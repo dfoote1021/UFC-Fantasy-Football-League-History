@@ -9,6 +9,7 @@
   --live: #ff4f4f;
   --win: #3ddc84;
   --gold: #ffd25c;
+  --silver: #c9c9c9;
 }
 
 * { box-sizing: border-box; }
@@ -58,6 +59,7 @@ select {
 }
 .btn:hover { border-color: var(--accent); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-small { padding: 3px 10px; font-size: 0.75rem; }
 
 .badge {
   padding: 3px 8px;
@@ -111,7 +113,7 @@ select {
 .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
 .tab-btn:hover { color: var(--text); }
 
-main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -131,7 +133,7 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
 .data-table th { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
 .data-table tr:hover td { background: var(--panel-alt); }
 .data-table tr.champion-row td { color: var(--gold); font-weight: 700; }
-.data-table tr.runner-up-row td { color: #c9c9c9; font-weight: 600; }
+.data-table tr.runner-up-row td { color: var(--silver); font-weight: 600; }
 
 .result-tag {
   font-size: 0.75rem;
@@ -163,13 +165,20 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   margin-bottom: 8px;
   font-size: 0.85rem;
 }
-.bracket-match .win { color: var(--win); font-weight: 700; }
+.bracket-slot {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.bracket-slot .seed { color: var(--text-dim); font-size: 0.75rem; margin-right: 6px; }
+.bracket-slot.win { color: var(--win); font-weight: 700; }
+.bracket-slot.unresolved { color: var(--text-dim); font-style: italic; }
 
 .week-picker { margin-bottom: 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 
 .matchups-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 14px;
 }
 
@@ -183,8 +192,34 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
+  align-items: center;
 }
 .matchup-row.winner { color: var(--win); font-weight: 600; }
+.matchup-toggle {
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+.matchup-rosters {
+  display: none;
+  margin-top: 10px;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+.matchup-rosters.expanded { display: grid; }
+.matchup-roster-col h5 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.matchup-roster-col ul { list-style: none; margin: 0; padding: 0; }
+.matchup-roster-col li {
+  font-size: 0.78rem;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+.matchup-roster-col li.bench-player { color: var(--text-dim); }
 
 .teams-grid {
   display: grid;
@@ -211,18 +246,24 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
 
 .draft-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 8px;
+}
+@media (max-width: 1100px) {
+  .draft-board { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .draft-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .draft-pick {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
-.draft-pick .pick-num { color: var(--text-dim); font-size: 0.7rem; }
-.draft-pick .draft-owner { color: var(--accent); font-size: 0.75rem; margin-top: 4px; }
+.draft-pick .pick-num { color: var(--text-dim); font-size: 0.68rem; }
+.draft-pick .draft-owner { color: var(--accent); font-size: 0.7rem; margin-top: 4px; }
 
 .transactions-list { list-style: none; padding: 0; }
 .transactions-list li {
@@ -233,6 +274,26 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   margin-bottom: 8px;
   font-size: 0.9rem;
 }
+.txn-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.txn-type-tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--panel-alt);
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.txn-detail-row {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.txn-detail-row .add-tag { color: var(--win); }
+.txn-detail-row .drop-tag { color: var(--live); }
 
 .status-text { color: var(--text-dim); font-size: 0.85rem; }
 
