@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>League Season</title>
+<link rel="stylesheet" href="assets/season.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <h1 id="page-title">Season</h1>
+  <div class="season-picker">
+    <label for="season-select">Season:</label>
+    <select id="season-select"></select>
+    <span id="live-badge" class="badge live-badge" hidden>LIVE</span>
+    <span id="last-refreshed"></span>
+    <button id="refresh-btn" class="btn">Refresh</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="standings">Standings</button>
+  <button class="tab-btn" data-tab="matchups">Matchups</button>
+  <button class="tab-btn" data-tab="teams">Teams</button>
+  <button class="tab-btn" data-tab="draft">Draft</button>
+  <button class="tab-btn" data-tab="transactions">Transactions</button>
+  <button class="tab-btn" data-tab="commish">Commissioner</button>
+</nav>
+
+<main>
+
+  <section id="tab-standings" class="tab-panel active">
+    <h2>Standings</h2>
+    <table id="standings-table" class="data-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Team</th><th>Owner</th><th>W</th><th>L</th><th>T</th>
+          <th>PF</th><th>PA</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="tab-matchups" class="tab-panel">
+    <h2>Matchups</h2>
+    <div class="week-picker">
+      <label for="week-select">Week:</label>
+      <select id="week-select"></select>
+    </div>
+    <div id="matchups-list" class="matchups-grid"></div>
+  </section>
+
+  <section id="tab-teams" class="tab-panel">
+    <h2>Teams</h2>
+    <div id="teams-grid" class="teams-grid"></div>
+  </section>
+
+  <section id="tab-draft" class="tab-panel">
+    <h2>Draft Board</h2>
+    <div id="draft-board" class="draft-board"></div>
+  </section>
+
+  <section id="tab-transactions" class="tab-panel">
+    <h2>Transactions</h2>
+    <div class="week-picker">
+      <label for="txn-week-select">Week:</label>
+      <select id="txn-week-select"></select>
+    </div>
+    <ul id="transactions-list" class="transactions-list"></ul>
+  </section>
+
+  <section id="tab-commish" class="tab-panel">
+    <h2>Commissioner Tools</h2>
+    <p>These tools help preserve each Sleeper season permanently, independent of Sleeper's servers.</p>
+    <button id="freeze-btn" class="btn btn-primary">Freeze &amp; Download This Season (JSON)</button>
+    <p id="freeze-status" class="status-text"></p>
+    <hr />
+    <h3>League Info</h3>
+    <pre id="league-info-raw"></pre>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Data provided by the public Sleeper API. This site is read-only and does not modify any league.</p>
+</footer>
+
+<script src="assets/sleeper-common.js"></script>
+<script src="assets/season.js"></script>
+</body>
+</html>
