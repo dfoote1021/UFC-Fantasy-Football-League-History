@@ -1,21 +1,25 @@
 /**
  * espn-loader.js
- * Loads and normalizes historical ESPN-era season data (2012-2021) from a
- * local CSV file, producing the exact same data shapes that
- * sleeper-common.js produces for Sleeper seasons. This lets season.js
- * render ESPN years through the identical Standings / Matchups / Bracket
- * UI code used for Sleeper years, with no duplicate rendering logic.
+ * Loads and normalizes historical ESPN-era season data (2012-2021) from
+ * local CSV files, producing data shapes compatible with sleeper-common.js
+ * so season.js can render ESPN years through the same UI used for Sleeper
+ * years, with no duplicate rendering logic.
  *
- * Data source: assets/data/espn-matchups.csv
- * Columns: year,week,team,team_score,opponent,opponent_score,result,
- *          is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
+ * Data sources:
+ *   assets/data/espn-matchups.csv   - week-by-week matchup results, playoffs
+ *   assets/data/espn-standings.csv  - authoritative final win/loss/points/
+ *                                     division per team per year (source of
+ *                                     truth for the Standings tab)
  *
- * result is one of: WIN, LOSS, TIE, BYE (from the perspective of `team`).
- * bracket_type is one of: Winners, Consolation (case-insensitive, blank
- * for regular season rows).
+ * Matchups CSV columns: year,week,team,team_score,opponent,opponent_score,
+ *   result,is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
+ *   result is one of: WIN, LOSS, TIE, BYE (from the perspective of `team`).
  *
- * Everything is wrapped in an IIFE and attached only to window.EspnLoader,
- * mirroring the defensive pattern used in sleeper-common.js.
+ * Standings CSV columns (case-insensitive; lowercase as authored):
+ *   year,team,division,division_standing,owner,wins,losses,ties,
+ *   points_for,points_against,final_rank,made_playoffs,champion,runner_up
+ *
+ * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
 
 (function () {
@@ -23,8 +27,10 @@
 
   var ESPN_SEASONS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021];
   var MATCHUPS_CSV_PATH = "assets/data/espn-matchups.csv";
+  var STANDINGS_CSV_PATH = "assets/data/espn-standings.csv";
 
-  var _rawRowsPromise = null;
+  var _matchupsCache = {};
+  var _standingsCache = {};
 
   /** Minimal CSV parser: handles quoted fields, commas inside quotes, CRLF/LF. */
   function parseCSV(text) {
@@ -87,6 +93,17 @@
     });
   }
 
+  /** Case-insensitive field lookup - works regardless of header casing. */
+  function getField(row, name) {
+    if (row[name] !== undefined) return row[name];
+    var lower = name.toLowerCase();
+    var keys = Object.keys(row);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === lower) return row[keys[i]];
+    }
+    return "";
+  }
+
   function toNumberOrNull(v) {
     if (v === null || v === undefined || v === "") return null;
     var n = Number(v);
@@ -97,7 +114,6 @@
     return String(v).trim().toUpperCase() === "TRUE";
   }
 
-  /** Normalize the result column (WIN/LOSS/TIE/BYE) into W/L/T/BYE used internally. */
   function normalizeResult(v) {
     var u = String(v).trim().toUpperCase();
     if (u === "WIN") return "W";
@@ -114,48 +130,93 @@
     return null;
   }
 
-  function fetchRawRows() {
-    if (_rawRowsPromise) return _rawRowsPromise;
-    _rawRowsPromise = fetch(MATCHUPS_CSV_PATH)
+  function fetchCsv(path, cache) {
+    if (cache.promise) return cache.promise;
+    cache.promise = fetch(path)
       .then(function (res) {
         if (!res.ok) {
-          throw new Error("Failed to load ESPN matchups CSV: " + res.status);
+          throw new Error("Failed to load " + path + ": " + res.status);
         }
         return res.text();
       })
       .then(function (text) {
         return rowsToObjects(parseCSV(text));
       });
-    return _rawRowsPromise;
+    return cache.promise;
   }
 
-  /** All parsed+normalized rows for one season. */
+  function fetchRawMatchupRows() {
+    return fetchCsv(MATCHUPS_CSV_PATH, _matchupsCache);
+  }
+
+  function fetchRawStandingsRows() {
+    return fetchCsv(STANDINGS_CSV_PATH, _standingsCache).catch(function () {
+      return []; // standings CSV is optional; fall back to derived data if absent
+    });
+  }
+
+  /** All parsed+normalized matchup rows for one season. */
   function getSeasonRows(year) {
-    return fetchRawRows().then(function (allRows) {
+    return fetchRawMatchupRows().then(function (allRows) {
       return allRows
         .filter(function (r) {
-          return Number(r.year) === Number(year);
+          return Number(getField(r, "year")) === Number(year);
         })
         .map(function (r) {
           return {
-            year: Number(r.year),
-            week: Number(r.week),
-            team: r.team,
-            teamScore: toNumberOrNull(r.team_score),
-            opponent: r.opponent,
-            opponentScore: toNumberOrNull(r.opponent_score),
-            result: normalizeResult(r.result),
-            isPlayoff: toBool(r.is_playoff),
-            bracketType: normalizeBracketType(r.bracket_type),
-            playoffRound: toNumberOrNull(r.playoff_round),
-            teamSeed: toNumberOrNull(r.team_seed),
-            opponentSeed: toNumberOrNull(r.opponent_seed),
+            year: Number(getField(r, "year")),
+            week: Number(getField(r, "week")),
+            team: getField(r, "team"),
+            teamScore: toNumberOrNull(getField(r, "team_score")),
+            opponent: getField(r, "opponent"),
+            opponentScore: toNumberOrNull(getField(r, "opponent_score")),
+            result: normalizeResult(getField(r, "result")),
+            isPlayoff: toBool(getField(r, "is_playoff")),
+            bracketType: normalizeBracketType(getField(r, "bracket_type")),
+            playoffRound: toNumberOrNull(getField(r, "playoff_round")),
+            teamSeed: toNumberOrNull(getField(r, "team_seed")),
+            opponentSeed: toNumberOrNull(getField(r, "opponent_seed")),
           };
         });
     });
   }
 
-  /** Distinct team names appearing anywhere in a season's rows (excluding BYE). */
+  /**
+   * Authoritative final standings rows for one season, keyed by team name.
+   * Reads: year, team, division, division_standing, owner, wins, losses,
+   * ties, points_for, points_against, final_rank, made_playoffs, champion,
+   * runner_up (case-insensitive).
+   */
+  function getStandingsRows(year) {
+    return fetchRawStandingsRows().then(function (allRows) {
+      var byTeam = {};
+      allRows
+        .filter(function (r) {
+          return Number(getField(r, "year")) === Number(year);
+        })
+        .forEach(function (r) {
+          var team = getField(r, "team");
+          byTeam[team] = {
+            team: team,
+            owner: getField(r, "owner"),
+            division: getField(r, "division") || null,
+            divisionStanding: toNumberOrNull(getField(r, "division_standing")),
+            wins: toNumberOrNull(getField(r, "wins")) || 0,
+            losses: toNumberOrNull(getField(r, "losses")) || 0,
+            ties: toNumberOrNull(getField(r, "ties")) || 0,
+            pointsFor: toNumberOrNull(getField(r, "points_for")) || 0,
+            pointsAgainst: toNumberOrNull(getField(r, "points_against")) || 0,
+            finalRank: toNumberOrNull(getField(r, "final_rank")),
+            madePlayoffs: toBool(getField(r, "made_playoffs")),
+            champion: toBool(getField(r, "champion")),
+            runnerUp: toBool(getField(r, "runner_up")),
+          };
+        });
+      return byTeam;
+    });
+  }
+
+  /** Distinct team names appearing anywhere in a season's matchup rows (excluding BYE). */
   function getTeamsForSeason(rows) {
     var names = {};
     rows.forEach(function (r) {
@@ -166,12 +227,23 @@
   }
 
   /**
-   * Build a rosterMap-shaped object compatible with SleeperAPI.sortStandings /
-   * buildFinalStandings. Since ESPN data has no numeric roster_id, team name
-   * itself is used as the id (rosterId = team name string).
+   * Build a rosterMap-shaped object. If authoritative standingsRows are
+   * available for this team, those win/loss/points/division values are
+   * used directly (source of truth). Otherwise falls back to deriving
+   * totals by summing regular-season matchup rows.
    */
-  function buildRosterMap(rows) {
-    var teams = getTeamsForSeason(rows);
+  function buildRosterMap(rows, standingsRows) {
+    var matchupTeams = getTeamsForSeason(rows);
+    var standingsTeams = standingsRows ? Object.keys(standingsRows) : [];
+    var allTeamNames = {};
+    matchupTeams.forEach(function (t) {
+      allTeamNames[t] = true;
+    });
+    standingsTeams.forEach(function (t) {
+      allTeamNames[t] = true;
+    });
+    var teams = Object.keys(allTeamNames);
+
     var rosterMap = {};
 
     teams.forEach(function (team) {
@@ -182,6 +254,7 @@
         displayName: team,
         avatar: null,
         division: null,
+        divisionStanding: null,
         wins: 0,
         losses: 0,
         ties: 0,
@@ -191,45 +264,68 @@
         totalMoves: 0,
         starters: [],
         players: [],
+        finalRank: null,
+        madePlayoffs: null,
+        isChampionFlag: false,
+        isRunnerUpFlag: false,
       };
     });
 
-    var regularRows = rows.filter(function (r) {
-      return !r.isPlayoff;
-    });
+    var hasStandings = standingsRows && Object.keys(standingsRows).length > 0;
 
-    regularRows.forEach(function (r) {
-      var team = rosterMap[r.team];
-      if (!team) return;
-      if (r.teamScore !== null) team.fpts += r.teamScore;
-      if (r.opponentScore !== null) team.fptsAgainst += r.opponentScore;
-      if (r.result === "W") team.wins += 1;
-      else if (r.result === "L") team.losses += 1;
-      else if (r.result === "T") team.ties += 1;
-      // BYE rows in the regular season do not affect win/loss/tie counts.
-    });
-
-    Object.keys(rosterMap).forEach(function (team) {
-      rosterMap[team].fpts = Math.round(rosterMap[team].fpts * 100) / 100;
-      rosterMap[team].fptsAgainst = Math.round(rosterMap[team].fptsAgainst * 100) / 100;
-    });
+    if (hasStandings) {
+      Object.keys(rosterMap).forEach(function (team) {
+        var s = standingsRows[team];
+        if (!s) return;
+        rosterMap[team].displayName = s.owner || team;
+        rosterMap[team].division = s.division;
+        rosterMap[team].divisionStanding = s.divisionStanding;
+        rosterMap[team].wins = s.wins;
+        rosterMap[team].losses = s.losses;
+        rosterMap[team].ties = s.ties;
+        rosterMap[team].fpts = Math.round(s.pointsFor * 100) / 100;
+        rosterMap[team].fptsAgainst = Math.round(s.pointsAgainst * 100) / 100;
+        rosterMap[team].finalRank = s.finalRank;
+        rosterMap[team].madePlayoffs = s.madePlayoffs;
+        rosterMap[team].isChampionFlag = s.champion;
+        rosterMap[team].isRunnerUpFlag = s.runnerUp;
+      });
+    } else {
+      var regularRows = rows.filter(function (r) {
+        return !r.isPlayoff;
+      });
+      regularRows.forEach(function (r) {
+        var team = rosterMap[r.team];
+        if (!team) return;
+        if (r.teamScore !== null) team.fpts += r.teamScore;
+        if (r.opponentScore !== null) team.fptsAgainst += r.opponentScore;
+        if (r.result === "W") team.wins += 1;
+        else if (r.result === "L") team.losses += 1;
+        else if (r.result === "T") team.ties += 1;
+      });
+      Object.keys(rosterMap).forEach(function (team) {
+        rosterMap[team].fpts = Math.round(rosterMap[team].fpts * 100) / 100;
+        rosterMap[team].fptsAgainst = Math.round(rosterMap[team].fptsAgainst * 100) / 100;
+      });
+    }
 
     return rosterMap;
   }
 
-  /** Sort standings the same way SleeperAPI.sortStandings does. */
   function sortStandings(rosterMap) {
     return Object.keys(rosterMap)
       .map(function (k) {
         return rosterMap[k];
       })
       .sort(function (a, b) {
+        if (a.finalRank !== null && b.finalRank !== null && a.finalRank !== b.finalRank) {
+          return a.finalRank - b.finalRank;
+        }
         if (b.wins !== a.wins) return b.wins - a.wins;
         return b.fpts - a.fpts;
       });
   }
 
-  /** Seed map derived from regular-season standings (1 = best record). */
   function buildSeedMap(rosterMap) {
     var standings = sortStandings(rosterMap);
     var seedMap = {};
@@ -239,7 +335,52 @@
     return seedMap;
   }
 
-  /** All distinct weeks present for a season, sorted ascending. */
+  /**
+   * Group standings by division (if the standings CSV supplied division
+   * values for this season). Returns null if no team has a division set,
+   * matching the behavior of the Sleeper-side division standings so the
+   * "Final Standings by Division" section hides itself cleanly when a
+   * season didn't use divisions.
+   */
+  function buildDivisionStandings(rosterMap, finalStandingsInfo) {
+    var teams = Object.keys(rosterMap).map(function (k) {
+      return rosterMap[k];
+    });
+    var hasDivisions = teams.some(function (t) {
+      return t.division;
+    });
+    if (!hasDivisions) return null;
+
+    var champion = finalStandingsInfo ? finalStandingsInfo.champion : null;
+    var runnerUp = finalStandingsInfo ? finalStandingsInfo.runnerUp : null;
+
+    var groups = {};
+    teams.forEach(function (team) {
+      var div = team.division || "Unassigned";
+      if (!groups[div]) groups[div] = [];
+      groups[div].push(team);
+    });
+
+    return Object.keys(groups)
+      .sort()
+      .map(function (divName) {
+        var divTeams = groups[divName].sort(function (a, b) {
+          if (a.divisionStanding !== null && b.divisionStanding !== null) {
+            return a.divisionStanding - b.divisionStanding;
+          }
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return b.fpts - a.fpts;
+        });
+        return {
+          divisionNum: divName,
+          divisionName: divName,
+          standings: divTeams,
+          champion: champion,
+          runnerUp: runnerUp,
+        };
+      });
+  }
+
   function getWeeksForSeason(rows) {
     var weeks = {};
     rows.forEach(function (r) {
@@ -252,11 +393,6 @@
       });
   }
 
-  /**
-   * Build matchup pairs for one week, in the same {teamA, teamB} shape
-   * SleeperAPI.pairMatchups produces (minus per-player roster data, which
-   * ESPN weekly-rosters CSV would supply separately if loaded).
-   */
   function pairMatchupsForWeek(rows, week, rosterMap) {
     var weekRows = rows.filter(function (r) {
       return r.week === week;
@@ -300,16 +436,99 @@
     return pairs;
   }
 
-  /** Full season schedule for one team, matching SleeperAPI.buildTeamSchedule's shape. */
+  /**
+   * Compute each team's running (cumulative) record through and including
+   * a given week, for the regular season only. Returns a map of
+   * teamName -> "W-L" (or "W-L-T" if any ties) string as of that week.
+   */
+  function buildRunningRecordsThroughWeek(rows, week) {
+    var regularRows = rows.filter(function (r) {
+      return !r.isPlayoff && r.week <= week;
+    });
+
+    var teams = getTeamsForSeason(rows);
+    var tally = {};
+    teams.forEach(function (t) {
+      tally[t] = { wins: 0, losses: 0, ties: 0 };
+    });
+
+    var weeksSorted = {};
+    regularRows.forEach(function (r) {
+      if (!weeksSorted[r.week]) weeksSorted[r.week] = [];
+      weeksSorted[r.week].push(r);
+    });
+
+    Object.keys(weeksSorted)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (w) {
+        weeksSorted[w].forEach(function (r) {
+          var t = tally[r.team];
+          if (!t) return;
+          if (r.result === "W") t.wins += 1;
+          else if (r.result === "L") t.losses += 1;
+          else if (r.result === "T") t.ties += 1;
+        });
+      });
+
+    var recordStrings = {};
+    Object.keys(tally).forEach(function (team) {
+      var t = tally[team];
+      recordStrings[team] =
+        t.ties > 0 ? t.wins + "-" + t.losses + "-" + t.ties : t.wins + "-" + t.losses;
+    });
+    return recordStrings;
+  }
+
+  /**
+   * Precompute running records for every regular-season week in one pass,
+   * returning { week: { teamName: "W-L" } }.
+   */
+  function buildAllRunningRecords(rows) {
+    var weeks = getWeeksForSeason(rows).filter(function (w) {
+      return rows.some(function (r) {
+        return r.week === w && !r.isPlayoff;
+      });
+    });
+    var result = {};
+    weeks.forEach(function (w) {
+      result[w] = buildRunningRecordsThroughWeek(rows, w);
+    });
+    return result;
+  }
+
+  /**
+   * Full season schedule for one team, with an added `recordAfter` field
+   * showing the team's cumulative regular-season record immediately
+   * following that week's game. Playoff weeks show "-" since they don't
+   * affect regular season record.
+   */
   function buildTeamSchedule(rows, teamName) {
+    var runningWins = 0;
+    var runningLosses = 0;
+    var runningTies = 0;
+
     return rows
       .filter(function (r) {
-        return r.team === teamName && !r.isPlayoff;
+        return r.team === teamName;
       })
       .sort(function (a, b) {
         return a.week - b.week;
       })
       .map(function (r) {
+        var recordAfter = "-";
+        if (!r.isPlayoff) {
+          if (r.result === "W") runningWins += 1;
+          else if (r.result === "L") runningLosses += 1;
+          else if (r.result === "T") runningTies += 1;
+          recordAfter =
+            runningTies > 0
+              ? runningWins + "-" + runningLosses + "-" + runningTies
+              : runningWins + "-" + runningLosses;
+        }
+
         return {
           week: r.week,
           opponentRosterId: r.opponent,
@@ -317,17 +536,12 @@
           myPoints: r.teamScore || 0,
           opponentPoints: r.opponent === "BYE" ? null : r.opponentScore,
           result: r.result,
+          isPlayoff: r.isPlayoff,
+          recordAfter: recordAfter,
         };
       });
   }
 
-  /**
-   * Build a bracket view (winners or consolation) matching the shape
-   * SleeperAPI.buildBracketView produces, so the existing bracket renderer
-   * in season.js works unmodified. ESPN data already has explicit outcomes
-   * recorded per game, so no "Winner of Match X" placeholders are needed -
-   * every round is fully resolved historical fact.
-   */
   function buildBracketView(rows, bracketType) {
     var playoffRows = rows.filter(function (r) {
       return r.isPlayoff && r.bracketType === bracketType;
@@ -390,7 +604,11 @@
       });
   }
 
-  /** Determine champion/runner-up from the final round of the winners bracket. */
+  /**
+   * Determine champion/runner-up. Prefers explicit champion/runner_up flags
+   * from the standings CSV (authoritative); falls back to inferring from
+   * the final round of the winners bracket if those flags are absent.
+   */
   function buildFinalStandings(rosterMap, rows) {
     var standings = sortStandings(rosterMap);
     var winnersRounds = buildBracketView(rows, "winners");
@@ -398,7 +616,17 @@
     var champion = null;
     var runnerUp = null;
 
-    if (winnersRounds.length > 0) {
+    var flaggedChampion = Object.keys(rosterMap).find(function (t) {
+      return rosterMap[t].isChampionFlag;
+    });
+    var flaggedRunnerUp = Object.keys(rosterMap).find(function (t) {
+      return rosterMap[t].isRunnerUpFlag;
+    });
+
+    if (flaggedChampion) {
+      champion = rosterMap[flaggedChampion];
+      runnerUp = flaggedRunnerUp ? rosterMap[flaggedRunnerUp] : null;
+    } else if (winnersRounds.length > 0) {
       var lastRound = winnersRounds[winnersRounds.length - 1];
       var champMatch =
         lastRound.matches.length === 1
@@ -442,17 +670,21 @@
   }
 
   /**
-   * High-level entry point: load and fully process one ESPN season, returning
-   * everything season.js needs in the same shapes SleeperAPI produces.
+   * High-level entry point: load and fully process one ESPN season.
    */
   function loadSeason(year) {
-    return getSeasonRows(year).then(function (rows) {
-      var rosterMap = buildRosterMap(rows);
+    return Promise.all([getSeasonRows(year), getStandingsRows(year)]).then(function (results) {
+      var rows = results[0];
+      var standingsRows = results[1];
+
+      var rosterMap = buildRosterMap(rows, standingsRows);
       var seedMap = buildSeedMap(rosterMap);
       var weeks = getWeeksForSeason(rows);
       var winnersBracket = buildBracketView(rows, "winners");
       var consolationBracket = buildBracketView(rows, "consolation");
       var finalStandingsInfo = buildFinalStandings(rosterMap, rows);
+      var divisionStandings = buildDivisionStandings(rosterMap, finalStandingsInfo);
+      var runningRecordsByWeek = buildAllRunningRecords(rows);
 
       return {
         year: year,
@@ -463,8 +695,18 @@
         winnersBracket: winnersBracket,
         consolationBracket: consolationBracket,
         finalStandingsInfo: finalStandingsInfo,
+        divisionStandings: divisionStandings,
+        runningRecordsByWeek: runningRecordsByWeek,
         getMatchupsForWeek: function (week) {
-          return pairMatchupsForWeek(rows, week, rosterMap);
+          var pairs = pairMatchupsForWeek(rows, week, rosterMap);
+          var recordsThisWeek = runningRecordsByWeek[week] || {};
+          pairs.forEach(function (pair) {
+            pair.teamA.recordAfter = recordsThisWeek[pair.teamA.rosterId] || null;
+            if (pair.teamB) {
+              pair.teamB.recordAfter = recordsThisWeek[pair.teamB.rosterId] || null;
+            }
+          });
+          return pairs;
         },
         getTeamSchedule: function (teamName) {
           return buildTeamSchedule(rows, teamName);
@@ -477,13 +719,17 @@
     ESPN_SEASONS: ESPN_SEASONS,
     loadSeason: loadSeason,
     getSeasonRows: getSeasonRows,
+    getStandingsRows: getStandingsRows,
     buildRosterMap: buildRosterMap,
     sortStandings: sortStandings,
     buildSeedMap: buildSeedMap,
+    buildDivisionStandings: buildDivisionStandings,
     getWeeksForSeason: getWeeksForSeason,
     pairMatchupsForWeek: pairMatchupsForWeek,
     buildTeamSchedule: buildTeamSchedule,
     buildBracketView: buildBracketView,
     buildFinalStandings: buildFinalStandings,
+    buildRunningRecordsThroughWeek: buildRunningRecordsThroughWeek,
+    buildAllRunningRecords: buildAllRunningRecords,
   };
 })();
