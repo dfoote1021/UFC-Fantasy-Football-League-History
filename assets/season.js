@@ -15,7 +15,7 @@
 
   var state = {
     season: null,
-    dataSource: null, // "sleeper" | "espn"
+    dataSource: null,
     leagueId: null,
     league: null,
     users: [],
@@ -32,7 +32,7 @@
     allTransactionsFlat: null,
     txnCountsByRoster: {},
     playoffStartWeek: null,
-    espnSeasonData: null, // populated only when dataSource === "espn"
+    espnSeasonData: null,
   };
 
   function isEspnYear(season) {
@@ -181,10 +181,6 @@
     return loadSleeperSeason(season);
   }
 
-  /* ---------------------------------------------------------------- */
-  /* Sleeper season loading (2022+)                                    */
-  /* ---------------------------------------------------------------- */
-
   async function loadSleeperSeason(season) {
     state.dataSource = "sleeper";
     state.leagueId = SleeperAPI.SLEEPER_SEASONS[season];
@@ -265,10 +261,6 @@
     }
   }
 
-  /* ---------------------------------------------------------------- */
-  /* ESPN season loading (2012-2021)                                   */
-  /* ---------------------------------------------------------------- */
-
   async function loadEspnSeason(season) {
     state.dataSource = "espn";
     byId("live-badge").hidden = true;
@@ -301,7 +293,7 @@
 
       renderChampionBanner();
       renderStandings();
-      renderDivisionStandings();
+      renderDivisionStandingsEspn(data.divisionStandings);
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelectsEspn(data.weeks);
@@ -340,7 +332,6 @@
     weekSelect.value = String(weeks[0] || 1);
     weekSelect.onchange = renderMatchupsEspn;
 
-    // ESPN years have no transaction/roster week pickers - hide those controls.
     var txnWeekSelect = byId("txn-week-select");
     if (txnWeekSelect) txnWeekSelect.innerHTML = "";
     var rosterWeekSelect = byId("roster-week-select");
@@ -364,19 +355,21 @@
       card.className = "matchup-card";
       var aWins = pair.teamB && pair.teamA.points > pair.teamB.points;
       var bWins = pair.teamB && pair.teamB.points > pair.teamA.points;
+      var aRecord = pair.teamA.recordAfter ? " (" + pair.teamA.recordAfter + ")" : "";
+      var bRecord = pair.teamB && pair.teamB.recordAfter ? " (" + pair.teamB.recordAfter + ")" : "";
       var rowA =
         '<div class="matchup-row ' + (aWins ? "winner" : "") + '">' +
-        "<span>" + escapeHtml(pair.teamA.teamName) + "</span>" +
+        "<span>" + escapeHtml(pair.teamA.teamName) + escapeHtml(aRecord) + "</span>" +
         "<span>" + pair.teamA.points.toFixed(2) + "</span></div>";
       var rowB = pair.teamB
         ? '<div class="matchup-row ' + (bWins ? "winner" : "") + '">' +
-          "<span>" + escapeHtml(pair.teamB.teamName) + "</span>" +
+          "<span>" + escapeHtml(pair.teamB.teamName) + escapeHtml(bRecord) + "</span>" +
           "<span>" + pair.teamB.points.toFixed(2) + "</span></div>"
         : '<div class="matchup-row">BYE</div>';
       card.innerHTML =
         rowA +
         rowB +
-        '<p class="status-text">Player-level rosters not available for ESPN seasons.</p>';
+        '<p class="status-text">Record shown is cumulative through this week. Player-level rosters not available for ESPN seasons.</p>';
       list.appendChild(card);
     });
   }
@@ -391,6 +384,7 @@
       card.className = "team-card";
       card.innerHTML =
         "<div><strong>" + escapeHtml(team.teamName) + "</strong></div>" +
+        "<p>" + escapeHtml(team.displayName) + "</p>" +
         '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
         '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
         '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
@@ -423,7 +417,7 @@
 
     var schedule = state.espnSeasonData.getTeamSchedule(teamName);
     if (!schedule || schedule.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5">No schedule data available.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6">No schedule data available.</td></tr>';
       return;
     }
 
@@ -432,12 +426,14 @@
       var tr = document.createElement("tr");
       if (game.result === "W") tr.classList.add("result-w");
       if (game.result === "L") tr.classList.add("result-l");
+      var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
       tr.innerHTML =
-        "<td>" + game.week + "</td>" +
+        "<td>" + weekLabel + "</td>" +
         "<td>" + escapeHtml(game.opponentName) + "</td>" +
         "<td>" + game.result + "</td>" +
         "<td>" + game.myPoints.toFixed(2) + "</td>" +
-        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>";
+        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>" +
+        "<td>" + escapeHtml(game.recordAfter) + "</td>";
       tbody.appendChild(tr);
     });
   }
@@ -470,10 +466,6 @@
       2
     );
   }
-
-  /* ---------------------------------------------------------------- */
-  /* Shared rendering (used by both Sleeper and ESPN data sources)      */
-  /* ---------------------------------------------------------------- */
 
   async function ensureAllWeeksMatchups() {
     if (state.dataSource !== "sleeper") return null;
@@ -575,12 +567,8 @@
   function renderDivisionStandings() {
     var wrap = byId("division-standings-wrap");
     if (!wrap) return;
-    if (state.dataSource === "espn") {
-      wrap.hidden = true;
-      return;
-    }
+    if (state.dataSource === "espn") return; // handled separately by renderDivisionStandingsEspn
 
-    var container = byId("division-standings");
     var divisions = SleeperAPI.buildDivisionStandings(
       state.rosterMap,
       state.league,
@@ -593,6 +581,25 @@
     }
 
     wrap.hidden = false;
+    renderDivisionCards(divisions);
+  }
+
+  function renderDivisionStandingsEspn(divisions) {
+    var wrap = byId("division-standings-wrap");
+    if (!wrap) return;
+
+    if (!divisions || divisions.length === 0) {
+      wrap.hidden = true;
+      return;
+    }
+
+    wrap.hidden = false;
+    renderDivisionCards(divisions);
+  }
+
+  function renderDivisionCards(divisions) {
+    var container = byId("division-standings");
+    if (!container) return;
     container.innerHTML = "";
     divisions.forEach(function (div) {
       var card = document.createElement("div");
@@ -623,7 +630,7 @@
 
     var rounds;
     if (state.dataSource === "espn") {
-      rounds = bracketData; // espn-loader already returns the final {round, matches} shape
+      rounds = bracketData;
     } else {
       rounds = SleeperAPI.buildBracketView(
         bracketData,
@@ -671,7 +678,6 @@
           matchDiv.appendChild(slotDiv);
         });
 
-        // Roster-toggle only applies to Sleeper years (player-level data available).
         if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
           var toggleId = containerId + "-rosters-" + matchCounter;
           var toggleDiv = document.createElement("div");
