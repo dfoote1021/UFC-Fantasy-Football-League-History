@@ -8,10 +8,7 @@
  * Docs: https://docs.sleeper.com
  *
  * Everything is wrapped in an IIFE and attached only to window.SleeperAPI.
- * No top-level const/let/var/function declarations leak into global scope,
- * which avoids "Can't create duplicate variable that shadows a global
- * property" errors if this script is ever loaded more than once or a name
- * collides with a browser global.
+ * No top-level const/let/var/function declarations leak into global scope.
  */
 
 (function () {
@@ -84,7 +81,11 @@
     return sleeperGet("/state/nfl");
   }
 
+  var _playersMapPromise = null;
+
   function getPlayersMap() {
+    if (_playersMapPromise) return _playersMapPromise;
+
     var cacheKey = "sleeper_players_cache_v1";
     var cacheTimeKey = "sleeper_players_cache_time_v1";
     var oneDayMs = 24 * 60 * 60 * 1000;
@@ -92,10 +93,13 @@
     var cachedTime = localStorage.getItem(cacheTimeKey);
     if (cachedTime && Date.now() - Number(cachedTime) < oneDayMs) {
       var cached = localStorage.getItem(cacheKey);
-      if (cached) return Promise.resolve(JSON.parse(cached));
+      if (cached) {
+        _playersMapPromise = Promise.resolve(JSON.parse(cached));
+        return _playersMapPromise;
+      }
     }
 
-    return sleeperGet("/players/nfl").then(function (players) {
+    _playersMapPromise = sleeperGet("/players/nfl").then(function (players) {
       try {
         localStorage.setItem(cacheKey, JSON.stringify(players));
         localStorage.setItem(cacheTimeKey, String(Date.now()));
@@ -104,6 +108,7 @@
       }
       return players;
     });
+    return _playersMapPromise;
   }
 
   function buildRosterMap(users, rosters) {
@@ -195,6 +200,158 @@
       });
   }
 
+  function resolvePlayoffResults(bracket) {
+    if (!bracket || bracket.length === 0) {
+      return { rounds: [], championRosterId: null, runnerUpRosterId: null };
+    }
+
+    var maxRound = Math.max.apply(
+      null,
+      bracket.map(function (m) {
+        return m.r;
+      })
+    );
+
+    var finalMatch = bracket.find(function (m) {
+      return m.r === maxRound && m.p === 1;
+    });
+    if (!finalMatch) {
+      finalMatch = bracket.find(function (m) {
+        return m.r === maxRound;
+      });
+    }
+
+    var championRosterId =
+      finalMatch && finalMatch.w !== undefined ? finalMatch.w : null;
+    var runnerUpRosterId =
+      finalMatch && finalMatch.l !== undefined ? finalMatch.l : null;
+
+    var roundsMap = {};
+    bracket.forEach(function (m) {
+      if (!roundsMap[m.r]) roundsMap[m.r] = [];
+      roundsMap[m.r].push(m);
+    });
+
+    var rounds = Object.keys(roundsMap)
+      .sort(function (a, b) {
+        return Number(a) - Number(b);
+      })
+      .map(function (r) {
+        return { round: Number(r), matches: roundsMap[r] };
+      });
+
+    return {
+      rounds: rounds,
+      championRosterId: championRosterId,
+      runnerUpRosterId: runnerUpRosterId,
+    };
+  }
+
+  function buildFinalStandings(rosterMap, winnersBracket) {
+    var standings = sortStandings(rosterMap);
+    var playoff = resolvePlayoffResults(winnersBracket);
+
+    var champion = playoff.championRosterId
+      ? rosterMap[playoff.championRosterId]
+      : null;
+    var runnerUp = playoff.runnerUpRosterId
+      ? rosterMap[playoff.runnerUpRosterId]
+      : null;
+
+    if (champion) {
+      standings = standings.filter(function (t) {
+        return t.rosterId !== champion.rosterId;
+      });
+      standings.unshift(champion);
+    }
+    if (runnerUp) {
+      standings = standings.filter(function (t) {
+        return t.rosterId !== runnerUp.rosterId || t === champion;
+      });
+      var idx = standings.findIndex(function (t) {
+        return t.rosterId === runnerUp.rosterId;
+      });
+      if (idx > 0) {
+        standings.splice(idx, 1);
+      }
+      standings.splice(champion ? 1 : 0, 0, runnerUp);
+    }
+
+    return {
+      standings: standings,
+      champion: champion,
+      runnerUp: runnerUp,
+      playoffRounds: playoff.rounds,
+    };
+  }
+
+  function buildWeeklyRoster(matchupsForWeek, rosterId, playersMap) {
+    var entry = matchupsForWeek.find(function (m) {
+      return m.roster_id === rosterId;
+    });
+    if (!entry) return null;
+
+    var starterSet = {};
+    (entry.starters || []).forEach(function (pid) {
+      starterSet[pid] = true;
+    });
+
+    var playerPoints = entry.players_points || {};
+
+    var roster = (entry.players || []).map(function (pid) {
+      var meta = (playersMap && playersMap[pid]) || {};
+      return {
+        playerId: pid,
+        name: meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : pid),
+        position: meta.position || "",
+        team: meta.team || "FA",
+        isStarter: !!starterSet[pid],
+        points: playerPoints[pid] !== undefined ? playerPoints[pid] : null,
+      };
+    });
+
+    roster.sort(function (a, b) {
+      if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
+      return (b.points || 0) - (a.points || 0);
+    });
+
+    return {
+      rosterId: rosterId,
+      totalPoints: entry.points || 0,
+      players: roster,
+    };
+  }
+
+  function buildDraftBoard(picks, rosterMap) {
+    var byRosterId = {};
+    Object.keys(rosterMap).forEach(function (rid) {
+      byRosterId[rid] = rosterMap[rid];
+    });
+
+    return picks
+      .slice()
+      .sort(function (a, b) {
+        return a.pick_no - b.pick_no;
+      })
+      .map(function (pick) {
+        var team = byRosterId[pick.roster_id] || null;
+        var meta = pick.metadata || {};
+        return {
+          pickNo: pick.pick_no,
+          round: pick.round,
+          rosterId: pick.roster_id,
+          teamName: team ? team.teamName : "Roster " + pick.roster_id,
+          ownerName: team ? team.displayName : "Unknown",
+          playerName:
+            (meta.first_name || "") +
+            (meta.first_name && meta.last_name ? " " : "") +
+            (meta.last_name || "") || "Unknown Player",
+          position: meta.position || "",
+          nflTeam: meta.team || "",
+        };
+      });
+  }
+
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
       getLeague(leagueId),
@@ -202,12 +359,20 @@
       getRosters(leagueId),
       getDraft(leagueId),
       getTradedPicks(leagueId),
+      getWinnersBracket(leagueId).catch(function () {
+        return [];
+      }),
+      getLosersBracket(leagueId).catch(function () {
+        return [];
+      }),
     ]).then(function (results) {
       var league = results[0];
       var users = results[1];
       var rosters = results[2];
       var draft = results[3];
       var tradedPicks = results[4];
+      var winnersBracket = results[5];
+      var losersBracket = results[6];
 
       var draftPicksPromise = draft
         ? getDraftPicks(draft.draft_id)
@@ -248,6 +413,8 @@
             draft: draft,
             draftPicks: draftPicks,
             tradedPicks: tradedPicks,
+            winnersBracket: winnersBracket,
+            losersBracket: losersBracket,
             matchupsByWeek: allMatchups,
             transactionsByWeek: allTransactions,
           };
@@ -289,6 +456,10 @@
     sortStandings: sortStandings,
     pairMatchups: pairMatchups,
     getDefaultWeek: getDefaultWeek,
+    resolvePlayoffResults: resolvePlayoffResults,
+    buildFinalStandings: buildFinalStandings,
+    buildWeeklyRoster: buildWeeklyRoster,
+    buildDraftBoard: buildDraftBoard,
     buildSeasonSnapshot: buildSeasonSnapshot,
     downloadJSON: downloadJSON,
   };
