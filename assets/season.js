@@ -3,11 +3,6 @@
  * Drives index.html. One page works for every Sleeper season -
  * pick a season from the dropdown, or load with ?season=2026 in the URL.
  * The season listed as SleeperAPI.CURRENT_LIVE_SEASON auto-refreshes.
- *
- * NOTE: Everything is wrapped in an IIFE and avoids top-level
- * const/let destructuring from window.SleeperAPI to prevent
- * "Can't create duplicate variable that shadows a global property"
- * errors on reload.
  */
 
 (function () {
@@ -31,6 +26,10 @@
     winnersBracket: [],
     losersBracket: [],
     finalStandingsInfo: null,
+    allWeeksMatchups: null,
+    allTransactionsFlat: null,
+    txnCountsByRoster: {},
+    playoffStartWeek: null,
   };
 
   function getSeasonFromURL() {
@@ -70,6 +69,35 @@
     });
   }
 
+  function setupMatchupViewToggle() {
+    var buttons = document.querySelectorAll(".view-toggle-btn");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        buttons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        var view = btn.dataset.view;
+        byId("matchups-week-view").hidden = view !== "week";
+        byId("matchups-schedule-view").hidden = view !== "schedule";
+        if (view === "schedule") {
+          renderTeamSchedule();
+        }
+      });
+    });
+  }
+
+  function setupTxnFilterToggle() {
+    var select = byId("txn-filter-mode");
+    if (!select) return;
+    select.addEventListener("change", function () {
+      var mode = select.value;
+      byId("txn-week-wrap").hidden = mode !== "week";
+      byId("txn-member-wrap").hidden = mode !== "member";
+      renderTransactions();
+    });
+  }
+
   function showFatalError(message) {
     var main = document.querySelector("main");
     if (!main) return;
@@ -103,6 +131,8 @@
 
     state.season = season;
     state.leagueId = SleeperAPI.SLEEPER_SEASONS[season];
+    state.allWeeksMatchups = null;
+    state.allTransactionsFlat = null;
 
     if (!state.leagueId) {
       showFatalError("No league ID configured for season " + season + ".");
@@ -132,6 +162,8 @@
       state.currentWeek = await SleeperAPI.getDefaultWeek(league);
       state.winnersBracket = winnersBracket || [];
       state.losersBracket = losersBracket || [];
+      state.playoffStartWeek =
+        (league.settings && league.settings.playoff_week_start) || null;
 
       var isComplete = league.status === "complete";
       byId("final-badge").hidden = !isComplete;
@@ -143,14 +175,18 @@
 
       renderChampionBanner();
       renderStandings();
+      renderDivisionStandings();
+      await ensureAllWeeksMatchups();
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelects();
       await renderMatchups();
-      renderTeams();
+      await renderTeams();
       await populateRosterTeamSelect();
       await renderWeeklyRoster();
+      await populateScheduleTeamSelect();
       await renderDraft();
+      await populateTxnMemberSelect();
       await renderTransactions();
       renderLeagueInfoRaw();
 
@@ -173,6 +209,38 @@
           (err && err.message ? err.message : err)
       );
     }
+  }
+
+  async function ensureAllWeeksMatchups() {
+    if (state.allWeeksMatchups) return state.allWeeksMatchups;
+    state.allWeeksMatchups = await SleeperAPI.getAllWeeksMatchups(state.leagueId, 18);
+    return state.allWeeksMatchups;
+  }
+
+  async function ensureAllTransactions() {
+    if (state.allTransactionsFlat) return state.allTransactionsFlat;
+    var weeks = [];
+    for (var w = 1; w <= 18; w++) weeks.push(w);
+    var chain = Promise.resolve();
+    var all = [];
+    weeks.forEach(function (week) {
+      chain = chain
+        .then(function () {
+          return SleeperAPI.getTransactions(state.leagueId, week).catch(function () {
+            return [];
+          });
+        })
+        .then(function (txns) {
+          (txns || []).forEach(function (t) {
+            t._week = week;
+            all.push(t);
+          });
+        });
+    });
+    await chain;
+    state.allTransactionsFlat = all;
+    state.txnCountsByRoster = SleeperAPI.countTransactionsByRoster(all);
+    return all;
   }
 
   function renderChampionBanner() {
@@ -235,11 +303,71 @@
     });
   }
 
+  function renderDivisionStandings() {
+    var wrap = byId("division-standings-wrap");
+    var container = byId("division-standings");
+    if (!wrap || !container) return;
+
+    var divisions = SleeperAPI.buildDivisionStandings(
+      state.rosterMap,
+      state.league,
+      state.finalStandingsInfo
+    );
+
+    if (!divisions || divisions.length === 0) {
+      wrap.hidden = true;
+      return;
+    }
+
+    wrap.hidden = false;
+    container.innerHTML = "";
+    divisions.forEach(function (div) {
+      var card = document.createElement("div");
+      card.className = "division-card";
+      var rows = div.standings
+        .map(function (team, idx) {
+          var isChamp = div.champion && div.champion.rosterId === team.rosterId;
+          var isRunnerUp = div.runnerUp && div.runnerUp.rosterId === team.rosterId;
+          var tag = isChamp ? " 🏆" : isRunnerUp ? " 🥈" : "";
+          return (
+            "<tr><td>" +
+            (idx + 1) +
+            "</td><td>" +
+            escapeHtml(team.teamName) +
+            tag +
+            "</td><td>" +
+            team.wins +
+            "-" +
+            team.losses +
+            "-" +
+            team.ties +
+            "</td><td>" +
+            team.fpts.toFixed(1) +
+            "</td></tr>"
+          );
+        })
+        .join("");
+      card.innerHTML =
+        "<h4>" +
+        escapeHtml(div.divisionName) +
+        "</h4><table><thead><tr><th>#</th><th>Team</th><th>Record</th><th>PF</th></tr></thead><tbody>" +
+        rows +
+        "</tbody></table>";
+      container.appendChild(card);
+    });
+  }
+
   function renderBracket(containerId, bracketData) {
     var container = byId(containerId);
     if (!container) return;
 
-    var rounds = SleeperAPI.buildBracketView(bracketData, state.rosterMap, state.seedMap);
+    var rounds = SleeperAPI.buildBracketView(
+      bracketData,
+      state.rosterMap,
+      state.seedMap,
+      state.allWeeksMatchups,
+      state.playoffStartWeek
+    );
 
     if (!rounds || rounds.length === 0) {
       container.innerHTML = "<p>No bracket data available yet for this season.</p>";
@@ -247,6 +375,7 @@
     }
 
     container.innerHTML = "";
+    var matchCounter = 0;
     rounds.forEach(function (roundData) {
       var roundDiv = document.createElement("div");
       roundDiv.className = "bracket-round";
@@ -255,10 +384,15 @@
       roundDiv.appendChild(roundTitle);
 
       roundData.matches.forEach(function (m) {
+        matchCounter++;
         var matchDiv = document.createElement("div");
         matchDiv.className = "bracket-match";
 
-        [m.slot1, m.slot2].forEach(function (slot) {
+        [
+          { slot: m.slot1, score: m.slot1Score },
+          { slot: m.slot2, score: m.slot2Score },
+        ].forEach(function (entry) {
+          var slot = entry.slot;
           var slotDiv = document.createElement("div");
           var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
           slotDiv.className =
@@ -266,16 +400,102 @@
             (isWinner ? " win" : "") +
             (!slot.resolved ? " unresolved" : "");
           var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
+          var scoreHtml =
+            entry.score !== null && entry.score !== undefined
+              ? '<span class="score">' + entry.score.toFixed(1) + "</span>"
+              : "";
           slotDiv.innerHTML =
-            "<span>" + seedHtml + escapeHtml(slot.teamName) + "</span>";
+            "<span>" + seedHtml + escapeHtml(slot.teamName) + "</span>" + scoreHtml;
           matchDiv.appendChild(slotDiv);
         });
+
+        if (m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
+          var toggleId = containerId + "-rosters-" + matchCounter;
+          var toggleDiv = document.createElement("div");
+          toggleDiv.className = "bracket-match-toggle";
+          var toggleBtn = document.createElement("button");
+          toggleBtn.className = "btn btn-small";
+          toggleBtn.textContent = "Show rosters";
+          toggleBtn.dataset.target = toggleId;
+          toggleBtn.dataset.week = m.week;
+          toggleBtn.dataset.roster1 = m.slot1.rosterId || "";
+          toggleBtn.dataset.roster2 = m.slot2.rosterId || "";
+          toggleDiv.appendChild(toggleBtn);
+          matchDiv.appendChild(toggleDiv);
+
+          var rostersDiv = document.createElement("div");
+          rostersDiv.className = "bracket-rosters";
+          rostersDiv.id = toggleId;
+          matchDiv.appendChild(rostersDiv);
+        }
 
         roundDiv.appendChild(matchDiv);
       });
 
       container.appendChild(roundDiv);
     });
+
+    container.querySelectorAll(".bracket-match-toggle button").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        var target = byId(btn.dataset.target);
+        if (!target) return;
+        var expanded = target.classList.contains("expanded");
+        if (expanded) {
+          target.classList.remove("expanded");
+          btn.textContent = "Show rosters";
+          return;
+        }
+
+        btn.textContent = "Loading…";
+        try {
+          if (!state.playersMap) {
+            state.playersMap = await SleeperAPI.getPlayersMap();
+          }
+          var week = Number(btn.dataset.week);
+          var weekMatchups = state.allWeeksMatchups[week] || [];
+          var r1 = Number(btn.dataset.roster1) || null;
+          var r2 = Number(btn.dataset.roster2) || null;
+
+          var side1 = weekMatchups.find(function (mu) {
+            return mu.roster_id === r1;
+          });
+          var side2 = weekMatchups.find(function (mu) {
+            return mu.roster_id === r2;
+          });
+
+          var html = '<div class="matchup-roster-col"><h5>' +
+            escapeHtml(r1 && state.rosterMap[r1] ? state.rosterMap[r1].teamName : "Team 1") +
+            "</h5>" + rosterListHtml(side1) + "</div>" +
+            '<div class="matchup-roster-col"><h5>' +
+            escapeHtml(r2 && state.rosterMap[r2] ? state.rosterMap[r2].teamName : "Team 2") +
+            "</h5>" + rosterListHtml(side2) + "</div>";
+
+          target.innerHTML = html;
+          target.classList.add("expanded");
+          btn.textContent = "Hide rosters";
+        } catch (e) {
+          target.innerHTML = "<p>Roster data unavailable.</p>";
+          target.classList.add("expanded");
+          btn.textContent = "Hide rosters";
+        }
+      });
+    });
+  }
+
+  function rosterListHtml(teamSide) {
+    if (!teamSide) return "<p>No data.</p>";
+    var roster = SleeperAPI.resolveMatchupRoster(teamSide, state.playersMap || {});
+    if (!roster || roster.length === 0) return "<p>No roster data.</p>";
+    var items = roster
+      .map(function (p) {
+        var cls = p.isStarter ? "" : "bench-player";
+        var pts = p.points !== null ? p.points.toFixed(1) : "-";
+        return (
+          '<li class="' + cls + '"><span>' + escapeHtml(p.name) + " (" + escapeHtml(p.position) + ")</span><span>" + pts + "</span></li>"
+        );
+      })
+      .join("");
+    return "<ul>" + items + "</ul>";
   }
 
   async function populateWeekSelects() {
@@ -311,12 +531,14 @@
     var list = byId("matchups-list");
     list.innerHTML = "<p>Loading…</p>";
 
-    var matchups;
-    try {
-      matchups = await SleeperAPI.getMatchups(state.leagueId, week);
-    } catch (e) {
-      list.innerHTML = "<p>No matchup data for this week.</p>";
-      return;
+    var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
+    if (!matchups) {
+      try {
+        matchups = await SleeperAPI.getMatchups(state.leagueId, week);
+      } catch (e) {
+        list.innerHTML = "<p>No matchup data for this week.</p>";
+        return;
+      }
     }
 
     if (!matchups || matchups.length === 0) {
@@ -355,10 +577,8 @@
         toggleId +
         '">Show rosters</button></div>';
 
-      var rosterAHtml = renderRosterListHtml(pair.teamA, state.playersMap);
-      var rosterBHtml = pair.teamB
-        ? renderRosterListHtml(pair.teamB, state.playersMap)
-        : "<p>BYE week</p>";
+      var rosterAHtml = rosterListHtml(pair.teamA);
+      var rosterBHtml = pair.teamB ? rosterListHtml(pair.teamB) : "<p>BYE week</p>";
 
       var rostersHtml =
         '<div class="matchup-rosters" id="' + toggleId + '">' +
@@ -380,32 +600,59 @@
     });
   }
 
-  function renderRosterListHtml(teamSide, playersMap) {
-    var roster = SleeperAPI.resolveMatchupRoster(teamSide, playersMap || {});
-    if (!roster || roster.length === 0) return "<p>No roster data.</p>";
-    var items = roster
-      .map(function (p) {
-        var cls = p.isStarter ? "" : "bench-player";
-        var pts = p.points !== null ? p.points.toFixed(1) : "-";
-        return (
-          '<li class="' +
-          cls +
-          '"><span>' +
-          escapeHtml(p.name) +
-          " (" +
-          escapeHtml(p.position) +
-          ")</span><span>" +
-          pts +
-          "</span></li>"
-        );
-      })
-      .join("");
-    return "<ul>" + items + "</ul>";
+  async function populateScheduleTeamSelect() {
+    var select = byId("schedule-team-select");
+    if (!select) return;
+    select.innerHTML = "";
+    var standings = SleeperAPI.sortStandings(state.rosterMap);
+    standings.forEach(function (team) {
+      var opt = document.createElement("option");
+      opt.value = String(team.rosterId);
+      opt.textContent = team.teamName + " (" + team.displayName + ")";
+      select.appendChild(opt);
+    });
+    select.onchange = renderTeamSchedule;
   }
 
-  function renderTeams() {
+  async function renderTeamSchedule() {
+    var select = byId("schedule-team-select");
+    var tbody = document.querySelector("#schedule-table tbody");
+    if (!select || !tbody) return;
+
+    var rosterId = Number(select.value);
+    if (!rosterId) return;
+
+    tbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+    await ensureAllWeeksMatchups();
+
+    var schedule = SleeperAPI.buildTeamSchedule(state.allWeeksMatchups, rosterId, state.rosterMap);
+    if (!schedule || schedule.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">No schedule data available.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = "";
+    schedule.forEach(function (game) {
+      var tr = document.createElement("tr");
+      if (game.result === "W") tr.classList.add("result-w");
+      if (game.result === "L") tr.classList.add("result-l");
+      tr.innerHTML =
+        "<td>" + game.week + "</td>" +
+        "<td>" + escapeHtml(game.opponentName) + "</td>" +
+        "<td>" + game.result + "</td>" +
+        "<td>" + game.myPoints.toFixed(2) + "</td>" +
+        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function renderTeams() {
     var grid = byId("teams-grid");
     if (!grid) return;
+    grid.innerHTML = "<p>Loading…</p>";
+
+    await ensureAllTransactions();
+
     grid.innerHTML = "";
     var standings = SleeperAPI.sortStandings(state.rosterMap);
     standings.forEach(function (team) {
@@ -414,11 +661,15 @@
       var avatarHtml = team.avatar
         ? '<img src="' + team.avatar + '" alt="' + escapeHtml(team.teamName) + '" />'
         : "";
+      var txnCount = state.txnCountsByRoster[team.rosterId] || 0;
       card.innerHTML =
         "<div>" + avatarHtml + "<strong>" + escapeHtml(team.teamName) + "</strong></div>" +
         "<p>" + escapeHtml(team.displayName) + "</p>" +
-        "<p>" + team.wins + "-" + team.losses + "-" + team.ties + " · " + team.fpts.toFixed(2) + " PF</p>" +
-        "<p>Roster size: " + team.players.length + "</p>";
+        '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
+        '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
+        '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
+        '<div class="team-stats-row"><span>Transactions</span><span>' + txnCount + "</span></div>" +
+        '<div class="team-stats-row"><span>Roster Size</span><span>' + team.players.length + "</span></div>";
       grid.appendChild(card);
     });
   }
@@ -455,12 +706,11 @@
       if (!state.playersMap) {
         state.playersMap = await SleeperAPI.getPlayersMap();
       }
-      var matchupsForWeek = await SleeperAPI.getMatchups(state.leagueId, week);
-      var rosterData = SleeperAPI.buildWeeklyRoster(
-        matchupsForWeek,
-        rosterId,
-        state.playersMap
-      );
+      var matchupsForWeek = state.allWeeksMatchups
+        ? state.allWeeksMatchups[week]
+        : await SleeperAPI.getMatchups(state.leagueId, week);
+
+      var rosterData = SleeperAPI.buildWeeklyRoster(matchupsForWeek || [], rosterId, state.playersMap);
 
       if (!rosterData) {
         tbody.innerHTML = '<tr><td colspan="5">No roster data for this week.</td></tr>';
@@ -522,24 +772,24 @@
     }
   }
 
+  async function populateTxnMemberSelect() {
+    var select = byId("txn-member-select");
+    if (!select) return;
+    select.innerHTML = "";
+    var standings = SleeperAPI.sortStandings(state.rosterMap);
+    standings.forEach(function (team) {
+      var opt = document.createElement("option");
+      opt.value = String(team.rosterId);
+      opt.textContent = team.teamName + " (" + team.displayName + ")";
+      select.appendChild(opt);
+    });
+    select.onchange = renderTransactions;
+  }
+
   async function renderTransactions() {
-    var txnWeekSelect = byId("txn-week-select");
-    var week = Number(txnWeekSelect.value) || state.currentWeek;
+    var mode = byId("txn-filter-mode").value;
     var list = byId("transactions-list");
     list.innerHTML = "<li>Loading…</li>";
-
-    var txns;
-    try {
-      txns = await SleeperAPI.getTransactions(state.leagueId, week);
-    } catch (e) {
-      list.innerHTML = "<li>No transaction data for this week.</li>";
-      return;
-    }
-
-    if (!txns || txns.length === 0) {
-      list.innerHTML = "<li>No transactions this week.</li>";
-      return;
-    }
 
     if (!state.playersMap) {
       try {
@@ -547,6 +797,27 @@
       } catch (e) {
         state.playersMap = {};
       }
+    }
+
+    var txns = [];
+    if (mode === "week") {
+      var week = Number(byId("txn-week-select").value) || state.currentWeek;
+      try {
+        txns = await SleeperAPI.getTransactions(state.leagueId, week);
+      } catch (e) {
+        txns = [];
+      }
+    } else {
+      var rosterId = Number(byId("txn-member-select").value);
+      await ensureAllTransactions();
+      txns = (state.allTransactionsFlat || []).filter(function (t) {
+        return (t.roster_ids || []).indexOf(rosterId) !== -1;
+      });
+    }
+
+    if (!txns || txns.length === 0) {
+      list.innerHTML = "<li>No transactions found.</li>";
+      return;
     }
 
     list.innerHTML = "";
@@ -564,6 +835,7 @@
       var dateHtml =
         '<div class="txn-detail-row">' +
         new Date(detail.statusUpdated).toLocaleString() +
+        (txn._week ? " — Week " + txn._week : "") +
         "</div>";
 
       var addsHtml = detail.adds.length
@@ -693,6 +965,8 @@
 
     populateSeasonSelect();
     setupTabs();
+    setupMatchupViewToggle();
+    setupTxnFilterToggle();
     setupFreezeButton();
 
     var urlSeason = getSeasonFromURL();
