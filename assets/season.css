@@ -134,6 +134,8 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 .data-table tr:hover td { background: var(--panel-alt); }
 .data-table tr.champion-row td { color: var(--gold); font-weight: 700; }
 .data-table tr.runner-up-row td { color: var(--silver); font-weight: 600; }
+.data-table tr.result-w td { color: var(--win); }
+.data-table tr.result-l td { color: var(--live); }
 
 .result-tag {
   font-size: 0.75rem;
@@ -146,9 +148,24 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 .playoff-heading { margin-top: 28px; color: var(--text-dim); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
+.division-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.division-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.division-card h4 { margin: 0 0 10px; font-size: 0.95rem; color: var(--accent); }
+.division-card table { width: 100%; font-size: 0.85rem; }
+.division-card td, .division-card th { padding: 6px 8px; }
+
 .playoff-bracket {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
 .bracket-round {
@@ -171,10 +188,34 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   padding: 2px 0;
 }
 .bracket-slot .seed { color: var(--text-dim); font-size: 0.75rem; margin-right: 6px; }
+.bracket-slot .score { font-weight: 700; }
 .bracket-slot.win { color: var(--win); font-weight: 700; }
 .bracket-slot.unresolved { color: var(--text-dim); font-style: italic; }
+.bracket-match-toggle {
+  margin-top: 6px;
+  font-size: 0.7rem;
+}
+.bracket-rosters {
+  display: none;
+  margin-top: 8px;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+.bracket-rosters.expanded { display: grid; }
+.bracket-rosters ul { list-style: none; margin: 4px 0 0; padding: 0; }
+.bracket-rosters li {
+  font-size: 0.72rem;
+  padding: 2px 0;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.bracket-rosters li.bench-player { color: var(--text-dim); }
 
 .week-picker { margin-bottom: 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+.matchup-view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+.view-toggle-btn.active { border-color: var(--accent); color: var(--accent); }
 
 .matchups-grid {
   display: grid;
@@ -223,7 +264,7 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 .teams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
 .team-card {
@@ -233,6 +274,15 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   padding: 14px;
 }
 .team-card img { width: 40px; height: 40px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
+.team-card .team-stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+.team-card .team-stats-row span:last-child { color: var(--text); font-weight: 600; }
 
 .roster-controls { margin-bottom: 8px; }
 .roster-total {
