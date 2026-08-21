@@ -8,6 +8,7 @@
   --accent: #4f8cff;
   --live: #ff4f4f;
   --win: #3ddc84;
+  --gold: #ffd25c;
 }
 
 * { box-sizing: border-box; }
@@ -66,6 +67,7 @@ select {
   letter-spacing: 0.05em;
 }
 .live-badge { background: var(--live); color: #fff; animation: pulse 2s infinite; }
+.final-badge { background: var(--gold); color: #1a1a1a; }
 
 @keyframes pulse {
   0% { opacity: 1; }
@@ -74,6 +76,19 @@ select {
 }
 
 #last-refreshed { color: var(--text-dim); font-size: 0.8rem; }
+
+.champion-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #3a2f0f, #1f1a0a);
+  border-bottom: 1px solid var(--gold);
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+.champion-trophy { font-size: 1.4rem; }
 
 .tabs {
   display: flex;
@@ -115,8 +130,42 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
 }
 .data-table th { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
 .data-table tr:hover td { background: var(--panel-alt); }
+.data-table tr.champion-row td { color: var(--gold); font-weight: 700; }
+.data-table tr.runner-up-row td { color: #c9c9c9; font-weight: 600; }
 
-.week-picker { margin-bottom: 16px; }
+.result-tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.result-tag.champ { background: var(--gold); color: #1a1a1a; }
+.result-tag.runner-up { background: #555; color: #fff; }
+
+.playoff-heading { margin-top: 28px; color: var(--text-dim); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.playoff-bracket {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.bracket-round {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.bracket-round h4 { margin: 0 0 10px; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
+.bracket-match {
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--panel-alt);
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.bracket-match .win { color: var(--win); font-weight: 700; }
+
+.week-picker { margin-bottom: 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 
 .matchups-grid {
   display: grid;
@@ -150,9 +199,19 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
 }
 .team-card img { width: 40px; height: 40px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
 
+.roster-controls { margin-bottom: 8px; }
+.roster-total {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+.roster-total strong { color: var(--text); }
+#roster-table tr.starter-row td { color: var(--text); }
+#roster-table tr.bench-row td { color: var(--text-dim); }
+
 .draft-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;
 }
 .draft-pick {
@@ -163,6 +222,7 @@ main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   font-size: 0.8rem;
 }
 .draft-pick .pick-num { color: var(--text-dim); font-size: 0.7rem; }
+.draft-pick .draft-owner { color: var(--accent); font-size: 0.75rem; margin-top: 4px; }
 
 .transactions-list { list-style: none; padding: 0; }
 .transactions-list li {
