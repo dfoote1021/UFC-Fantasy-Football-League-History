@@ -49,6 +49,11 @@
       <tbody></tbody>
     </table>
 
+    <div id="division-standings-wrap" hidden>
+      <h3 class="playoff-heading">Final Standings by Division</h3>
+      <div id="division-standings" class="division-grid"></div>
+    </div>
+
     <h3 class="playoff-heading">Playoff Bracket (Winners)</h3>
     <div id="playoff-bracket" class="playoff-bracket"></div>
 
@@ -58,11 +63,31 @@
 
   <section id="tab-matchups" class="tab-panel">
     <h2>Matchups</h2>
-    <div class="week-picker">
-      <label for="week-select">Week:</label>
-      <select id="week-select"></select>
+    <div class="matchup-view-toggle">
+      <button class="btn view-toggle-btn active" data-view="week">By Week</button>
+      <button class="btn view-toggle-btn" data-view="schedule">By Team (Full Schedule)</button>
     </div>
-    <div id="matchups-list" class="matchups-grid"></div>
+
+    <div id="matchups-week-view">
+      <div class="week-picker">
+        <label for="week-select">Week:</label>
+        <select id="week-select"></select>
+      </div>
+      <div id="matchups-list" class="matchups-grid"></div>
+    </div>
+
+    <div id="matchups-schedule-view" hidden>
+      <div class="week-picker">
+        <label for="schedule-team-select">Team:</label>
+        <select id="schedule-team-select"></select>
+      </div>
+      <table id="schedule-table" class="data-table">
+        <thead>
+          <tr><th>Week</th><th>Opponent</th><th>Result</th><th>My Score</th><th>Opp Score</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="tab-teams" class="tab-panel">
@@ -97,8 +122,19 @@
   <section id="tab-transactions" class="tab-panel">
     <h2>Transactions</h2>
     <div class="week-picker">
-      <label for="txn-week-select">Week:</label>
-      <select id="txn-week-select"></select>
+      <label for="txn-filter-mode">View by:</label>
+      <select id="txn-filter-mode">
+        <option value="week">Week</option>
+        <option value="member">Member</option>
+      </select>
+      <span id="txn-week-wrap">
+        <label for="txn-week-select">Week:</label>
+        <select id="txn-week-select"></select>
+      </span>
+      <span id="txn-member-wrap" hidden>
+        <label for="txn-member-select">Member:</label>
+        <select id="txn-member-select"></select>
+      </span>
     </div>
     <ul id="transactions-list" class="transactions-list"></ul>
   </section>
