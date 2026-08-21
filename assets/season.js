@@ -24,10 +24,12 @@
     users: [],
     rosters: [],
     rosterMap: {},
+    seedMap: {},
     currentWeek: 1,
     refreshTimer: null,
     playersMap: null,
     winnersBracket: [],
+    losersBracket: [],
     finalStandingsInfo: null,
   };
 
@@ -118,13 +120,18 @@
       var winnersBracket = await SleeperAPI.getWinnersBracket(state.leagueId).catch(function () {
         return [];
       });
+      var losersBracket = await SleeperAPI.getLosersBracket(state.leagueId).catch(function () {
+        return [];
+      });
 
       state.league = league;
       state.users = users;
       state.rosters = rosters;
       state.rosterMap = SleeperAPI.buildRosterMap(users, rosters);
+      state.seedMap = SleeperAPI.buildSeedMap(state.rosterMap);
       state.currentWeek = await SleeperAPI.getDefaultWeek(league);
       state.winnersBracket = winnersBracket || [];
+      state.losersBracket = losersBracket || [];
 
       var isComplete = league.status === "complete";
       byId("final-badge").hidden = !isComplete;
@@ -136,7 +143,8 @@
 
       renderChampionBanner();
       renderStandings();
-      renderPlayoffBracket();
+      renderBracket("playoff-bracket", state.winnersBracket);
+      renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelects();
       await renderMatchups();
       renderTeams();
@@ -227,18 +235,19 @@
     });
   }
 
-  function renderPlayoffBracket() {
-    var container = byId("playoff-bracket");
+  function renderBracket(containerId, bracketData) {
+    var container = byId(containerId);
     if (!container) return;
-    var info = state.finalStandingsInfo;
 
-    if (!info || !info.playoffRounds || info.playoffRounds.length === 0) {
-      container.innerHTML = "<p>No playoff bracket available yet for this season.</p>";
+    var rounds = SleeperAPI.buildBracketView(bracketData, state.rosterMap, state.seedMap);
+
+    if (!rounds || rounds.length === 0) {
+      container.innerHTML = "<p>No bracket data available yet for this season.</p>";
       return;
     }
 
     container.innerHTML = "";
-    info.playoffRounds.forEach(function (roundData) {
+    rounds.forEach(function (roundData) {
       var roundDiv = document.createElement("div");
       roundDiv.className = "bracket-round";
       var roundTitle = document.createElement("h4");
@@ -246,17 +255,22 @@
       roundDiv.appendChild(roundTitle);
 
       roundData.matches.forEach(function (m) {
-        var t1 = typeof m.t1 === "number" ? state.rosterMap[m.t1] : null;
-        var t2 = typeof m.t2 === "number" ? state.rosterMap[m.t2] : null;
-        var t1Name = t1 ? t1.teamName : (m.t1_from ? "TBD" : "BYE");
-        var t2Name = t2 ? t2.teamName : (m.t2_from ? "TBD" : "BYE");
         var matchDiv = document.createElement("div");
         matchDiv.className = "bracket-match";
-        var t1Class = m.w === m.t1 ? "win" : "";
-        var t2Class = m.w === m.t2 ? "win" : "";
-        matchDiv.innerHTML =
-          '<div class="' + t1Class + '">' + escapeHtml(t1Name) + "</div>" +
-          '<div class="' + t2Class + '">' + escapeHtml(t2Name) + "</div>";
+
+        [m.slot1, m.slot2].forEach(function (slot) {
+          var slotDiv = document.createElement("div");
+          var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
+          slotDiv.className =
+            "bracket-slot" +
+            (isWinner ? " win" : "") +
+            (!slot.resolved ? " unresolved" : "");
+          var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
+          slotDiv.innerHTML =
+            "<span>" + seedHtml + escapeHtml(slot.teamName) + "</span>";
+          matchDiv.appendChild(slotDiv);
+        });
+
         roundDiv.appendChild(matchDiv);
       });
 
@@ -310,9 +324,17 @@
       return;
     }
 
+    if (!state.playersMap) {
+      try {
+        state.playersMap = await SleeperAPI.getPlayersMap();
+      } catch (e) {
+        state.playersMap = {};
+      }
+    }
+
     var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
     list.innerHTML = "";
-    pairs.forEach(function (pair) {
+    pairs.forEach(function (pair, idx) {
       var card = document.createElement("div");
       card.className = "matchup-card";
       var aWins = pair.teamB && pair.teamA.points > pair.teamB.points;
@@ -326,9 +348,59 @@
           "<span>" + escapeHtml(pair.teamB.teamName) + "</span>" +
           "<span>" + pair.teamB.points.toFixed(2) + "</span></div>"
         : '<div class="matchup-row">BYE</div>';
-      card.innerHTML = rowA + rowB;
+
+      var toggleId = "matchup-rosters-" + idx;
+      var toggleHtml =
+        '<div class="matchup-toggle"><button class="btn btn-small" data-target="' +
+        toggleId +
+        '">Show rosters</button></div>';
+
+      var rosterAHtml = renderRosterListHtml(pair.teamA, state.playersMap);
+      var rosterBHtml = pair.teamB
+        ? renderRosterListHtml(pair.teamB, state.playersMap)
+        : "<p>BYE week</p>";
+
+      var rostersHtml =
+        '<div class="matchup-rosters" id="' + toggleId + '">' +
+        '<div class="matchup-roster-col"><h5>' + escapeHtml(pair.teamA.teamName) + "</h5>" + rosterAHtml + "</div>" +
+        '<div class="matchup-roster-col"><h5>' + escapeHtml(pair.teamB ? pair.teamB.teamName : "") + "</h5>" + rosterBHtml + "</div>" +
+        "</div>";
+
+      card.innerHTML = rowA + rowB + toggleHtml + rostersHtml;
       list.appendChild(card);
     });
+
+    list.querySelectorAll(".matchup-toggle button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var target = byId(btn.dataset.target);
+        if (!target) return;
+        var expanded = target.classList.toggle("expanded");
+        btn.textContent = expanded ? "Hide rosters" : "Show rosters";
+      });
+    });
+  }
+
+  function renderRosterListHtml(teamSide, playersMap) {
+    var roster = SleeperAPI.resolveMatchupRoster(teamSide, playersMap || {});
+    if (!roster || roster.length === 0) return "<p>No roster data.</p>";
+    var items = roster
+      .map(function (p) {
+        var cls = p.isStarter ? "" : "bench-player";
+        var pts = p.points !== null ? p.points.toFixed(1) : "-";
+        return (
+          '<li class="' +
+          cls +
+          '"><span>' +
+          escapeHtml(p.name) +
+          " (" +
+          escapeHtml(p.position) +
+          ")</span><span>" +
+          pts +
+          "</span></li>"
+        );
+      })
+      .join("");
+    return "<ul>" + items + "</ul>";
   }
 
   function renderTeams() {
@@ -469,17 +541,95 @@
       return;
     }
 
+    if (!state.playersMap) {
+      try {
+        state.playersMap = await SleeperAPI.getPlayersMap();
+      } catch (e) {
+        state.playersMap = {};
+      }
+    }
+
     list.innerHTML = "";
     txns.forEach(function (txn) {
+      var detail = SleeperAPI.resolveTransactionDetail(txn, state.rosterMap, state.playersMap);
       var li = document.createElement("li");
-      var teamNames = (txn.roster_ids || [])
-        .map(function (rid) {
-          return state.rosterMap[rid] ? state.rosterMap[rid].teamName : "Roster " + rid;
-        })
-        .join(", ");
-      li.textContent =
-        txn.type.toUpperCase() + " — " + teamNames + " — " +
-        new Date(txn.status_updated).toLocaleDateString();
+
+      var headerHtml =
+        '<div class="txn-header"><span>' +
+        escapeHtml(detail.teams.join(" ↔ ")) +
+        '</span><span class="txn-type-tag">' +
+        escapeHtml(detail.type) +
+        "</span></div>";
+
+      var dateHtml =
+        '<div class="txn-detail-row">' +
+        new Date(detail.statusUpdated).toLocaleString() +
+        "</div>";
+
+      var addsHtml = detail.adds.length
+        ? detail.adds
+            .map(function (a) {
+              return (
+                '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
+                escapeHtml(a.player) +
+                " → " +
+                escapeHtml(a.team) +
+                "</div>"
+              );
+            })
+            .join("")
+        : "";
+
+      var dropsHtml = detail.drops.length
+        ? detail.drops
+            .map(function (d) {
+              return (
+                '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
+                escapeHtml(d.player) +
+                " from " +
+                escapeHtml(d.team) +
+                "</div>"
+              );
+            })
+            .join("")
+        : "";
+
+      var picksHtml = detail.draftPicks.length
+        ? detail.draftPicks
+            .map(function (dp) {
+              return (
+                '<div class="txn-detail-row">Draft pick: ' +
+                dp.season +
+                " Round " +
+                dp.round +
+                " (" +
+                escapeHtml(dp.from) +
+                " → " +
+                escapeHtml(dp.to) +
+                ")</div>"
+              );
+            })
+            .join("")
+        : "";
+
+      var faabHtml =
+        detail.faab && detail.faab.length
+          ? detail.faab
+              .map(function (f) {
+                return (
+                  '<div class="txn-detail-row">FAAB: $' +
+                  f.amount +
+                  " (" +
+                  escapeHtml(f.from) +
+                  " → " +
+                  escapeHtml(f.to) +
+                  ")</div>"
+                );
+              })
+              .join("")
+          : "";
+
+      li.innerHTML = headerHtml + dateHtml + addsHtml + dropsHtml + picksHtml + faabHtml;
       list.appendChild(li);
     });
   }
