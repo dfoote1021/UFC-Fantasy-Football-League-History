@@ -132,6 +132,7 @@
         avatar: user.avatar
           ? "https://sleepercdn.com/avatars/thumbs/" + user.avatar
           : null,
+        division: r.settings ? r.settings.division || null : null,
         wins: r.settings ? r.settings.wins : 0,
         losses: r.settings ? r.settings.losses : 0,
         ties: r.settings ? r.settings.ties : 0,
@@ -144,6 +145,7 @@
             ? r.settings.fpts_against + (r.settings.fpts_against_decimal || 0) / 100
             : 0,
         waiverBudgetUsed: r.settings ? r.settings.waiver_budget_used : 0,
+        totalMoves: r.settings ? r.settings.total_moves || 0 : 0,
         starters: r.starters || [],
         players: r.players || [],
       };
@@ -162,7 +164,6 @@
       });
   }
 
-  /** roster_id -> regular season seed (1 = best record), based on standings order. */
   function buildSeedMap(rosterMap) {
     var standings = sortStandings(rosterMap);
     var seedMap = {};
@@ -170,6 +171,59 @@
       seedMap[team.rosterId] = idx + 1;
     });
     return seedMap;
+  }
+
+  function getDivisionNames(league) {
+    if (!league.settings || !league.settings.divisions) return null;
+    var count = league.settings.divisions;
+    if (!count || count < 1) return null;
+    var names = {};
+    for (var i = 1; i <= count; i++) {
+      var key = "division_" + i;
+      names[i] = (league.metadata && league.metadata[key]) || "Division " + i;
+    }
+    return names;
+  }
+
+  function buildDivisionStandings(rosterMap, league, finalStandingsInfo) {
+    var divisionNames = getDivisionNames(league);
+    if (!divisionNames) return null;
+
+    var allTeams = Object.keys(rosterMap).map(function (k) {
+      return rosterMap[k];
+    });
+    var hasDivisions = allTeams.some(function (t) {
+      return t.division;
+    });
+    if (!hasDivisions) return null;
+
+    var champion = finalStandingsInfo ? finalStandingsInfo.champion : null;
+    var runnerUp = finalStandingsInfo ? finalStandingsInfo.runnerUp : null;
+
+    var groups = {};
+    allTeams.forEach(function (team) {
+      var div = team.division || 0;
+      if (!groups[div]) groups[div] = [];
+      groups[div].push(team);
+    });
+
+    return Object.keys(groups)
+      .sort(function (a, b) {
+        return Number(a) - Number(b);
+      })
+      .map(function (divKey) {
+        var teams = groups[divKey].sort(function (a, b) {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return b.fpts - a.fpts;
+        });
+        return {
+          divisionNum: Number(divKey),
+          divisionName: divisionNames[divKey] || "Division " + divKey,
+          standings: teams,
+          champion: champion,
+          runnerUp: runnerUp,
+        };
+      });
   }
 
   function pairMatchups(matchups, rosterMap) {
@@ -207,10 +261,6 @@
     });
   }
 
-  /**
-   * Resolve starters/bench for one side of a matchup into named players,
-   * using the players map. Mirrors buildWeeklyRoster's shape.
-   */
   function resolveMatchupRoster(teamSide, playersMap) {
     if (!teamSide) return [];
     var starterSet = {};
@@ -250,6 +300,67 @@
       .catch(function () {
         return 1;
       });
+  }
+
+  function getAllWeeksMatchups(leagueId, maxWeek) {
+    maxWeek = maxWeek || 18;
+    var weeks = [];
+    for (var i = 1; i <= maxWeek; i++) weeks.push(i);
+
+    var results = {};
+    var chain = Promise.resolve();
+    weeks.forEach(function (week) {
+      chain = chain
+        .then(function () {
+          return getMatchups(leagueId, week).catch(function () {
+            return [];
+          });
+        })
+        .then(function (m) {
+          results[week] = m;
+        });
+    });
+    return chain.then(function () {
+      return results;
+    });
+  }
+
+  function buildTeamSchedule(allWeeksMatchups, rosterId, rosterMap) {
+    var schedule = [];
+    Object.keys(allWeeksMatchups)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (week) {
+        var weekMatchups = allWeeksMatchups[week];
+        if (!weekMatchups || weekMatchups.length === 0) return;
+
+        var mine = weekMatchups.find(function (m) {
+          return m.roster_id === rosterId;
+        });
+        if (!mine) return;
+
+        var opponent = weekMatchups.find(function (m) {
+          return m.matchup_id === mine.matchup_id && m.roster_id !== rosterId;
+        });
+
+        var myPoints = mine.points || 0;
+        var oppPoints = opponent ? opponent.points || 0 : 0;
+        var result = !opponent ? "BYE" : myPoints > oppPoints ? "W" : myPoints < oppPoints ? "L" : "T";
+
+        schedule.push({
+          week: week,
+          opponentRosterId: opponent ? opponent.roster_id : null,
+          opponentName: opponent
+            ? (rosterMap[opponent.roster_id] ? rosterMap[opponent.roster_id].teamName : "Roster " + opponent.roster_id)
+            : "BYE",
+          myPoints: myPoints,
+          opponentPoints: opponent ? oppPoints : null,
+          result: result,
+        });
+      });
+    return schedule;
   }
 
   function resolvePlayoffResults(bracket) {
@@ -299,16 +410,7 @@
     };
   }
 
-  /**
-   * Build a bracket view (winners or losers) with each slot annotated with
-   * regular-season seed number, using the seed map. Bracket matches can
-   * reference a team directly (t1/t2 = roster_id) or reference the
-   * winner/loser of a prior match (t1_from = {w: matchId} or {l: matchId});
-   * this resolves those references so every round shows real team names
-   * once determined, or "Winner/Loser of Match X" placeholders before
-   * that round is played.
-   */
-  function buildBracketView(bracket, rosterMap, seedMap) {
+  function buildBracketView(bracket, rosterMap, seedMap, weeksMatchupsByWeek, playoffStartWeek) {
     if (!bracket || bracket.length === 0) return [];
 
     var byMatchId = {};
@@ -339,16 +441,30 @@
       return { rosterId: null, teamName: "BYE", seed: null, resolved: false };
     }
 
+    function findScore(weekNum, rosterId) {
+      if (!weeksMatchupsByWeek || !rosterId) return null;
+      var weekData = weeksMatchupsByWeek[weekNum];
+      if (!weekData) return null;
+      var entry = weekData.find(function (m) {
+        return m.roster_id === rosterId;
+      });
+      return entry ? entry.points || 0 : null;
+    }
+
     var roundsMap = {};
     bracket.forEach(function (m) {
       if (!roundsMap[m.r]) roundsMap[m.r] = [];
       var slot1 = resolveSlot(m.t1, m.t1_from);
       var slot2 = resolveSlot(m.t2, m.t2_from);
+      var weekNum = playoffStartWeek ? playoffStartWeek + (m.r - 1) : null;
       roundsMap[m.r].push({
         matchId: m.m,
         position: m.p || null,
+        week: weekNum,
         slot1: slot1,
+        slot1Score: weekNum ? findScore(weekNum, slot1.rosterId) : null,
         slot2: slot2,
+        slot2Score: weekNum ? findScore(weekNum, slot2.rosterId) : null,
         winnerRosterId: m.w !== undefined ? m.w : null,
         loserRosterId: m.l !== undefined ? m.l : null,
       });
@@ -444,12 +560,6 @@
       });
   }
 
-  /**
-   * Resolve a raw transaction (with adds/drops as player_id -> roster_id maps)
-   * into a readable summary listing each player added/dropped, their
-   * position/team, and which fantasy team made the move. Also resolves
-   * traded draft picks and FAAB spent for trade-type transactions.
-   */
   function resolveTransactionDetail(txn, rosterMap, playersMap) {
     function playerLabel(pid) {
       var meta = (playersMap && playersMap[pid]) || {};
@@ -465,14 +575,14 @@
     var adds = [];
     if (txn.adds) {
       Object.keys(txn.adds).forEach(function (pid) {
-        adds.push({ player: playerLabel(pid), team: teamLabel(txn.adds[pid]) });
+        adds.push({ player: playerLabel(pid), team: teamLabel(txn.adds[pid]), rosterId: txn.adds[pid] });
       });
     }
 
     var drops = [];
     if (txn.drops) {
       Object.keys(txn.drops).forEach(function (pid) {
-        drops.push({ player: playerLabel(pid), team: teamLabel(txn.drops[pid]) });
+        drops.push({ player: playerLabel(pid), team: teamLabel(txn.drops[pid]), rosterId: txn.drops[pid] });
       });
     }
 
@@ -500,12 +610,23 @@
       type: txn.type,
       status: txn.status,
       statusUpdated: txn.status_updated,
+      rosterIds: txn.roster_ids || [],
       teams: (txn.roster_ids || []).map(teamLabel),
       adds: adds,
       drops: drops,
       draftPicks: draftPicks,
       faab: faab,
     };
+  }
+
+  function countTransactionsByRoster(allTransactions) {
+    var counts = {};
+    allTransactions.forEach(function (txn) {
+      (txn.roster_ids || []).forEach(function (rid) {
+        counts[rid] = (counts[rid] || 0) + 1;
+      });
+    });
+    return counts;
   }
 
   function buildSeasonSnapshot(leagueId) {
@@ -611,15 +732,20 @@
     buildRosterMap: buildRosterMap,
     sortStandings: sortStandings,
     buildSeedMap: buildSeedMap,
+    getDivisionNames: getDivisionNames,
+    buildDivisionStandings: buildDivisionStandings,
     pairMatchups: pairMatchups,
     resolveMatchupRoster: resolveMatchupRoster,
     getDefaultWeek: getDefaultWeek,
+    getAllWeeksMatchups: getAllWeeksMatchups,
+    buildTeamSchedule: buildTeamSchedule,
     resolvePlayoffResults: resolvePlayoffResults,
     buildBracketView: buildBracketView,
     buildFinalStandings: buildFinalStandings,
     buildWeeklyRoster: buildWeeklyRoster,
     buildDraftBoard: buildDraftBoard,
     resolveTransactionDetail: resolveTransactionDetail,
+    countTransactionsByRoster: countTransactionsByRoster,
     buildSeasonSnapshot: buildSeasonSnapshot,
     downloadJSON: downloadJSON,
   };
