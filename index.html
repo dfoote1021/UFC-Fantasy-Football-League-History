@@ -14,15 +14,22 @@
     <label for="season-select">Season:</label>
     <select id="season-select"></select>
     <span id="live-badge" class="badge live-badge" hidden>LIVE</span>
+    <span id="final-badge" class="badge final-badge" hidden>FINAL</span>
     <span id="last-refreshed"></span>
     <button id="refresh-btn" class="btn">Refresh</button>
   </div>
 </header>
 
+<div id="champion-banner" class="champion-banner" hidden>
+  <span class="champion-trophy">🏆</span>
+  <span id="champion-text"></span>
+</div>
+
 <nav class="tabs">
   <button class="tab-btn active" data-tab="standings">Standings</button>
   <button class="tab-btn" data-tab="matchups">Matchups</button>
   <button class="tab-btn" data-tab="teams">Teams</button>
+  <button class="tab-btn" data-tab="rosters">Weekly Rosters</button>
   <button class="tab-btn" data-tab="draft">Draft</button>
   <button class="tab-btn" data-tab="transactions">Transactions</button>
   <button class="tab-btn" data-tab="commish">Commissioner</button>
@@ -31,16 +38,19 @@
 <main>
 
   <section id="tab-standings" class="tab-panel active">
-    <h2>Standings</h2>
+    <h2 id="standings-heading">Standings</h2>
     <table id="standings-table" class="data-table">
       <thead>
         <tr>
           <th>#</th><th>Team</th><th>Owner</th><th>W</th><th>L</th><th>T</th>
-          <th>PF</th><th>PA</th>
+          <th>PF</th><th>PA</th><th>Result</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+
+    <h3 class="playoff-heading">Playoff Bracket</h3>
+    <div id="playoff-bracket" class="playoff-bracket"></div>
   </section>
 
   <section id="tab-matchups" class="tab-panel">
@@ -57,8 +67,27 @@
     <div id="teams-grid" class="teams-grid"></div>
   </section>
 
+  <section id="tab-rosters" class="tab-panel">
+    <h2>Weekly Rosters</h2>
+    <div class="week-picker roster-controls">
+      <label for="roster-team-select">Team:</label>
+      <select id="roster-team-select"></select>
+      <label for="roster-week-select">Week:</label>
+      <select id="roster-week-select"></select>
+    </div>
+    <div id="roster-total" class="roster-total"></div>
+    <table id="roster-table" class="data-table">
+      <thead>
+        <tr>
+          <th>Slot</th><th>Player</th><th>Pos</th><th>NFL Team</th><th>Points</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
   <section id="tab-draft" class="tab-panel">
-    <h2>Draft Board</h2>
+    <h2>Draft Board — Who Drafted Who</h2>
     <div id="draft-board" class="draft-board"></div>
   </section>
 
