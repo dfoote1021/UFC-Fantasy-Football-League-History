@@ -329,13 +329,13 @@
   /**
    * A week is considered "played" only if Sleeper returned at least one
    * matchup row for it AND at least one roster in that week has a
-   * non-zero score. Sleeper's API can return placeholder/empty rows for
-   * future weeks (including weeks past a league's actual final week,
-   * e.g. week 18 for a league that only plays through week 17), and
-   * those should never appear in week-select dropdowns, schedules, or
-   * running-record calculations. This is the single source of truth for
-   * that check, used by buildAllRunningRecords, buildTeamSchedule, and
-   * season.js's week-dropdown population.
+   * non-zero score. Sleeper's API can return an empty array ([]) for
+   * weeks past a league's actual final week (confirmed directly against
+   * this league: week 18 returns []), and those must never appear in
+   * week-select dropdowns, schedules, or running-record calculations.
+   * This is the single source of truth for that check, used by
+   * buildAllRunningRecords, buildTeamSchedule, and season.js's
+   * week-dropdown population.
    */
   function isWeekPlayed(weekMatchups) {
     if (!weekMatchups || weekMatchups.length === 0) return false;
