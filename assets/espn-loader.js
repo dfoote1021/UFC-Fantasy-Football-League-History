@@ -11,20 +11,30 @@
  *                                     division per team per year (source of
  *                                     truth for the Standings tab)
  *
- * Matchups CSV columns: year,week,team,team_score,opponent,opponent_score,
- *   result,is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
+ * ── IMPORTANT: how teams are matched across the two files ──────────────
+ * Fantasy team NAMES change from year to year (e.g. the same owner might
+ * be "Team McFarland" in 2012 and "Caucasion Sasquatch" in 2013), but the
+ * OWNER behind a team is stable. So this loader joins standings rows to
+ * matchup rows using `owner` (case-insensitive, trimmed) as the primary
+ * key for a given year, not the team display name. The real team name
+ * shown throughout the site always comes from espn-matchups.csv (since
+ * that's the fun display name), while wins/losses/points/division/
+ * champion flags come from espn-standings.csv via the owner match.
+ * If a matchup row has no owner value at all, it falls back to matching
+ * by team name directly (useful for partially-filled-in sheets).
  *
- *   IMPORTANT: `result` is treated as informational only (it may contain
- *   WIN/LOSS, HOME/AWAY, or anything else depending on how the sheet was
- *   authored). The actual winner/loser/tie for every game is always
- *   determined by comparing team_score vs opponent_score directly, since
- *   scores are the one value guaranteed to be reliable and consistently
- *   formatted. The only exception is BYE weeks, detected when `opponent`
- *   is literally the string "BYE" (no opponent_score to compare against).
+ * Matchups CSV columns: year,week,team,team_owner,team_score,opponent,
+ *   opponent_owner,opponent_score,result,is_playoff,bracket_type,
+ *   playoff_round,team_seed,opponent_seed
  *
- * Standings CSV columns (case-insensitive; header name ALIASES also
- * accepted - see ALIAS_MAP below - so "season" works the same as "year"
- * and "final_standing" works the same as "final_rank"):
+ *   `result` is treated as informational only (it may say WIN/LOSS,
+ *   HOME/AWAY, or anything else). The actual winner/loser/tie is always
+ *   computed by comparing team_score vs opponent_score directly. BYE is
+ *   detected when `opponent` is literally the string "BYE".
+ *
+ * Standings CSV columns (case-insensitive; common header aliases such as
+ * "season" for "year" and "final_standing" for "final_rank" are accepted
+ * automatically - see ALIAS_MAP below):
  *   year (or season), team, division, division_standing, owner, wins,
  *   losses, ties, points_for, points_against, final_rank (or
  *   final_standing), made_playoffs, champion, runner_up
@@ -39,12 +49,6 @@
   var MATCHUPS_CSV_PATH = "assets/data/espn-matchups.csv";
   var STANDINGS_CSV_PATH = "assets/data/espn-standings.csv";
 
-  /**
-   * Canonical field name -> list of acceptable header spellings.
-   * getField() checks each alias (case-insensitively) in order and
-   * returns the first one present in the row. This means a CSV author
-   * can use either name and the loader "just works" either way.
-   */
   var ALIAS_MAP = {
     year: ["year", "season"],
     final_rank: ["final_rank", "final_standing", "finalstanding", "rank"],
@@ -53,7 +57,6 @@
   var _matchupsCache = {};
   var _standingsCache = {};
 
-  /** Minimal CSV parser: handles quoted fields, commas inside quotes, CRLF/LF. */
   function parseCSV(text) {
     var rows = [];
     var row = [];
@@ -114,13 +117,6 @@
     });
   }
 
-  /**
-   * Case-insensitive, alias-aware field lookup. `name` should be the
-   * canonical field name (e.g. "year", "final_rank"). This checks the
-   * exact key first (fast path), then any known aliases for that
-   * canonical name, then finally falls back to a direct case-insensitive
-   * match on `name` itself for fields with no aliases registered.
-   */
   function getField(row, name) {
     if (row[name] !== undefined) return row[name];
 
@@ -138,6 +134,10 @@
     return "";
   }
 
+  function normalizeKey(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
   function toNumberOrNull(v) {
     if (v === null || v === undefined || v === "") return null;
     var n = Number(v);
@@ -148,12 +148,6 @@
     return String(v).trim().toUpperCase() === "TRUE";
   }
 
-  /**
-   * Determine W/L/T/BYE strictly from scores, ignoring whatever text is
-   * in the `result` column (which may be WIN/LOSS, HOME/AWAY, etc. - its
-   * wording is not reliable across different seasons/authors). `opponent`
-   * literally equal to "BYE" (case-insensitive) is the only BYE signal.
-   */
   function deriveResultFromScores(teamScore, opponentScore, opponentName) {
     if (String(opponentName).trim().toUpperCase() === "BYE") return "BYE";
     if (teamScore === null || opponentScore === null) return "";
@@ -190,11 +184,16 @@
 
   function fetchRawStandingsRows() {
     return fetchCsv(STANDINGS_CSV_PATH, _standingsCache).catch(function () {
-      return []; // standings CSV is optional; fall back to derived data if absent
+      return [];
     });
   }
 
-  /** All parsed+normalized matchup rows for one season. */
+  /**
+   * All parsed+normalized matchup rows for one season. Each row carries
+   * BOTH the display team name and (if present) the owner identifier, so
+   * downstream code can join to standings by owner while still showing
+   * the fun team name everywhere in the UI.
+   */
   function getSeasonRows(year) {
     return fetchRawMatchupRows().then(function (allRows) {
       return allRows
@@ -205,13 +204,18 @@
           var teamScore = toNumberOrNull(getField(r, "team_score"));
           var opponentScore = toNumberOrNull(getField(r, "opponent_score"));
           var opponent = getField(r, "opponent");
+          var team = getField(r, "team");
+          var teamOwner = getField(r, "team_owner") || getField(r, "owner");
+          var opponentOwner = getField(r, "opponent_owner");
 
           return {
             year: Number(getField(r, "year")),
             week: Number(getField(r, "week")),
-            team: getField(r, "team"),
+            team: team,
+            teamOwner: teamOwner,
             teamScore: teamScore,
             opponent: opponent,
+            opponentOwner: opponentOwner,
             opponentScore: opponentScore,
             result: deriveResultFromScores(teamScore, opponentScore, opponent),
             isPlayoff: toBool(getField(r, "is_playoff")),
@@ -225,24 +229,28 @@
   }
 
   /**
-   * Authoritative final standings rows for one season, keyed by team name.
-   * Reads: year (or season), team, division, division_standing, owner,
-   * wins, losses, ties, points_for, points_against, final_rank (or
-   * final_standing), made_playoffs, champion, runner_up. All lookups are
-   * case-insensitive and alias-aware, see ALIAS_MAP and getField() above.
+   * Authoritative final standings rows for one season, keyed by OWNER
+   * (normalized lowercase/trimmed) so they can be joined reliably to
+   * matchup rows even when the team display name changed that year.
+   * Each entry also keeps the standings-file team name as a fallback
+   * label, and a secondary index keyed by team name for sheets that
+   * don't have an owner column filled in yet.
    */
   function getStandingsRows(year) {
     return fetchRawStandingsRows().then(function (allRows) {
-      var byTeam = {};
+      var byOwner = {};
+      var byTeamName = {};
+
       allRows
         .filter(function (r) {
           return Number(getField(r, "year")) === Number(year);
         })
         .forEach(function (r) {
           var team = getField(r, "team");
-          byTeam[team] = {
+          var owner = getField(r, "owner");
+          var entry = {
             team: team,
-            owner: getField(r, "owner"),
+            owner: owner,
             division: getField(r, "division") || null,
             divisionStanding: toNumberOrNull(getField(r, "division_standing")),
             wins: toNumberOrNull(getField(r, "wins")) || 0,
@@ -255,86 +263,104 @@
             champion: toBool(getField(r, "champion")),
             runnerUp: toBool(getField(r, "runner_up")),
           };
+          if (owner) byOwner[normalizeKey(owner)] = entry;
+          if (team) byTeamName[normalizeKey(team)] = entry;
         });
-      return byTeam;
-    });
-  }
 
-  /** Distinct team names appearing anywhere in a season's matchup rows (excluding BYE). */
-  function getTeamsForSeason(rows) {
-    var names = {};
-    rows.forEach(function (r) {
-      if (r.team && r.team !== "BYE") names[r.team] = true;
-      if (r.opponent && r.opponent !== "BYE") names[r.opponent] = true;
+      return { byOwner: byOwner, byTeamName: byTeamName };
     });
-    return Object.keys(names);
   }
 
   /**
-   * Build a rosterMap-shaped object. If authoritative standingsRows are
-   * available for this team, those win/loss/points/division values are
-   * used directly (source of truth). Otherwise falls back to deriving
-   * totals by summing regular-season matchup rows.
+   * Resolve the standings entry for a given matchup-row team, trying
+   * owner match first (reliable across name changes), then falling back
+   * to team-name match (for rows with no owner filled in).
    */
-  function buildRosterMap(rows, standingsRows) {
-    var matchupTeams = getTeamsForSeason(rows);
-    var standingsTeams = standingsRows ? Object.keys(standingsRows) : [];
-    var allTeamNames = {};
-    matchupTeams.forEach(function (t) {
-      allTeamNames[t] = true;
-    });
-    standingsTeams.forEach(function (t) {
-      allTeamNames[t] = true;
-    });
-    var teams = Object.keys(allTeamNames);
+  function resolveStandingsEntry(standingsIndex, teamName, teamOwner) {
+    if (teamOwner) {
+      var byOwnerHit = standingsIndex.byOwner[normalizeKey(teamOwner)];
+      if (byOwnerHit) return byOwnerHit;
+    }
+    if (teamName) {
+      var byNameHit = standingsIndex.byTeamName[normalizeKey(teamName)];
+      if (byNameHit) return byNameHit;
+    }
+    return null;
+  }
 
+  /** Distinct team names appearing anywhere in a season's matchup rows (excluding BYE), with owner attached. */
+  function getTeamsForSeason(rows) {
+    var teams = {};
+    rows.forEach(function (r) {
+      if (r.team && r.team !== "BYE" && !teams[r.team]) {
+        teams[r.team] = r.teamOwner || "";
+      }
+      if (r.opponent && r.opponent !== "BYE" && !teams[r.opponent]) {
+        teams[r.opponent] = r.opponentOwner || "";
+      }
+    });
+    return teams; // { teamName: ownerName }
+  }
+
+  /**
+   * Build a rosterMap-shaped object keyed by the matchup CSV's team
+   * display name (so games/brackets/schedules all resolve correctly),
+   * with wins/losses/points/division/champion flags pulled from the
+   * standings CSV via owner match (falling back to team-name match, then
+   * to deriving from matchup rows directly if no standings data exists
+   * for that team at all).
+   */
+  function buildRosterMap(rows, standingsIndex) {
+    var teamOwnerMap = getTeamsForSeason(rows);
+    var teamNames = Object.keys(teamOwnerMap);
+
+    var hasStandings =
+      standingsIndex &&
+      (Object.keys(standingsIndex.byOwner).length > 0 ||
+        Object.keys(standingsIndex.byTeamName).length > 0);
+
+    var usedStandingsEntries = {};
     var rosterMap = {};
 
-    teams.forEach(function (team) {
+    teamNames.forEach(function (team) {
+      var owner = teamOwnerMap[team];
+      var standingsEntry = hasStandings
+        ? resolveStandingsEntry(standingsIndex, team, owner)
+        : null;
+
       rosterMap[team] = {
         rosterId: team,
-        ownerId: team,
+        ownerId: owner || team,
         teamName: team,
-        displayName: team,
+        displayName: owner || (standingsEntry ? standingsEntry.owner : team) || team,
         avatar: null,
-        division: null,
-        divisionStanding: null,
-        wins: 0,
-        losses: 0,
-        ties: 0,
-        fpts: 0,
-        fptsAgainst: 0,
+        division: standingsEntry ? standingsEntry.division : null,
+        divisionStanding: standingsEntry ? standingsEntry.divisionStanding : null,
+        wins: standingsEntry ? standingsEntry.wins : 0,
+        losses: standingsEntry ? standingsEntry.losses : 0,
+        ties: standingsEntry ? standingsEntry.ties : 0,
+        fpts: standingsEntry ? Math.round(standingsEntry.pointsFor * 100) / 100 : 0,
+        fptsAgainst: standingsEntry
+          ? Math.round(standingsEntry.pointsAgainst * 100) / 100
+          : 0,
         waiverBudgetUsed: 0,
         totalMoves: 0,
         starters: [],
         players: [],
-        finalRank: null,
-        madePlayoffs: null,
-        isChampionFlag: false,
-        isRunnerUpFlag: false,
+        finalRank: standingsEntry ? standingsEntry.finalRank : null,
+        madePlayoffs: standingsEntry ? standingsEntry.madePlayoffs : null,
+        isChampionFlag: standingsEntry ? standingsEntry.champion : false,
+        isRunnerUpFlag: standingsEntry ? standingsEntry.runnerUp : false,
+        _hasStandingsMatch: !!standingsEntry,
       };
+
+      if (standingsEntry) {
+        var matchKey = owner ? normalizeKey(owner) : normalizeKey(team);
+        usedStandingsEntries[matchKey] = true;
+      }
     });
 
-    var hasStandings = standingsRows && Object.keys(standingsRows).length > 0;
-
-    if (hasStandings) {
-      Object.keys(rosterMap).forEach(function (team) {
-        var s = standingsRows[team];
-        if (!s) return;
-        rosterMap[team].displayName = s.owner || team;
-        rosterMap[team].division = s.division;
-        rosterMap[team].divisionStanding = s.divisionStanding;
-        rosterMap[team].wins = s.wins;
-        rosterMap[team].losses = s.losses;
-        rosterMap[team].ties = s.ties;
-        rosterMap[team].fpts = Math.round(s.pointsFor * 100) / 100;
-        rosterMap[team].fptsAgainst = Math.round(s.pointsAgainst * 100) / 100;
-        rosterMap[team].finalRank = s.finalRank;
-        rosterMap[team].madePlayoffs = s.madePlayoffs;
-        rosterMap[team].isChampionFlag = s.champion;
-        rosterMap[team].isRunnerUpFlag = s.runnerUp;
-      });
-    } else {
+    if (!hasStandings) {
       var regularRows = rows.filter(function (r) {
         return !r.isPlayoff;
       });
@@ -379,13 +405,6 @@
     return seedMap;
   }
 
-  /**
-   * Group standings by division (if the standings CSV supplied division
-   * values for this season). Returns null if no team has a division set,
-   * matching the behavior of the Sleeper-side division standings so the
-   * "Final Standings by Division" section hides itself cleanly when a
-   * season didn't use divisions.
-   */
   function buildDivisionStandings(rosterMap, finalStandingsInfo) {
     var teams = Object.keys(rosterMap).map(function (k) {
       return rosterMap[k];
@@ -480,19 +499,14 @@
     return pairs;
   }
 
-  /**
-   * Compute each team's running (cumulative) record through and including
-   * a given week, for the regular season only. Returns a map of
-   * teamName -> "W-L" (or "W-L-T" if any ties) string as of that week.
-   */
   function buildRunningRecordsThroughWeek(rows, week) {
     var regularRows = rows.filter(function (r) {
       return !r.isPlayoff && r.week <= week;
     });
 
-    var teams = getTeamsForSeason(rows);
+    var teamOwnerMap = getTeamsForSeason(rows);
     var tally = {};
-    teams.forEach(function (t) {
+    Object.keys(teamOwnerMap).forEach(function (t) {
       tally[t] = { wins: 0, losses: 0, ties: 0 };
     });
 
@@ -526,10 +540,6 @@
     return recordStrings;
   }
 
-  /**
-   * Precompute running records for every regular-season week in one pass,
-   * returning { week: { teamName: "W-L" } }.
-   */
   function buildAllRunningRecords(rows) {
     var weeks = getWeeksForSeason(rows).filter(function (w) {
       return rows.some(function (r) {
@@ -543,12 +553,6 @@
     return result;
   }
 
-  /**
-   * Full season schedule for one team, with an added `recordAfter` field
-   * showing the team's cumulative regular-season record immediately
-   * following that week's game. Playoff weeks show "-" since they don't
-   * affect regular season record.
-   */
   function buildTeamSchedule(rows, teamName) {
     var runningWins = 0;
     var runningLosses = 0;
@@ -652,11 +656,6 @@
       });
   }
 
-  /**
-   * Determine champion/runner-up. Prefers explicit champion/runner_up flags
-   * from the standings CSV (authoritative); falls back to inferring from
-   * the final round of the winners bracket if those flags are absent.
-   */
   function buildFinalStandings(rosterMap, rows) {
     var standings = sortStandings(rosterMap);
     var winnersRounds = buildBracketView(rows, "winners");
@@ -717,15 +716,12 @@
     };
   }
 
-  /**
-   * High-level entry point: load and fully process one ESPN season.
-   */
   function loadSeason(year) {
     return Promise.all([getSeasonRows(year), getStandingsRows(year)]).then(function (results) {
       var rows = results[0];
-      var standingsRows = results[1];
+      var standingsIndex = results[1];
 
-      var rosterMap = buildRosterMap(rows, standingsRows);
+      var rosterMap = buildRosterMap(rows, standingsIndex);
       var seedMap = buildSeedMap(rosterMap);
       var weeks = getWeeksForSeason(rows);
       var winnersBracket = buildBracketView(rows, "winners");
