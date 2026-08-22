@@ -167,6 +167,11 @@
     </nav>
 
     <section id="alltime-career" class="tab-panel active">
+      <div class="career-view-toggle">
+        <button class="btn career-toggle-btn active" data-split="combined">Combined</button>
+        <button class="btn career-toggle-btn" data-split="regular">Regular Season</button>
+        <button class="btn career-toggle-btn" data-split="playoff">Playoffs Only</button>
+      </div>
       <table id="career-totals-table" class="data-table">
         <thead>
           <tr>
@@ -187,8 +192,16 @@
         <select id="h2h-owner-b"></select>
       </div>
 
-      <div id="h2h-summary" class="h2h-summary"></div>
+      <h3 class="h2h-split-heading">Combined (Regular Season + Playoffs)</h3>
+      <div id="h2h-summary-combined" class="h2h-summary"></div>
 
+      <h3 class="h2h-split-heading">Regular Season Only</h3>
+      <div id="h2h-summary-regular" class="h2h-summary"></div>
+
+      <h3 class="h2h-split-heading">Playoffs Only</h3>
+      <div id="h2h-summary-playoff" class="h2h-summary"></div>
+
+      <h3 class="h2h-split-heading">All Games</h3>
       <table id="h2h-games-table" class="data-table">
         <thead>
           <tr><th>Year</th><th>Week</th><th>Team A</th><th>Score</th><th>Score</th><th>Team B</th></tr>
