@@ -326,6 +326,24 @@
       });
   }
 
+  /**
+   * A week is considered "played" only if Sleeper returned at least one
+   * matchup row for it AND at least one roster in that week has a
+   * non-zero score. Sleeper's API can return placeholder/empty rows for
+   * future weeks (including weeks past a league's actual final week,
+   * e.g. week 18 for a league that only plays through week 17), and
+   * those should never appear in week-select dropdowns, schedules, or
+   * running-record calculations. This is the single source of truth for
+   * that check, used by buildAllRunningRecords, buildTeamSchedule, and
+   * season.js's week-dropdown population.
+   */
+  function isWeekPlayed(weekMatchups) {
+    if (!weekMatchups || weekMatchups.length === 0) return false;
+    return weekMatchups.some(function (m) {
+      return (m.points || 0) > 0;
+    });
+  }
+
   function getAllWeeksMatchups(leagueId, maxWeek) {
     maxWeek = maxWeek || 18;
     var weeks = [];
@@ -350,113 +368,35 @@
   }
 
   /**
-   * Compute every roster's cumulative regular-season win-loss(-tie)
-   * record through and including a given week, from Sleeper's raw
-   * per-week matchup arrays (allWeeksMatchups, as returned by
-   * getAllWeeksMatchups). Sleeper matchup rows already come in pairs
-   * sharing the same matchup_id, so both sides of every game are
-   * available directly.
-   *
-   * Playoff weeks are excluded from the record so a team's "regular
-   * season" record doesn't change during the playoffs. Pass
-   * playoffStartWeek (from league.settings.playoff_week_start) so weeks
-   * at or after that cutoff are excluded.
-   *
-   * Returns { rosterId: "W-L" } (or "W-L-T" if that roster has any ties).
+   * Filters allWeeksMatchups down to only the weeks that have actually
+   * been played (see isWeekPlayed above), sorted ascending. Use this
+   * wherever you need "the real list of weeks this season has played" -
+   * e.g. populating a week-select dropdown - instead of assuming every
+   * key present in allWeeksMatchups is a real week.
    */
-  function buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek) {
-    var tally = {};
-
-    function ensure(rosterId) {
-      if (!tally[rosterId]) tally[rosterId] = { wins: 0, losses: 0, ties: 0 };
-    }
-
-    Object.keys(allWeeksMatchups)
+  function getPlayedWeeks(allWeeksMatchups) {
+    return Object.keys(allWeeksMatchups)
       .map(Number)
-      .filter(function (w) {
-        var withinRange = w <= week;
-        var isRegularSeason = !playoffStartWeek || w < playoffStartWeek;
-        return withinRange && isRegularSeason;
+      .filter(function (week) {
+        return isWeekPlayed(allWeeksMatchups[week]);
       })
       .sort(function (a, b) {
         return a - b;
-      })
-      .forEach(function (w) {
-        var weekMatchups = allWeeksMatchups[w] || [];
-        var grouped = {};
-        weekMatchups.forEach(function (m) {
-          if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
-          grouped[m.matchup_id].push(m);
-        });
-
-        Object.keys(grouped).forEach(function (matchupId) {
-          var pair = grouped[matchupId];
-          var a = pair[0];
-          var b = pair[1];
-          if (!a) return;
-
-          ensure(a.roster_id);
-          if (!b) return; // bye week - no result to credit
-          ensure(b.roster_id);
-
-          var aPoints = a.points || 0;
-          var bPoints = b.points || 0;
-
-          if (aPoints > bPoints) {
-            tally[a.roster_id].wins += 1;
-            tally[b.roster_id].losses += 1;
-          } else if (aPoints < bPoints) {
-            tally[a.roster_id].losses += 1;
-            tally[b.roster_id].wins += 1;
-          } else {
-            tally[a.roster_id].ties += 1;
-            tally[b.roster_id].ties += 1;
-          }
-        });
       });
-
-    var recordStrings = {};
-    Object.keys(tally).forEach(function (rosterId) {
-      var t = tally[rosterId];
-      recordStrings[rosterId] =
-        t.ties > 0 ? t.wins + "-" + t.losses + "-" + t.ties : t.wins + "-" + t.losses;
-    });
-    return recordStrings;
   }
 
-  /**
-   * Precompute running records for every week present in
-   * allWeeksMatchups in one pass, returning { week: { rosterId: "W-L" } }.
-   */
-  function buildAllRunningRecords(allWeeksMatchups, playoffStartWeek) {
-    var result = {};
-    Object.keys(allWeeksMatchups)
-      .map(Number)
-      .forEach(function (week) {
-        result[week] = buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek);
-      });
-    return result;
-  }
-
-  /**
-   * Full season schedule for one team, with an added `recordAfter` field
-   * on each game showing that team's cumulative regular-season record
-   * immediately following that week (or "-" for playoff weeks), matching
-   * the same field/format used by the ESPN loader's buildTeamSchedule so
-   * the "By Team" schedule view renders identically for both data
-   * sources. Pass runningRecordsByWeek (from buildAllRunningRecords) so
-   * this doesn't have to recompute records from scratch.
-   */
   function buildTeamSchedule(allWeeksMatchups, rosterId, rosterMap, runningRecordsByWeek, playoffStartWeek) {
     var schedule = [];
     Object.keys(allWeeksMatchups)
       .map(Number)
+      .filter(function (week) {
+        return isWeekPlayed(allWeeksMatchups[week]);
+      })
       .sort(function (a, b) {
         return a - b;
       })
       .forEach(function (week) {
         var weekMatchups = allWeeksMatchups[week];
-        if (!weekMatchups || weekMatchups.length === 0) return;
 
         var mine = weekMatchups.find(function (m) {
           return m.roster_id === rosterId;
@@ -491,6 +431,97 @@
         });
       });
     return schedule;
+  }
+
+  /**
+   * Compute every roster's cumulative regular-season win-loss(-tie)
+   * record through and including a given week, from Sleeper's raw
+   * per-week matchup arrays (allWeeksMatchups, as returned by
+   * getAllWeeksMatchups). Only weeks that pass isWeekPlayed() are
+   * counted, so unplayed placeholder weeks (e.g. week 18 in a league
+   * that ends at week 17) never affect records.
+   *
+   * Playoff weeks are excluded from the record so a team's "regular
+   * season" record doesn't change during the playoffs. Pass
+   * playoffStartWeek (from league.settings.playoff_week_start) so weeks
+   * at or after that cutoff are excluded.
+   *
+   * Returns { rosterId: "W-L" } (or "W-L-T" if that roster has any ties).
+   */
+  function buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek) {
+    var tally = {};
+
+    function ensure(rosterId) {
+      if (!tally[rosterId]) tally[rosterId] = { wins: 0, losses: 0, ties: 0 };
+    }
+
+    Object.keys(allWeeksMatchups)
+      .map(Number)
+      .filter(function (w) {
+        var withinRange = w <= week;
+        var isRegularSeason = !playoffStartWeek || w < playoffStartWeek;
+        var played = isWeekPlayed(allWeeksMatchups[w]);
+        return withinRange && isRegularSeason && played;
+      })
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (w) {
+        var weekMatchups = allWeeksMatchups[w] || [];
+        var grouped = {};
+        weekMatchups.forEach(function (m) {
+          if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
+          grouped[m.matchup_id].push(m);
+        });
+
+        Object.keys(grouped).forEach(function (matchupId) {
+          var pair = grouped[matchupId];
+          var a = pair[0];
+          var b = pair[1];
+          if (!a) return;
+
+          ensure(a.roster_id);
+          if (!b) return; // bye week - no result to credit
+
+          ensure(b.roster_id);
+
+          var aPoints = a.points || 0;
+          var bPoints = b.points || 0;
+
+          if (aPoints > bPoints) {
+            tally[a.roster_id].wins += 1;
+            tally[b.roster_id].losses += 1;
+          } else if (aPoints < bPoints) {
+            tally[a.roster_id].losses += 1;
+            tally[b.roster_id].wins += 1;
+          } else {
+            tally[a.roster_id].ties += 1;
+            tally[b.roster_id].ties += 1;
+          }
+        });
+      });
+
+    var recordStrings = {};
+    Object.keys(tally).forEach(function (rosterId) {
+      var t = tally[rosterId];
+      recordStrings[rosterId] =
+        t.ties > 0 ? t.wins + "-" + t.losses + "-" + t.ties : t.wins + "-" + t.losses;
+    });
+    return recordStrings;
+  }
+
+  /**
+   * Precompute running records for every PLAYED week in one pass,
+   * returning { week: { rosterId: "W-L" } }. Unplayed weeks (see
+   * isWeekPlayed) are skipped entirely, so they never show up as keys
+   * in the returned object.
+   */
+  function buildAllRunningRecords(allWeeksMatchups, playoffStartWeek) {
+    var result = {};
+    getPlayedWeeks(allWeeksMatchups).forEach(function (week) {
+      result[week] = buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek);
+    });
+    return result;
   }
 
   function resolvePlayoffResults(bracket) {
@@ -867,6 +898,8 @@
     pairMatchups: pairMatchups,
     resolveMatchupRoster: resolveMatchupRoster,
     getDefaultWeek: getDefaultWeek,
+    isWeekPlayed: isWeekPlayed,
+    getPlayedWeeks: getPlayedWeeks,
     getAllWeeksMatchups: getAllWeeksMatchups,
     buildTeamSchedule: buildTeamSchedule,
     buildRunningRecordsThroughWeek: buildRunningRecordsThroughWeek,
