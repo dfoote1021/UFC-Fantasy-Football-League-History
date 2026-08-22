@@ -1,4 +1,4 @@
-season,team,division,division_standing,owner,wins,losses,ties,points_for,points_against,final_standing,made_playoffs,champion,runner_up
+year,team,division,division_standing,owner,wins,losses,ties,points_for,points_against,final_standing,made_playoffs,champion,runner_up
 2012,Spear,West,1,jspear3,10,3,0,1690.00,1373.00,2,TRUE,FALSE,TRUE
 2012,Dan,East,2,dfoote93,9,4,0,1678.00,1538.00,3,TRUE,FALSE,FALSE
 2012,Spencer,East,1,Spencery1025,8,5,0,1685.00,1425.00,1,TRUE,TRUE,FALSE
