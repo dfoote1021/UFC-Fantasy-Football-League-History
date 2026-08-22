@@ -35,6 +35,7 @@
     espnSeasonData: null,
     espnDraftData: null,
     sleeperRunningRecordsByWeek: null,
+    sleeperPlayedWeeks: null,
   };
 
   function isEspnYear(season) {
@@ -176,6 +177,7 @@
     state.espnSeasonData = null;
     state.espnDraftData = null;
     state.sleeperRunningRecordsByWeek = null;
+    state.sleeperPlayedWeeks = null;
 
     byId("page-title").textContent = season + " Season";
 
@@ -231,10 +233,20 @@
       renderStandings();
       renderDivisionStandings();
       await ensureAllWeeksMatchups();
+      state.sleeperPlayedWeeks = SleeperAPI.getPlayedWeeks(state.allWeeksMatchups);
       state.sleeperRunningRecordsByWeek = SleeperAPI.buildAllRunningRecords(
         state.allWeeksMatchups,
         state.playoffStartWeek
       );
+      // Clamp currentWeek to the latest week that's actually been played,
+      // so the default selection never lands on an unplayed placeholder
+      // week (e.g. week 18 for a league that only plays through week 17).
+      if (state.sleeperPlayedWeeks.length > 0) {
+        var latestPlayedWeek = state.sleeperPlayedWeeks[state.sleeperPlayedWeeks.length - 1];
+        if (state.currentWeek > latestPlayedWeek) {
+          state.currentWeek = latestPlayedWeek;
+        }
+      }
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelects();
@@ -821,6 +833,15 @@
     return "<ul>" + items + "</ul>";
   }
 
+  /**
+   * Populates the Week (matchups), Transactions-week, and Roster-week
+   * dropdowns. The Matchups and Roster dropdowns only list weeks that
+   * have actually been played (per SleeperAPI.getPlayedWeeks), so a
+   * league that ends at week 17 never shows a "Week 18" option with no
+   * real data behind it. The Transactions dropdown still lists all 18
+   * weeks, since waiver moves/trades can occur in weeks without a scored
+   * matchup (e.g. before the season starts).
+   */
   async function populateWeekSelects() {
     var weekSelect = byId("week-select");
     var txnWeekSelect = byId("txn-week-select");
@@ -831,14 +852,27 @@
       sel.innerHTML = "";
     });
 
-    for (var w = 1; w <= 18; w++) {
-      [weekSelect, txnWeekSelect, rosterWeekSelect].forEach(function (sel) {
+    var playedWeeks =
+      state.sleeperPlayedWeeks && state.sleeperPlayedWeeks.length
+        ? state.sleeperPlayedWeeks
+        : [state.currentWeek || 1];
+
+    playedWeeks.forEach(function (w) {
+      [weekSelect, rosterWeekSelect].forEach(function (sel) {
         var opt = document.createElement("option");
         opt.value = String(w);
         opt.textContent = "Week " + w;
         sel.appendChild(opt);
       });
+    });
+
+    for (var w = 1; w <= 18; w++) {
+      var opt = document.createElement("option");
+      opt.value = String(w);
+      opt.textContent = "Week " + w;
+      txnWeekSelect.appendChild(opt);
     }
+
     weekSelect.value = String(state.currentWeek);
     txnWeekSelect.value = String(state.currentWeek);
     rosterWeekSelect.value = String(state.currentWeek);
@@ -853,7 +887,8 @@
    * cumulative regular-season record in parentheses next to its name -
    * "Team Name (W-L)" - matching the ESPN weekly view's format. Records
    * come from state.sleeperRunningRecordsByWeek, precomputed once per
-   * season load via SleeperAPI.buildAllRunningRecords().
+   * season load via SleeperAPI.buildAllRunningRecords(), which already
+   * excludes unplayed weeks.
    */
   async function renderMatchups() {
     var weekSelect = byId("week-select");
@@ -956,11 +991,13 @@
   }
 
   /**
-   * Renders the Sleeper "By Team (Full Schedule)" view, now including a
-   * Record column that shows each game's cumulative regular-season
-   * record immediately after that week - matching the exact 6-column
-   * layout (Week, Opponent, Result, My Score, Opp Score, Record) already
-   * used by the ESPN schedule view (renderTeamScheduleEspn above).
+   * Renders the Sleeper "By Team (Full Schedule)" view. Only includes
+   * weeks that have actually been played (buildTeamSchedule filters via
+   * SleeperAPI.isWeekPlayed internally), so a league that ends at week
+   * 17 never shows a phantom "Week 18" row. Includes a Record column
+   * showing each game's cumulative regular-season record immediately
+   * after that week, matching the 6-column layout already used by the
+   * ESPN schedule view (renderTeamScheduleEspn above).
    */
   async function renderTeamSchedule() {
     if (state.dataSource === "espn") {
