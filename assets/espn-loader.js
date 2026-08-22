@@ -13,7 +13,14 @@
  *
  * Matchups CSV columns: year,week,team,team_score,opponent,opponent_score,
  *   result,is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
- *   result is one of: WIN, LOSS, TIE, BYE (from the perspective of `team`).
+ *
+ *   IMPORTANT: `result` is treated as informational only (it may contain
+ *   WIN/LOSS, HOME/AWAY, or anything else depending on how the sheet was
+ *   authored). The actual winner/loser/tie for every game is always
+ *   determined by comparing team_score vs opponent_score directly, since
+ *   scores are the one value guaranteed to be reliable and consistently
+ *   formatted. The only exception is BYE weeks, detected when `opponent`
+ *   is literally the string "BYE" (no opponent_score to compare against).
  *
  * Standings CSV columns (case-insensitive; header name ALIASES also
  * accepted - see ALIAS_MAP below - so "season" works the same as "year"
@@ -141,13 +148,18 @@
     return String(v).trim().toUpperCase() === "TRUE";
   }
 
-  function normalizeResult(v) {
-    var u = String(v).trim().toUpperCase();
-    if (u === "WIN") return "W";
-    if (u === "LOSS") return "L";
-    if (u === "TIE") return "T";
-    if (u === "BYE") return "BYE";
-    return u;
+  /**
+   * Determine W/L/T/BYE strictly from scores, ignoring whatever text is
+   * in the `result` column (which may be WIN/LOSS, HOME/AWAY, etc. - its
+   * wording is not reliable across different seasons/authors). `opponent`
+   * literally equal to "BYE" (case-insensitive) is the only BYE signal.
+   */
+  function deriveResultFromScores(teamScore, opponentScore, opponentName) {
+    if (String(opponentName).trim().toUpperCase() === "BYE") return "BYE";
+    if (teamScore === null || opponentScore === null) return "";
+    if (teamScore > opponentScore) return "W";
+    if (teamScore < opponentScore) return "L";
+    return "T";
   }
 
   function normalizeBracketType(v) {
@@ -190,14 +202,18 @@
           return Number(getField(r, "year")) === Number(year);
         })
         .map(function (r) {
+          var teamScore = toNumberOrNull(getField(r, "team_score"));
+          var opponentScore = toNumberOrNull(getField(r, "opponent_score"));
+          var opponent = getField(r, "opponent");
+
           return {
             year: Number(getField(r, "year")),
             week: Number(getField(r, "week")),
             team: getField(r, "team"),
-            teamScore: toNumberOrNull(getField(r, "team_score")),
-            opponent: getField(r, "opponent"),
-            opponentScore: toNumberOrNull(getField(r, "opponent_score")),
-            result: normalizeResult(getField(r, "result")),
+            teamScore: teamScore,
+            opponent: opponent,
+            opponentScore: opponentScore,
+            result: deriveResultFromScores(teamScore, opponentScore, opponent),
             isPlayoff: toBool(getField(r, "is_playoff")),
             bracketType: normalizeBracketType(getField(r, "bracket_type")),
             playoffRound: toNumberOrNull(getField(r, "playoff_round")),
@@ -605,9 +621,13 @@
           };
 
       var winnerRosterId = null;
-      if (r.result === "W") winnerRosterId = r.team;
-      else if (r.result === "L") winnerRosterId = isBye ? r.team : r.opponent;
-      else if (r.result === "BYE") winnerRosterId = r.team;
+      if (isBye) {
+        winnerRosterId = r.team;
+      } else if (r.result === "W") {
+        winnerRosterId = r.team;
+      } else if (r.result === "L") {
+        winnerRosterId = r.opponent;
+      }
 
       if (!roundsMap[round]) roundsMap[round] = [];
       roundsMap[round].push({
