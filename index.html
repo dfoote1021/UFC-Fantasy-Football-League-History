@@ -13,6 +13,7 @@
   <div class="season-picker">
     <label for="season-select">Season:</label>
     <select id="season-select"></select>
+    <button id="alltime-btn" class="btn btn-alltime">All-Time</button>
     <span id="live-badge" class="badge live-badge" hidden>LIVE</span>
     <span id="final-badge" class="badge final-badge" hidden>FINAL</span>
     <span id="last-refreshed"></span>
@@ -25,7 +26,7 @@
   <span id="champion-text"></span>
 </div>
 
-<nav class="tabs">
+<nav class="tabs" id="season-tabs">
   <button class="tab-btn active" data-tab="standings">Standings</button>
   <button class="tab-btn" data-tab="matchups">Matchups</button>
   <button class="tab-btn" data-tab="teams">Teams</button>
@@ -35,7 +36,7 @@
   <button class="tab-btn" data-tab="commish">Commissioner</button>
 </nav>
 
-<main>
+<main id="season-main">
 
   <section id="tab-standings" class="tab-panel active">
     <h2 id="standings-heading">Standings</h2>
@@ -151,6 +152,53 @@
 
 </main>
 
+<main id="alltime-main" hidden>
+  <div class="alltime-header">
+    <h2>All-Time League History</h2>
+    <button id="back-to-season-btn" class="btn">← Back to Season</button>
+  </div>
+
+  <div id="alltime-loading" class="status-text">Loading every season, this may take a few seconds…</div>
+
+  <div id="alltime-content" hidden>
+    <nav class="tabs alltime-tabs">
+      <button class="tab-btn active" data-alltime-tab="career">Career Totals</button>
+      <button class="tab-btn" data-alltime-tab="h2h">Head-to-Head</button>
+    </nav>
+
+    <section id="alltime-career" class="tab-panel active">
+      <table id="career-totals-table" class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Owner</th><th>Seasons</th><th>W</th><th>L</th><th>T</th>
+            <th>Win %</th><th>PF</th><th>PA</th><th>🏆</th><th>🥈</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="alltime-h2h" class="tab-panel">
+      <div class="h2h-picker">
+        <label for="h2h-owner-a">Owner A:</label>
+        <select id="h2h-owner-a"></select>
+        <span class="h2h-vs">vs</span>
+        <label for="h2h-owner-b">Owner B:</label>
+        <select id="h2h-owner-b"></select>
+      </div>
+
+      <div id="h2h-summary" class="h2h-summary"></div>
+
+      <table id="h2h-games-table" class="data-table">
+        <thead>
+          <tr><th>Year</th><th>Week</th><th>Team A</th><th>Score</th><th>Score</th><th>Team B</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+</main>
+
 <footer class="site-footer">
   <p>Data provided by the public Sleeper API. This site is read-only and does not modify any league.</p>
 </footer>
@@ -159,6 +207,7 @@
 <script src="assets/sleeper-common.js"></script>
 <script src="assets/espn-loader.js"></script>
 <script src="assets/espn-draft-loader.js"></script>
+<script src="assets/all-time.js"></script>
 <script src="assets/season.js"></script>
 </body>
 </html>
