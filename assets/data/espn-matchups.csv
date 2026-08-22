@@ -1,121 +1,955 @@
-year,team,division,division_standing,owner,wins,losses,ties,points_for,points_against,final_rank,made_playoffs,champion,runner_up
-2012,Spear,West,1,jspear3,10,3,0,1690.00,1373.00,2,TRUE,FALSE,TRUE
-2012,Dan,East,2,dfoote93,9,4,0,1678.00,1538.00,3,TRUE,FALSE,FALSE
-2012,Spencer,East,1,Spencery1025,8,5,0,1685.00,1425.00,1,TRUE,TRUE,FALSE
-2012,Tom,West,3,thomas51192,7,6,0,1763.00,1578.00,5,TRUE,FALSE,FALSE
-2012,James,East,3,JFFrenzie5199,7,5,1,1734.00,1637.00,4,FALSE,FALSE,FALSE
-2012,Gavin,West,4,littlejeterboy7,7,6,0,1642.00,1599.00,9,FALSE,FALSE,FALSE
-2012,Ed,East,4,ed.kelly33,7,6,0,1590.00,1622.00,6,FALSE,FALSE,FALSE
-2012,Carson,West,2,C Baby Scovs,7,5,1,1503.00,1388.00,7,FALSE,FALSE,FALSE
-2012,Charles,West,5,lilpatriot37,6,7,0,1315.00,1432.00,8,FALSE,FALSE,FALSE
-2012,Dylan,West,6,giantsman1694,5,8,0,1249.00,1402.00,11,FALSE,FALSE,FALSE
-2012,Tsizz,East,5,tomizzle3,2,11,0,1346.00,1494.00,10,FALSE,FALSE,FALSE
-2012,Ken,East,6,kenhats,2,11,0,916.00,1623.00,12,FALSE,FALSE,FALSE
-2013,Tsizz,East,1,tomizzle3,10,3,0,1806.30,1650.60,3,TRUE,FALSE,FALSE
-2013,Spencer,East,2,Spencery1025,8,5,0,1747.40,1522.40,1,TRUE,TRUE,FALSE
-2013,Carson,West,1,C Baby Scovs,8,5,0,1739.10,1538.30,4,TRUE,FALSE,FALSE
-2013,Dan,East,3,dfoote93,7,6,0,1599.00,1603.10,2,TRUE,FALSE,TRUE
-2013,Ed,East,4,ed.kelly33,7,6,0,1584.00,1549.60,6,FALSE,FALSE,FALSE
-2013,Spear,West,2,jspear3,7,6,0,1492.70,1550.00,7,FALSE,FALSE,FALSE
-2013,James,East,5,JFFrenzie5199,6,7,0,1712.20,1710.70,5,FALSE,FALSE,FALSE
-2013,Tom,West,3,thomas51192,6,7,0,1609.20,1593.00,9,FALSE,FALSE,FALSE
-2013,Dylan,West,4,giantsman1694,6,7,0,1586.60,1509.00,12,FALSE,FALSE,FALSE
-2013,Ken,East,6,kenhats,5,8,0,1534.20,1730.30,8,FALSE,FALSE,FALSE
-2013,Charles,West,5,lilpatriot37,4,9,0,1568.40,1745.70,11,FALSE,FALSE,FALSE
-2013,Gavin,West,6,littlejeterboy7,4,9,0,1443.10,1719.50,10,FALSE,FALSE,FALSE
-2014,Geoff,West,1,GeoffNYY2009,12,1,0,1830.60,1475.70,2,TRUE,FALSE,TRUE
-2014,Gavin,West,2,littlejeterboy7,11,2,0,1841.40,1531.70,3,TRUE,FALSE,FALSE
-2014,Spencer,East,1,Spencery1025,9,4,0,1898.10,1647.90,1,TRUE,TRUE,FALSE
-2014,Tom,West,3,thomas51192,7,6,0,1875.30,1637.00,4,TRUE,FALSE,FALSE
-2014,Dan,East,2,dfoote93,7,6,0,1659.40,1636.50,8,FALSE,FALSE,FALSE
-2014,Wes,West,4,Wesley3901,6,7,0,1635.50,1591.70,6,FALSE,FALSE,FALSE
-2014,Rob,East,3,bradytdftw,6,7,0,1471.60,1645.30,10,FALSE,FALSE,FALSE
-2014,Spear,West,5,jspear3,5,8,0,1597.60,1828.30,5,FALSE,FALSE,FALSE
-2014,Ken,East,4,kenhats,5,8,0,1560.40,1643.00,7,FALSE,FALSE,FALSE
-2014,Tsizz,East,5,tomizzle3,4,9,0,1536.40,1704.00,12,FALSE,FALSE,FALSE
-2014,James,East,6,JFFrenzie5199,3,10,0,1497.20,1789.20,11,FALSE,FALSE,FALSE
-2014,Charles,West,6,lilpatriot37,3,10,0,1377.30,1650.50,9,FALSE,FALSE,FALSE
-2015,Rob,East,1,bradytdftw,9,4,0,1837.00,1688.90,2,TRUE,FALSE,TRUE
-2015,Dan,East,2,dfoote93,8,5,0,1869.90,1611.00,1,TRUE,TRUE,FALSE
-2015,Tom,West,1,thomas51192,8,5,0,1806.70,1608.60,3,TRUE,FALSE,FALSE
-2015,James,East,3,JFFrenzie5199,8,5,0,1803.00,1620.60,4,TRUE,FALSE,FALSE
-2015,Gavin,West,2,littlejeterboy7,8,5,0,1779.40,1598.10,5,TRUE,FALSE,FALSE
-2015,Spencer,East,4,Spencerwhy,8,5,0,1714.60,1749.80,8,TRUE,FALSE,FALSE
-2015,Tsizz,East,5,tomizzle3,7,6,0,1709.10,1744.20,6,FALSE,FALSE,FALSE
-2015,Wes,West,3,Wesley3901,6,7,0,1598.30,1710.90,10,FALSE,FALSE,FALSE
-2015,Spear,West,5,jspear3,5,8,0,1723.30,1795.60,11,FALSE,FALSE,FALSE
-2015,Ken,East,6,kenhats,5,8,0,1560.80,1715.50,7,FALSE,FALSE,FALSE
-2015,Geoff,West,4,GeoffNYY2009,3,10,0,1510.50,1692.60,9,FALSE,FALSE,FALSE
-2015,Dylan,West,5,Dclark1694,3,10,0,1255.50,1632.30,12,FALSE,FALSE,FALSE
-2016,Rob,East,1,bradytdftw,10,4,0,2137.80,1844.60,3,TRUE,FALSE,FALSE
-2016,Dylan,West,1,Dclark1694,8,6,0,1862.70,1826.50,1,TRUE,TRUE,FALSE
-2016,Tom,West,2,thomas51192,8,6,0,1822.80,1757.70,6,TRUE,FALSE,FALSE
-2016,Ken,East,2,kenhats,8,6,0,1778.30,1778.00,2,TRUE,FALSE,TRUE
-2016,Dan,East,3,dfoote93,8,6,0,1638.20,1719.90,5,TRUE,FALSE,FALSE
-2016,Gavin,West,3,littlejeterboy7,7,7,0,1801.00,1770.10,4,TRUE,FALSE,FALSE
-2016,Spencer,East,4,Spencerwhy,7,7,0,1753.10,1734.90,8,FALSE,FALSE,FALSE
-2016,James,East,5,JFFrenzie5199,6,8,0,2028.80,1886.30,7,FALSE,FALSE,FALSE
-2016,Geoff,West,4,GeoffNYY2009,6,8,0,1845.50,1983.50,9,FALSE,FALSE,FALSE
-2016,Tsizz,East,6,tomizzle3,6,8,0,1669.80,1763.80,10,FALSE,FALSE,FALSE
-2016,Spear,West,5,jspear3,5,9,0,1639.30,1696.10,11,FALSE,FALSE,FALSE
-2016,Wes,West,6,Wesley3901,5,9,0,1562.70,1778.60,12,FALSE,FALSE,FALSE
-2017,Rob,East,1,bradytdftw,10,3,0,1552.10,1424.10,2,TRUE,FALSE,TRUE
-2017,Geoff,West,1,GeoffNYY2009,8,5,0,1694.60,1535.40,1,TRUE,FALSE,FALSE
-2017,James,East,2,JFFrenzie5199,8,5,0,1653.50,1559.30,5,TRUE,FALSE,FALSE
-2017,Ken,East,3,kenhats,8,5,0,1576.80,1438.00,4,TRUE,FALSE,FALSE
-2017,Spear,West,2,jspear3,8,5,0,1570.80,1525.00,6,TRUE,FALSE,FALSE
-2017,Gavin,West,3,littlejeterboy7,7,6,0,1812.80,1698.20,3,TRUE,FALSE,FALSE
-2017,Dan,East,4,dfoote93,6,7,0,1643.70,1568.80,7,FALSE,FALSE,FALSE
-2017,Tsizz,East,5,tomizzle3,5,8,0,1646.20,1773.70,10,FALSE,FALSE,FALSE
-2017,Dylan,West,4,Dclark1694,5,8,0,1459.50,1542.90,8,FALSE,FALSE,FALSE
-2017,Spencer,East,6,Spencerwhy,5,8,0,1361.30,1639.70,9,FALSE,FALSE,FALSE
-2017,Tom,West,5,thomas51192,4,9,0,1612.10,1734.90,12,FALSE,FALSE,FALSE
-2017,Wes,West,6,Wesley3901,4,9,0,1488.00,1631.40,11,FALSE,FALSE,FALSE
-2018,James,East,1,JFFrenzie5199,11,2,0,1863.50,1658.00,1,TRUE,TRUE,FALSE
-2018,Rob,East,2,bradytdftw,10,3,0,1790.80,1596.40,3,TRUE,FALSE,TRUE
-2018,Dan,East,3,dfoote93,9,4,0,1892.40,1566.60,4,TRUE,FALSE,FALSE
-2018,Gavin,West,1,littlejeterboy7,8,5,0,1918.40,1824.20,2,TRUE,FALSE,FALSE
-2018,Tsizz,East,4,tomizzle3,8,5,0,1904.70,1785.30,5,TRUE,FALSE,FALSE
-2018,Tom,West,2,thomas51192,7,6,0,1808.40,1718.90,6,TRUE,FALSE,FALSE
-2018,Spear,West,3,jspear3,6,6,1,1817.20,1788.50,9,FALSE,FALSE,FALSE
-2018,Dylan,West,4,Dclark1694,5,8,0,1449.20,1615.60,12,FALSE,FALSE,FALSE
-2018,Ken,East,5,kenhats,4,9,0,1665.90,1717.40,11,FALSE,FALSE,FALSE
-2018,Geoff,West,5,GeoffNYY2009,3,9,1,1542.20,1793.90,8,FALSE,FALSE,FALSE
-2018,Spencer,East,6,Spencerwhy,3,10,0,1469.30,1657.80,7,FALSE,FALSE,FALSE
-2018,Wes,West,6,Wesley3901,3,10,0,1312.90,1712.30,10,FALSE,FALSE,FALSE
-2019,Spencer,East,1,Spencerwhy,9,4,0,1821.60,1584.80,1,TRUE,TRUE,FALSE
-2019,Tsizz,East,2,tomizzle3,9,4,0,1677.00,1552.90,5,TRUE,FALSE,FALSE
-2019,James,East,3,JFFrenzie5199,8,5,0,1813.00,1614.30,3,TRUE,FALSE,FALSE
-2019,Spear,West,1,jspear3,8,5,0,1655.20,1657.00,2,TRUE,FALSE,TRUE
-2019,Ken,East,4,kenhats,8,5,0,1419.60,1489.90,6,TRUE,FALSE,FALSE
-2019,Wes,West,2,Wesley3901,7,6,0,1747.00,1667.20,4,TRUE,FALSE,FALSE
-2019,Tom,West,3,thomas51192,7,6,0,1695.10,1608.90,11,FALSE,FALSE,FALSE
-2019,Gavin,West,4,littlejeterboy7,5,8,0,1720.50,1751.90,8,FALSE,FALSE,FALSE
-2019,Dan,East,5,dfoote93,5,8,0,1650.80,1697.90,9,FALSE,FALSE,FALSE
-2019,Geoff,West,5,GeoffNYY2009,5,8,0,1549.90,1833.40,12,FALSE,FALSE,FALSE
-2019,Dylan,West,6,Dclark1694,4,9,0,1514.60,1675.00,10,FALSE,FALSE,FALSE
-2019,Rob,East,6,bradytdftw,3,10,0,1711.90,1843.00,7,FALSE,FALSE,FALSE
-2020,Geoff,West,1,GeoffNYY2009,9,4,0,2007.30,1732.60,2,TRUE,FALSE,TRUE
-2020,Rob,East,1,bradytdftw,9,4,0,1740.40,1573.30,1,TRUE,TRUE,FALSE
-2020,James,East,2,JFFrenzie5199,8,5,0,1712.10,1666.00,4,TRUE,FALSE,FALSE
-2020,Tsizz,East,3,tomizzle3,7,6,0,1743.40,1683.80,6,TRUE,FALSE,FALSE
-2020,Dan,East,4,dfoote93,7,6,0,1738.70,1843.00,3,TRUE,FALSE,FALSE
-2020,Wes,West,2,Wesley3901,7,6,0,1669.50,1766.30,5,TRUE,FALSE,FALSE
-2020,Gavin,West,3,littlejeterboy7,7,6,0,1611.60,1570.40,12,FALSE,FALSE,FALSE
-2020,Tom,West,4,thomas51192,6,7,0,1743.90,1664.00,8,FALSE,FALSE,FALSE
-2020,Connor,West,5,conmancush,6,7,0,1691.40,1637.30,10,FALSE,FALSE,FALSE
-2020,Ken,East,5,kenhats,6,7,0,1556.80,1662.50,9,FALSE,FALSE,FALSE
-2020,Spear,West,6,jspear3,3,10,0,1585.80,1747.20,7,FALSE,FALSE,FALSE
-2020,Spencer,East,6,Spencerwhy,3,10,0,1566.10,1820.60,11,FALSE,FALSE,FALSE
-2021,James,SMART,1,JFFrenzie5199,13,1,0,2116.60,1610.80,1,TRUE,TRUE,FALSE
-2021,Tsizz,SLOB,1,tomizzle3,11,3,0,1905.80,1725.60,4,TRUE,FALSE,FALSE
-2021,Tom,SMART,2,thomas51192,8,6,0,1864.30,1679.90,6,TRUE,FALSE,FALSE
-2021,Spencer,SMART,3,Spencerwhy,7,7,0,1876.10,2011.40,3,TRUE,FALSE,FALSE
-2021,Dan,SALT,1,dfoote93,7,7,0,1858.60,1845.50,5,TRUE,FALSE,FALSE
-2021,Geoff,SLOB,2,GeoffNYY2009,7,7,0,1652.60,1723.20,2,TRUE,FALSE,TRUE
-2021,Spear,SALT,2,jspear3,6,8,0,1756.00,1756.90,7,FALSE,FALSE,FALSE
-2021,Gavin,SALT,3,littlejeterboy7,6,8,0,1708.10,1653.60,9,FALSE,FALSE,FALSE
-2021,Ken,SLOB,3,kenhats,6,8,0,1705.50,1908.00,8,FALSE,FALSE,FALSE
-2021,Wes,SALT,4,Wesley3901,5,9,0,1625.20,1823.50,10,FALSE,FALSE,FALSE
-2021,Connor,SMART,4,conmancush,4,10,0,1685.70,1843.30,11,FALSE,FALSE,FALSE
-2021,Rob,SLOB,4,bradytdftw,4,10,0,1642.70,1815.50,12,FALSE,FALSE,FALSE
+year,week,team,team_owner,team_score,opponent,opponent_owner,opponent_score,result,is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
+2012,1,Salsa Dancing,Tom,141.00,Gotham City Rogues,Dan,115.00,WIN,FALSE,,,,
+2012,1,Former ShepaugTeacher,Spear,163.00,The Elite Eli's,Gavin,113.00,WIN,FALSE,,,,
+2012,1,Best Served Hot,Ed,137.00,The Thirteenth District,James,136.00,WIN,FALSE,,,,
+2012,1,Team McFarland,Ken,72.00,Eat The Sandwich,Spencer,164.00,LOSS,FALSE,,,,
+2012,1,Team No College Yet,Dylan,111.00,Wearing Sperrys Popping Cherrys,Carson,102.00,WIN,FALSE,,,,
+2012,1,Team Charles,Charles,99.00,Rapid City Monuments,Tsizz,160.00,LOSS,FALSE,,,,
+2012,2,Gotham City Rogues,Dan,102.00,Team McFarland,Ken,109.00,LOSS,FALSE,,,,
+2012,2,The Thirteenth District,James,173.00,Eat The Sandwich,Spencer,174.00,LOSS,FALSE,,,,
+2012,2,Best Served Hot,Ed,111.00,Rapid City Monuments,Tsizz,95.00,WIN,FALSE,,,,
+2012,2,Salsa Dancing,Tom,122.00,Wearing Sperrys Popping Cherrys,Carson,166.00,LOSS,FALSE,,,,
+2012,2,The Elite Eli's,Gavin,130.00,Former ShepaugTeacher,Spear,154.00,LOSS,FALSE,,,,
+2012,2,Team Charles,Charles,127.00,Team No College Yet,Dylan,75.00,WIN,FALSE,,,,
+2012,3,The Thirteenth District,James,121.00,Gotham City Rogues,Dan,141.00,LOSS,FALSE,,,,
+2012,3,Team McFarland,Ken,79.00,Best Served Hot,Ed,187.00,LOSS,FALSE,,,,
+2012,3,Eat The Sandwich,Spencer,111.00,Rapid City Monuments,Tsizz,90.00,WIN,FALSE,,,,
+2012,3,The Elite Eli's,Gavin,106.00,Salsa Dancing,Tom,141.00,LOSS,FALSE,,,,
+2012,3,Wearing Sperrys Popping Cherrys,Carson,90.00,Team Charles,Charles,113.00,LOSS,FALSE,,,,
+2012,3,Former ShepaugTeacher,Spear,145.00,Team No College Yet,Dylan,94.00,WIN,FALSE,,,,
+2012,4,Gotham City Rogues,Dan,164.00,Best Served Hot,Ed,116.00,WIN,FALSE,,,,
+2012,4,Rapid City Monuments,Tsizz,112.00,The Thirteenth District,James,125.00,LOSS,FALSE,,,,
+2012,4,Eat The Sandwich,Spencer,132.00,Team McFarland,Ken,81.00,WIN,FALSE,,,,
+2012,4,Salsa Dancing,Tom,105.00,Team Charles,Charles,127.00,LOSS,FALSE,,,,
+2012,4,Team No College Yet,Dylan,116.00,The Elite Eli's,Gavin,118.00,LOSS,FALSE,,,,
+2012,4,Former ShepaugTeacher,Spear,130.00,Wearing Sperrys Popping Cherrys,Carson,157.00,LOSS,FALSE,,,,
+2012,5,Rapid City Monuments,Tsizz,128.00,Gotham City Rogues,Dan,155.00,LOSS,FALSE,,,,
+2012,5,Best Served Hot,Ed,93.00,Eat The Sandwich,Spencer,147.00,LOSS,FALSE,,,,
+2012,5,The Thirteenth District,James,124.00,Team McFarland,Ken,114.00,WIN,FALSE,,,,
+2012,5,Team No College Yet,Dylan,86.00,Salsa Dancing,Tom,103.00,LOSS,FALSE,,,,
+2012,5,Team Charles,Charles,80.00,Former ShepaugTeacher,Spear,130.00,LOSS,FALSE,,,,
+2012,5,The Elite Eli's,Gavin,92.00,Wearing Sperrys Popping Cherrys,Carson,120.00,LOSS,FALSE,,,,
+2012,6,Gotham City Rogues,Dan,153.00,Salsa Dancing,Tom,126.00,WIN,FALSE,,,,
+2012,6,Eat The Sandwich,Spencer,81.00,Former ShepaugTeacher,Spear,88.00,LOSS,FALSE,,,,
+2012,6,Team McFarland,Ken,84.00,Wearing Sperrys Popping Cherrys,Carson,78.00,WIN,FALSE,,,,
+2012,6,The Thirteenth District,James,152.00,The Elite Eli's,Gavin,204.00,LOSS,FALSE,,,,
+2012,6,Best Served Hot,Ed,115.00,Team Charles,Charles,77.00,WIN,FALSE,,,,
+2012,6,Rapid City Monuments,Tsizz,102.00,Team No College Yet,Dylan,118.00,LOSS,FALSE,,,,
+2012,7,Salsa Dancing,Tom,133.00,Eat The Sandwich,Spencer,112.00,WIN,FALSE,,,,
+2012,7,Former ShepaugTeacher,Spear,94.00,Team McFarland,Ken,84.00,WIN,FALSE,,,,
+2012,7,Wearing Sperrys Popping Cherrys,Carson,60.00,The Thirteenth District,James,156.00,LOSS,FALSE,,,,
+2012,7,The Elite Eli's,Gavin,160.00,Best Served Hot,Ed,97.00,WIN,FALSE,,,,
+2012,7,Team Charles,Charles,101.00,Rapid City Monuments,Tsizz,90.00,WIN,FALSE,,,,
+2012,7,Team No College Yet,Dylan,93.00,Gotham City Rogues,Dan,127.00,LOSS,FALSE,,,,
+2012,8,Team McFarland,Ken,26.00,Salsa Dancing,Tom,135.00,LOSS,FALSE,,,,
+2012,8,The Thirteenth District,James,136.00,Former ShepaugTeacher,Spear,95.00,WIN,FALSE,,,,
+2012,8,Best Served Hot,Ed,114.00,Wearing Sperrys Popping Cherrys,Carson,109.00,WIN,FALSE,,,,
+2012,8,Rapid City Monuments,Tsizz,105.00,The Elite Eli's,Gavin,116.00,LOSS,FALSE,,,,
+2012,8,Gotham City Rogues,Dan,120.00,Team Charles,Charles,92.00,WIN,FALSE,,,,
+2012,8,Eat The Sandwich,Spencer,145.00,Team No College Yet,Dylan,80.00,WIN,FALSE,,,,
+2012,9,Salsa Dancing,Tom,194.00,The Thirteenth District,James,94.00,WIN,FALSE,,,,
+2012,9,Former ShepaugTeacher,Spear,141.00,Best Served Hot,Ed,127.00,WIN,FALSE,,,,
+2012,9,Wearing Sperrys Popping Cherrys,Carson,99.00,Rapid City Monuments,Tsizz,95.00,WIN,FALSE,,,,
+2012,9,The Elite Eli's,Gavin,125.00,Gotham City Rogues,Dan,97.00,WIN,FALSE,,,,
+2012,9,Team Charles,Charles,107.00,Eat The Sandwich,Spencer,145.00,LOSS,FALSE,,,,
+2012,9,Team No College Yet,Dylan,112.00,Team McFarland,Ken,37.00,WIN,FALSE,,,,
+2012,10,Best Served Hot,Ed,129.00,Salsa Dancing,Tom,162.00,LOSS,FALSE,,,,
+2012,10,Rapid City Monuments,Tsizz,84.00,Former ShepaugTeacher,Spear,153.00,LOSS,FALSE,,,,
+2012,10,Gotham City Rogues,Dan,95.00,Wearing Sperrys Popping Cherrys,Carson,143.00,LOSS,FALSE,,,,
+2012,10,Eat The Sandwich,Spencer,111.00,The Elite Eli's,Gavin,121.00,LOSS,FALSE,,,,
+2012,10,Team McFarland,Ken,51.00,Team Charles,Charles,68.00,LOSS,FALSE,,,,
+2012,10,The Thirteenth District,James,148.00,Team No College Yet,Dylan,98.00,WIN,FALSE,,,,
+2012,11,Salsa Dancing,Tom,114.00,Rapid City Monuments,Tsizz,125.00,LOSS,FALSE,,,,
+2012,11,Former ShepaugTeacher,Spear,119.00,Gotham City Rogues,Dan,121.00,LOSS,FALSE,,,,
+2012,11,Wearing Sperrys Popping Cherrys,Carson,125.00,Eat The Sandwich,Spencer,96.00,WIN,FALSE,,,,
+2012,11,The Elite Eli's,Gavin,129.00,Team McFarland,Ken,36.00,WIN,FALSE,,,,
+2012,11,Team Charles,Charles,83.00,The Thirteenth District,James,122.00,LOSS,FALSE,,,,
+2012,11,Team No College Yet,Dylan,107.00,Best Served Hot,Ed,51.00,WIN,FALSE,,,,
+2012,12,Salsa Dancing,Tom,146.00,Gotham City Rogues,Dan,162.00,LOSS,FALSE,,,,
+2012,12,Former ShepaugTeacher,Spear,121.00,Eat The Sandwich,Spencer,90.00,WIN,FALSE,,,,
+2012,12,Wearing Sperrys Popping Cherrys,Carson,141.00,Team McFarland,Ken,67.00,WIN,FALSE,,,,
+2012,12,The Elite Eli's,Gavin,112.00,The Thirteenth District,James,134.00,LOSS,FALSE,,,,
+2012,12,Team Charles,Charles,129.00,Best Served Hot,Ed,140.00,LOSS,FALSE,,,,
+2012,12,Team No College Yet,Dylan,80.00,Rapid City Monuments,Tsizz,71.00,WIN,FALSE,,,,
+2012,13,Eat The Sandwich,Spencer,177.00,Salsa Dancing,Tom,141.00,WIN,FALSE,,,,
+2012,13,Team McFarland,Ken,76.00,Former ShepaugTeacher,Spear,157.00,LOSS,FALSE,,,,
+2012,13,The Thirteenth District,James,113.00,Wearing Sperrys Popping Cherrys,Carson,113.00,TIE,FALSE,,,,
+2012,13,Best Served Hot,Ed,173.00,The Elite Eli's,Gavin,116.00,WIN,FALSE,,,,
+2012,13,Rapid City Monuments,Tsizz,89.00,Team Charles,Charles,112.00,LOSS,FALSE,,,,
+2012,13,Gotham City Rogues,Dan,126.00,Team No College Yet,Dylan,79.00,WIN,FALSE,,,,
+2012,14,Former ShepaugTeacher,Spear,249.00,The Thirteenth District,James,211.00,WIN,TRUE,Winners,1,1,4
+2012,14,Gotham City Rogues,Dan,234.00,Eat The Sandwich,Spencer,275.00,LOSS,TRUE,Winners,1,2,3
+2012,14,Wearing Sperrys Popping Cherrys,Carson,216.00,Salsa Dancing,Tom,284.00,LOSS,TRUE,Consolation,1,5,6
+2012,14,The Elite Eli's,Gavin,245.00,Best Served Hot,Ed,310.00,LOSS,TRUE,Consolation,1,7,8
+2012,14,Team Charles,Charles,199.00,Team No College Yet,Dylan,136.00,WIN,TRUE,Consolation,1,9,10
+2012,14,Rapid City Monuments,Tsizz,248.00,Team McFarland,Ken,97.00,WIN,TRUE,Consolation,1,11,12
+2012,15,Former ShepaugTeacher,Spear,268.00,Eat The Sandwich,Spencer,297.00,LOSS,TRUE,Winners,2,1,3
+2012,15,Gotham City Rogues,Dan,287.00,The Thirteenth District,James,240.00,WIN,TRUE,Winners,2,2,4
+2012,15,Salsa Dancing,Tom,285.00,Best Served Hot,Ed,276.00,WIN,TRUE,Consolation,2,6,8
+2012,15,Wearing Sperrys Popping Cherrys,Carson,208.00,Team Charles,Charles,197.00,WIN,TRUE,Consolation,2,5,9
+2012,15,The Elite Eli's,Gavin,236.00,Rapid City Monuments,Tsizz,209.00,WIN,TRUE,Consolation,2,7,11
+2012,15,Team No College Yet,Dylan,133.00,Team McFarland,Ken,93.00,WIN,TRUE,Consolation,2,10,12
+2013,1,Salsa Dancing,Tom,155.60,Gotham City Rogues,Dan,110.00,WIN,FALSE,,,,
+2013,1,Former ShepaugTeacher,Spear,134.40,The Elite Eli's,Gavin,118.80,WIN,FALSE,,,,
+2013,1,Best Served Hot,Ed,161.80,The Thirteenth District,James,128.00,WIN,FALSE,,,,
+2013,1,Caucasion Sasquatch,Ken,114.70,Eat The Sandwich,Spencer,127.70,LOSS,FALSE,,,,
+2013,1,Team No College Yet,Dylan,124.70,Wearing Sperrys Popping Cherrys,Carson,188.50,LOSS,FALSE,,,,
+2013,1,Team Charles,Charles,182.30,Rapid City Monuments,Tsizz,125.00,WIN,FALSE,,,,
+2013,2,Gotham City Rogues,Dan,173.30,Caucasion Sasquatch,Ken,123.70,WIN,FALSE,,,,
+2013,2,The Thirteenth District,James,140.30,Eat The Sandwich,Spencer,169.00,LOSS,FALSE,,,,
+2013,2,Best Served Hot,Ed,121.60,Rapid City Monuments,Tsizz,154.90,LOSS,FALSE,,,,
+2013,2,Salsa Dancing,Tom,126.60,Wearing Sperrys Popping Cherrys,Carson,119.30,WIN,FALSE,,,,
+2013,2,The Elite Eli's,Gavin,151.50,Former ShepaugTeacher,Spear,147.90,WIN,FALSE,,,,
+2013,2,Team Charles,Charles,91.40,Team No College Yet,Dylan,164.40,LOSS,FALSE,,,,
+2013,3,The Thirteenth District,James,115.10,Gotham City Rogues,Dan,81.20,WIN,FALSE,,,,
+2013,3,Caucasion Sasquatch,Ken,88.40,Best Served Hot,Ed,143.60,LOSS,FALSE,,,,
+2013,3,Eat The Sandwich,Spencer,158.40,Rapid City Monuments,Tsizz,121.60,WIN,FALSE,,,,
+2013,3,The Elite Eli's,Gavin,122.20,Salsa Dancing,Tom,88.00,WIN,FALSE,,,,
+2013,3,Wearing Sperrys Popping Cherrys,Carson,133.40,Team Charles,Charles,113.00,WIN,FALSE,,,,
+2013,3,Former ShepaugTeacher,Spear,100.80,Team No College Yet,Dylan,128.90,LOSS,FALSE,,,,
+2013,4,Gotham City Rogues,Dan,118.80,Best Served Hot,Ed,137.30,LOSS,FALSE,,,,
+2013,4,Rapid City Monuments,Tsizz,141.70,The Thirteenth District,James,162.40,LOSS,FALSE,,,,
+2013,4,Eat The Sandwich,Spencer,157.10,Caucasion Sasquatch,Ken,166.40,LOSS,FALSE,,,,
+2013,4,Salsa Dancing,Tom,105.40,Team Charles,Charles,140.70,LOSS,FALSE,,,,
+2013,4,Team No College Yet,Dylan,130.10,The Elite Eli's,Gavin,80.20,WIN,FALSE,,,,
+2013,4,Former ShepaugTeacher,Spear,95.40,Wearing Sperrys Popping Cherrys,Carson,174.50,LOSS,FALSE,,,,
+2013,5,Rapid City Monuments,Tsizz,162.50,Gotham City Rogues,Dan,125.70,WIN,FALSE,,,,
+2013,5,Best Served Hot,Ed,78.50,Eat The Sandwich,Spencer,146.60,LOSS,FALSE,,,,
+2013,5,The Thirteenth District,James,165.70,Caucasion Sasquatch,Ken,177.40,LOSS,FALSE,,,,
+2013,5,Team No College Yet,Dylan,147.00,Salsa Dancing,Tom,109.10,WIN,FALSE,,,,
+2013,5,Team Charles,Charles,120.40,Former ShepaugTeacher,Spear,71.40,WIN,FALSE,,,,
+2013,5,The Elite Eli's,Gavin,121.50,Wearing Sperrys Popping Cherrys,Carson,186.30,LOSS,FALSE,,,,
+2013,6,Gotham City Rogues,Dan,113.60,Salsa Dancing,Tom,165.90,LOSS,FALSE,,,,
+2013,6,Eat The Sandwich,Spencer,144.20,Former ShepaugTeacher,Spear,83.40,WIN,FALSE,,,,
+2013,6,Caucasion Sasquatch,Ken,95.90,Wearing Sperrys Popping Cherrys,Carson,114.70,LOSS,FALSE,,,,
+2013,6,The Thirteenth District,James,109.50,The Elite Eli's,Gavin,95.60,WIN,FALSE,,,,
+2013,6,Best Served Hot,Ed,108.90,Team Charles,Charles,111.00,LOSS,FALSE,,,,
+2013,6,Rapid City Monuments,Tsizz,136.10,Team No College Yet,Dylan,135.90,WIN,FALSE,,,,
+2013,7,Salsa Dancing,Tom,121.00,Eat The Sandwich,Spencer,112.50,WIN,FALSE,,,,
+2013,7,Former ShepaugTeacher,Spear,148.10,Caucasion Sasquatch,Ken,121.20,WIN,FALSE,,,,
+2013,7,Wearing Sperrys Popping Cherrys,Carson,112.40,The Thirteenth District,James,104.80,WIN,FALSE,,,,
+2013,7,The Elite Eli's,Gavin,93.70,Best Served Hot,Ed,100.10,LOSS,FALSE,,,,
+2013,7,Team Charles,Charles,129.80,Rapid City Monuments,Tsizz,156.60,LOSS,FALSE,,,,
+2013,7,Team No College Yet,Dylan,77.00,Gotham City Rogues,Dan,115.70,LOSS,FALSE,,,,
+2013,8,Caucasion Sasquatch,Ken,75.50,Salsa Dancing,Tom,134.80,LOSS,FALSE,,,,
+2013,8,The Thirteenth District,James,111.40,Former ShepaugTeacher,Spear,150.00,LOSS,FALSE,,,,
+2013,8,Best Served Hot,Ed,80.90,Wearing Sperrys Popping Cherrys,Carson,167.00,LOSS,FALSE,,,,
+2013,8,Rapid City Monuments,Tsizz,122.90,The Elite Eli's,Gavin,96.90,WIN,FALSE,,,,
+2013,8,Gotham City Rogues,Dan,109.50,Team Charles,Charles,99.00,WIN,FALSE,,,,
+2013,8,Eat The Sandwich,Spencer,110.90,Team No College Yet,Dylan,128.40,LOSS,FALSE,,,,
+2013,9,Salsa Dancing,Tom,117.50,The Thirteenth District,James,148.10,LOSS,FALSE,,,,
+2013,9,Former ShepaugTeacher,Spear,96.90,Best Served Hot,Ed,80.10,WIN,FALSE,,,,
+2013,9,Wearing Sperrys Popping Cherrys,Carson,91.60,Rapid City Monuments,Tsizz,113.60,LOSS,FALSE,,,,
+2013,9,The Elite Eli's,Gavin,116.70,Gotham City Rogues,Dan,203.60,LOSS,FALSE,,,,
+2013,9,Team Charles,Charles,89.30,Eat The Sandwich,Spencer,146.70,LOSS,FALSE,,,,
+2013,9,Team No College Yet,Dylan,175.20,Caucasion Sasquatch,Ken,69.70,WIN,FALSE,,,,
+2013,10,Best Served Hot,Ed,106.70,Salsa Dancing,Tom,128.30,LOSS,FALSE,,,,
+2013,10,Rapid City Monuments,Tsizz,115.90,Former ShepaugTeacher,Spear,104.50,WIN,FALSE,,,,
+2013,10,Gotham City Rogues,Dan,127.50,Wearing Sperrys Popping Cherrys,Carson,109.00,WIN,FALSE,,,,
+2013,10,Eat The Sandwich,Spencer,92.40,The Elite Eli's,Gavin,121.90,LOSS,FALSE,,,,
+2013,10,Caucasion Sasquatch,Ken,142.20,Team Charles,Charles,131.00,WIN,FALSE,,,,
+2013,10,The Thirteenth District,James,126.00,Team No College Yet,Dylan,91.00,WIN,FALSE,,,,
+2013,11,Salsa Dancing,Tom,128.80,Rapid City Monuments,Tsizz,140.20,LOSS,FALSE,,,,
+2013,11,Former ShepaugTeacher,Spear,124.60,Gotham City Rogues,Dan,93.00,WIN,FALSE,,,,
+2013,11,Wearing Sperrys Popping Cherrys,Carson,100.90,Eat The Sandwich,Spencer,139.60,LOSS,FALSE,,,,
+2013,11,The Elite Eli's,Gavin,75.40,Caucasion Sasquatch,Ken,118.60,LOSS,FALSE,,,,
+2013,11,Team Charles,Charles,124.20,The Thirteenth District,James,151.80,LOSS,FALSE,,,,
+2013,11,Team No College Yet,Dylan,96.80,Best Served Hot,Ed,151.50,LOSS,FALSE,,,,
+2013,12,Salsa Dancing,Tom,114.70,Gotham City Rogues,Dan,117.70,LOSS,FALSE,,,,
+2013,12,Former ShepaugTeacher,Spear,142.50,Eat The Sandwich,Spencer,102.80,WIN,FALSE,,,,
+2013,12,Wearing Sperrys Popping Cherrys,Carson,90.90,Caucasion Sasquatch,Ken,153.20,LOSS,FALSE,,,,
+2013,12,The Elite Eli's,Gavin,138.30,The Thirteenth District,James,107.50,WIN,FALSE,,,,
+2013,12,Team Charles,Charles,108.80,Best Served Hot,Ed,134.80,LOSS,FALSE,,,,
+2013,12,Team No College Yet,Dylan,85.20,Rapid City Monuments,Tsizz,119.70,LOSS,FALSE,,,,
+2013,13,Eat The Sandwich,Spencer,139.50,Salsa Dancing,Tom,113.50,WIN,FALSE,,,,
+2013,13,Caucasion Sasquatch,Ken,87.30,Former ShepaugTeacher,Spear,92.80,LOSS,FALSE,,,,
+2013,13,The Thirteenth District,James,141.60,Wearing Sperrys Popping Cherrys,Carson,150.60,LOSS,FALSE,,,,
+2013,13,Best Served Hot,Ed,178.20,The Elite Eli's,Gavin,110.40,WIN,FALSE,,,,
+2013,13,Rapid City Monuments,Tsizz,195.60,Team Charles,Charles,127.50,WIN,FALSE,,,,
+2013,13,Gotham City Rogues,Dan,109.40,Team No College Yet,Dylan,102.00,WIN,FALSE,,,,
+2013,14,Rapid City Monuments,Tsizz,284.10,Gotham City Rogues,Dan,339.30,LOSS,TRUE,Winners,1,1,4
+2013,14,Wearing Sperrys Popping Cherrys,Carson,215.70,Eat The Sandwich,Spencer,258.70,LOSS,TRUE,Winners,1,2,3
+2013,14,Best Served Hot,Ed,254.10,Former ShepaugTeacher,Spear,239.90,WIN,TRUE,Consolation,1,5,6
+2013,14,The Thirteenth District,James,298.00,Salsa Dancing,Tom,274.20,WIN,TRUE,Consolation,1,7,8
+2013,14,Team No College Yet,Dylan,239.70,Caucasion Sasquatch,Ken,257.20,LOSS,TRUE,Consolation,1,9,10
+2013,14,Team Charles,Charles,226.00,The Elite Eli's,Gavin,278.00,LOSS,TRUE,Consolation,1,11,12
+2013,15,Eat The Sandwich,Spencer,219.60,Gotham City Rogues,Dan,217.20,WIN,TRUE,Winners,2,3,4
+2013,15,Rapid City Monuments,Tsizz,288.30,Wearing Sperrys Popping Cherrys,Carson,281.50,WIN,TRUE,Winners,2,1,2
+2013,15,Best Served Hot,Ed,175.00,The Thirteenth District,James,272.20,LOSS,TRUE,Consolation,2,5,7
+2013,15,Former ShepaugTeacher,Spear,195.30,Caucasion Sasquatch,Ken,182.40,WIN,TRUE,Consolation,2,6,10
+2013,15,Salsa Dancing,Tom,246.40,The Elite Eli's,Gavin,136.10,WIN,TRUE,Consolation,2,8,12
+2013,15,Team No College Yet,Dylan,173.00,Team Charles,Charles,261.40,LOSS,TRUE,Consolation,2,9,11
+2014,1,Eat The Sandwich,Spencer,154.5,Gotham City Rogues,Dan,113.8,WIN,FALSE,,,,
+2014,1,Rapid City Monuments,Tsizz,89.5,Caucasion Sasquatch,Ken,129.4,LOSS,FALSE,,,,
+2014,1,Reverend Payne,Rob,123,The Thirteenth District,James,112.8,WIN,FALSE,,,,
+2014,1,Two First Names,Spear,186.4,Salsa Dancing,Tom,179.8,WIN,FALSE,,,,
+2014,1,Team Foote Longs,Wes,114.8,Geoff,Geoff,142.4,LOSS,FALSE,,,,
+2014,1,Team Charles,Charles,105.8,Johnny Clipboards,Gavin,98.1,WIN,FALSE,,,,
+2014,2,Gotham City Rogues,Dan,115,Caucasion Sasquatch,Ken,132.3,LOSS,FALSE,,,,
+2014,2,The Thirteenth District,James,122.3,Eat The Sandwich,Spencer,112.6,WIN,FALSE,,,,
+2014,2,Reverend Payne,Rob,125.7,Rapid City Monuments,Tsizz,110.2,WIN,FALSE,,,,
+2014,2,Salsa Dancing,Tom,117.8,Geoff,Geoff,147.6,LOSS,FALSE,,,,
+2014,2,Gavin,Gavin,145.5,Two First Names,Spear,85.8,WIN,FALSE,,,,
+2014,2,Team Charles,Charles,115.8,Team Foote Longs,Wes,118,LOSS,FALSE,,,,
+2014,3,The Thirteenth District,James,111.8,Gotham City Rogues,Dan,132,LOSS,FALSE,,,,
+2014,3,Caucasion Sasquatch,Ken,80.4,Reverend Payne,Rob,101.3,LOSS,FALSE,,,,
+2014,3,Eat The Sandwich,Spencer,153.5,Rapid City Monuments,Tsizz,116.5,WIN,FALSE,,,,
+2014,3,Johnny Clipboards,Gavin,83.1,Salsa Dancing,Tom,145.7,LOSS,FALSE,,,,
+2014,3,Geoff,Geoff,138,Team Charles,Charles,79,WIN,FALSE,,,,
+2014,3,Two First Names,Spear,156.2,Team Foote Longs,Wes,125.7,WIN,FALSE,,,,
+2014,4,Gotham City Rogues,Dan,117.5,Reverend Payne,Rob,103.6,WIN,FALSE,,,,
+2014,4,Rapid City Monuments,Tsizz,135.5,The Thirteenth District,James,123.2,WIN,FALSE,,,,
+2014,4,Eat The Sandwich,Spencer,123.9,Caucasion Sasquatch,Ken,107.4,WIN,FALSE,,,,
+2014,4,Salsa Dancing,Tom,157,Team Charles,Charles,87.2,WIN,FALSE,,,,
+2014,4,Team Foote Longs,Wes,137.9,Johnny Clipboards,Gavin,152.7,LOSS,FALSE,,,,
+2014,4,Two First Names,Spear,99.5,Geoff,Geoff,134.7,LOSS,FALSE,,,,
+2014,5,Rapid City Monuments,Tsizz,134,Gotham City Rogues,Dan,107.5,WIN,FALSE,,,,
+2014,5,Reverend Payne,Rob,123.6,Eat The Sandwich,Spencer,158.2,LOSS,FALSE,,,,
+2014,5,The Thirteenth District,James,97.9,Caucasion Sasquatch,Ken,173.6,LOSS,FALSE,,,,
+2014,5,Team Foote Longs,Wes,120.2,Salsa Dancing,Tom,100.8,WIN,FALSE,,,,
+2014,5,Team Charles,Charles,90.4,Two First Names,Spear,95.9,LOSS,FALSE,,,,
+2014,5,Johnny Clipboards,Gavin,137.1,Geoff,Geoff,135.4,WIN,FALSE,,,,
+2014,6,Gotham City Rogues,Dan,135.8,Salsa Dancing,Tom,85.4,WIN,FALSE,,,,
+2014,6,Eat The Sandwich,Spencer,235,Two First Names,Spear,131.6,WIN,FALSE,,,,
+2014,6,Caucasion Sasquatch,Ken,142.1,Geoff,Geoff,149.4,LOSS,FALSE,,,,
+2014,6,The Thirteenth District,James,128.5,Johnny Clipboards,Gavin,130.4,LOSS,FALSE,,,,
+2014,6,Reverend Payne,Rob,90.6,Team Charles,Charles,85.7,WIN,FALSE,,,,
+2014,6,Rapid City Monuments,Tsizz,132,Team Foote Longs,Wes,146.7,LOSS,FALSE,,,,
+2014,7,Salsa Dancing,Tom,105.5,Eat The Sandwich,Spencer,135.2,LOSS,FALSE,,,,
+2014,7,Two First Names,Spear,104.2,Caucasion Sasquatch,Ken,133.4,LOSS,FALSE,,,,
+2014,7,Geoff,Geoff,138.1,The Thirteenth District,James,107.3,WIN,FALSE,,,,
+2014,7,Johnny Clipboards,Gavin,158.2,Reverend Payne,Rob,89,WIN,FALSE,,,,
+2014,7,Team Charles,Charles,133.5,Rapid City Monuments,Tsizz,128.6,WIN,FALSE,,,,
+2014,7,Team Foote Longs,Wes,96.5,Gotham City Rogues,Dan,102.5,LOSS,FALSE,,,,
+2014,8,Caucasion Sasquatch,Ken,127.2,Salsa Dancing,Tom,188.6,LOSS,FALSE,,,,
+2014,8,The Thirteenth District,James,147.1,Two First Names,Spear,113.5,WIN,FALSE,,,,
+2014,8,Reverend Payne,Rob,105.8,Geoff,Geoff,153.6,LOSS,FALSE,,,,
+2014,8,Rapid City Monuments,Tsizz,124,Johnny Clipboards,Gavin,153.5,LOSS,FALSE,,,,
+2014,8,Gotham City Rogues,Dan,147.1,Team Charles,Charles,124,WIN,FALSE,,,,
+2014,8,Eat The Sandwich,Spencer,172.2,Team Foote Longs,Wes,148.4,WIN,FALSE,,,,
+2014,9,Salsa Dancing,Tom,133.9,The Thirteenth District,James,92.4,WIN,FALSE,,,,
+2014,9,Two First Names,Spear,101.7,Reverend Payne,Rob,147.1,LOSS,FALSE,,,,
+2014,9,Geoff,Geoff,138.9,Rapid City Monuments,Tsizz,109.9,WIN,FALSE,,,,
+2014,9,Johnny Clipboards,Gavin,144.3,Gotham City Rogues,Dan,133.3,WIN,FALSE,,,,
+2014,9,Team Charles,Charles,109.3,Eat The Sandwich,Spencer,106,WIN,FALSE,,,,
+2014,9,Team Foote Longs,Wes,159.7,Caucasion Sasquatch,Ken,81.4,WIN,FALSE,,,,
+2014,10,Reverend Payne,Rob,107.6,Salsa Dancing,Tom,158.9,LOSS,FALSE,,,,
+2014,10,Rapid City Monuments,Tsizz,115.6,Two First Names,Spear,143.6,LOSS,FALSE,,,,
+2014,10,Gotham City Rogues,Dan,137.2,Geoff,Geoff,144.1,LOSS,FALSE,,,,
+2014,10,Eat The Sandwich,Spencer,125.2,Johnny Clipboards,Gavin,147.4,LOSS,FALSE,,,,
+2014,10,Caucasion Sasquatch,Ken,143.3,Team Charles,Charles,104.6,WIN,FALSE,,,,
+2014,10,The Thirteenth District,James,103.3,Team Foote Longs,Wes,135,LOSS,FALSE,,,,
+2014,11,Salsa Dancing,Tom,157.3,Rapid City Monuments,Tsizz,67.6,WIN,FALSE,,,,
+2014,11,Two First Names,Spear,109,Gotham City Rogues,Dan,117.1,LOSS,FALSE,,,,
+2014,11,Geoff,Geoff,128.5,Eat The Sandwich,Spencer,112.6,WIN,FALSE,,,,
+2014,11,Johnny Clipboards,Gavin,141.7,Caucasion Sasquatch,Ken,91.7,WIN,FALSE,,,,
+2014,11,Team Charles,Charles,131.6,The Thirteenth District,James,135.9,LOSS,FALSE,,,,
+2014,11,Team Foote Longs,Wes,124.3,Reverend Payne,Rob,81.8,WIN,FALSE,,,,
+2014,12,Salsa Dancing,Tom,176.3,Gotham City Rogues,Dan,176.2,WIN,FALSE,,,,
+2014,12,Two First Names,Spear,125.3,Eat The Sandwich,Spencer,138.7,LOSS,FALSE,,,,
+2014,12,Geoff,Geoff,122.3,Caucasion Sasquatch,Ken,100,WIN,FALSE,,,,
+2014,12,Johnny Clipboards,Gavin,172.4,The Thirteenth District,James,102.1,WIN,FALSE,,,,
+2014,12,Team Charles,Charles,106.8,Reverend Payne,Rob,145.2,LOSS,FALSE,,,,
+2014,12,Team Foote Longs,Wes,87.6,Rapid City Monuments,Tsizz,126.2,LOSS,FALSE,,,,
+2014,13,Eat The Sandwich,Spencer,170.5,Salsa Dancing,Tom,168.3,WIN,FALSE,,,,
+2014,13,Caucasion Sasquatch,Ken,118.2,Two First Names,Spear,144.9,LOSS,FALSE,,,,
+2014,13,The Thirteenth District,James,112.6,Geoff,Geoff,157.6,LOSS,FALSE,,,,
+2014,13,Reverend Payne,Rob,127.3,Johnny Clipboards,Gavin,177,LOSS,FALSE,,,,
+2014,13,Rapid City Monuments,Tsizz,146.8,Team Charles,Charles,103.6,WIN,FALSE,,,,
+2014,13,Gotham City Rogues,Dan,124.4,Team Foote Longs,Wes,120.7,WIN,FALSE,,,,
+2014,14,Geoff,Geoff,286.2,Salsa Dancing,Tom,275.5,WIN,TRUE,Winners,1,1,4
+2014,14,Eat The Sandwich,Spencer,311.1,Gavin,Gavin,308.8,WIN,TRUE,Winners,1,2,3
+2014,14,Gotham City Rogues,Dan,217.3,Team Foote Longs,Wes,222,LOSS,TRUE,Consolation,1,5,6
+2014,14,Reverend Payne,Rob,223.9,Two First Names,Spear,295.3,LOSS,TRUE,Consolation,1,7,8
+2014,14,Caucasion Sasquatch,Ken,211.4,Rapid City Monuments,Tsizz,170.8,WIN,TRUE,Consolation,1,9,10
+2014,14,The Thirteenth District,James,240.5,Team Charles,Charles,242.9,LOSS,TRUE,Consolation,1,11,12
+2014,15,Geoff,Geoff,217.1,Eat The Sandwich,Spencer,224.8,LOSS,TRUE,Winners,2,1,2
+2014,15,Johnny Clipboards,Gavin,320.6,Salsa Dancing,Tom,244.3,WIN,TRUE,Winners,2,3,4
+2014,15,Team Foote Longs,Wes,177.1,Two First Names,Spear,194.8,LOSS,TRUE,Consolation,2,6,8
+2014,15,Gotham City Rogues,Dan,213.5,Caucasion Sasquatch,Ken,248.8,LOSS,TRUE,Consolation,2,5,9
+2014,15,Reverend Payne,Rob,253.2,Team Charles,Charles,338.9,LOSS,TRUE,Consolation,2,7,12
+2014,15,Rapid City Monuments,Tsizz,208.6,The Thirteenth District,James,234.9,LOSS,TRUE,Consolation,2,10,11
+2015,1,Eat The Sandwich,Spencer,147.1,Gotham City Rogues,Dan,127.3,WIN,FALSE,,,,
+2015,1,Rapid City Monuments,Tsizz,141.7,Threat Level Midnight,Ken,106.4,WIN,FALSE,,,,
+2015,1,Reverend Payne,Rob,127.9,Republic City Fire Ferrets,James,134.4,LOSS,FALSE,,,,
+2015,1,Former ShepaugTeacher,Spear,159.3,The Buzzards,Tom,115,WIN,FALSE,,,,
+2015,1,Team Foote Longs,Wes,139.1,Paper Thin Walls,Geoff,109.1,WIN,FALSE,,,,
+2015,1,LSC Stud Muffins,Dylan,115,Johnny Man-Zeer,Gavin,142.5,LOSS,FALSE,,,,
+2015,2,Gotham City Rogues,Dan,164,Threat Level Midnight,Ken,129.7,WIN,FALSE,,,,
+2015,2,Republic City Fire Ferrets,James,110.1,Eat The Sandwich,Spencer,115,LOSS,FALSE,,,,
+2015,2,Reverend Payne,Rob,158.4,Rapid City Monuments,Tsizz,130.9,WIN,FALSE,,,,
+2015,2,The Buzzards,Tom,110.8,Paper Thin Walls,Geoff,118.5,LOSS,FALSE,,,,
+2015,2,Johnny Man-Zeer,Gavin,147.9,Former ShepaugTeacher,Spear,113.4,WIN,FALSE,,,,
+2015,2,LSC Stud Muffins,Dylan,89.5,Team Foote Longs,Wes,127.1,LOSS,FALSE,,,,
+2015,3,Republic City Fire Ferrets,James,121.9,Gotham City Rogues,Dan,173.8,LOSS,FALSE,,,,
+2015,3,Threat Level Midnight,Ken,119.6,Reverend Payne,Rob,163,LOSS,FALSE,,,,
+2015,3,Eat The Sandwich,Spencer,164.7,Rapid City Monuments,Tsizz,117.8,WIN,FALSE,,,,
+2015,3,Johnny Man-Zeer,Gavin,112.6,The Buzzards,Tom,157.8,LOSS,FALSE,,,,
+2015,3,Paper Thin Walls,Geoff,132.8,LSC Stud Muffins,Dylan,83.5,WIN,FALSE,,,,
+2015,3,Former ShepaugTeacher,Spear,166.1,Team Foote Longs,Wes,141,WIN,FALSE,,,,
+2015,4,Gotham City Rogues,Dan,103.1,Reverend Payne,Rob,116.7,LOSS,FALSE,,,,
+2015,4,Rapid City Monuments,Tsizz,128.1,Republic City Fire Ferrets,James,106.5,WIN,FALSE,,,,
+2015,4,Eat The Sandwich,Spencer,164.7,Threat Level Midnight,Ken,91.7,WIN,FALSE,,,,
+2015,4,The Buzzards,Tom,75.8,LSC Stud Muffins,Dylan,77.6,LOSS,FALSE,,,,
+2015,4,Team Foote Longs,Wes,105.5,Johnny Man-Zeer,Gavin,119.2,LOSS,FALSE,,,,
+2015,4,Former ShepaugTeacher,Spear,151.6,Paper Thin Walls,Geoff,91.4,WIN,FALSE,,,,
+2015,5,Rapid City Monuments,Tsizz,134.2,Gotham City Rogues,Dan,169,LOSS,FALSE,,,,
+2015,5,Reverend Payne,Rob,137.1,Eat The Sandwich,Spencer,128.9,WIN,FALSE,,,,
+2015,5,Republic City Fire Ferrets,James,171,Threat Level Midnight,Ken,106.3,WIN,FALSE,,,,
+2015,5,Team Foote Longs,Wes,98.4,The Buzzards,Tom,112.5,LOSS,FALSE,,,,
+2015,5,LSC Stud Muffins,Dylan,56.9,Former ShepaugTeacher,Spear,117.3,LOSS,FALSE,,,,
+2015,5,Johnny Man-Zeer,Gavin,151.6,Paper Thin Walls,Geoff,115.9,WIN,FALSE,,,,
+2015,6,Gotham City Rogues,Dan,134.7,The Buzzards,Tom,105.6,WIN,FALSE,,,,
+2015,6,Eat The Sandwich,Spencer,170.2,Former ShepaugTeacher,Spear,148.2,WIN,FALSE,,,,
+2015,6,Threat Level Midnight,Ken,120,Paper Thin Walls,Geoff,115.2,WIN,FALSE,,,,
+2015,6,Republic City Fire Ferrets,James,147.9,Johnny Man-Zeer,Gavin,113.2,WIN,FALSE,,,,
+2015,6,Reverend Payne,Rob,133.2,LSC Stud Muffins,Dylan,98.5,WIN,FALSE,,,,
+2015,6,Rapid City Monuments,Tsizz,146.4,Team Foote Longs,Wes,159.9,LOSS,FALSE,,,,
+2015,7,The Buzzards,Tom,185.9,Eat The Sandwich,Spencer,98.7,WIN,FALSE,,,,
+2015,7,Former ShepaugTeacher,Spear,108,Threat Level Midnight,Ken,120.5,LOSS,FALSE,,,,
+2015,7,Paper Thin Walls,Geoff,108.2,Republic City Fire Ferrets,James,112.3,LOSS,FALSE,,,,
+2015,7,Johnny Man-Zeer,Gavin,170.6,Reverend Payne,Rob,100.9,WIN,FALSE,,,,
+2015,7,LSC Stud Muffins,Dylan,98.1,Rapid City Monuments,Tsizz,147.9,LOSS,FALSE,,,,
+2015,7,Team Foote Longs,Wes,106.8,Gotham City Rogues,Dan,187.5,LOSS,FALSE,,,,
+2015,8,Threat Level Midnight,Ken,124.7,The Buzzards,Tom,155.6,LOSS,FALSE,,,,
+2015,8,Republic City Fire Ferrets,James,189.4,Former ShepaugTeacher,Spear,125.3,WIN,FALSE,,,,
+2015,8,Reverend Payne,Rob,186.7,Paper Thin Walls,Geoff,171.4,WIN,FALSE,,,,
+2015,8,Rapid City Monuments,Tsizz,140,Johnny Man-Zeer,Gavin,127.8,WIN,FALSE,,,,
+2015,8,Gotham City Rogues,Dan,145.8,LSC Stud Muffins,Dylan,86.1,WIN,FALSE,,,,
+2015,8,Eat The Sandwich,Spencer,108.4,Team Foote Longs,Wes,134.8,LOSS,FALSE,,,,
+2015,9,The Buzzards,Tom,178.7,Republic City Fire Ferrets,James,138.2,WIN,FALSE,,,,
+2015,9,Former ShepaugTeacher,Spear,113.6,Reverend Payne,Rob,177.5,LOSS,FALSE,,,,
+2015,9,Paper Thin Walls,Geoff,106.6,Rapid City Monuments,Tsizz,113.3,LOSS,FALSE,,,,
+2015,9,Johnny Man-Zeer,Gavin,160.7,Gotham City Rogues,Dan,126.8,WIN,FALSE,,,,
+2015,9,LSC Stud Muffins,Dylan,120.5,Eat The Sandwich,Spencer,103.1,WIN,FALSE,,,,
+2015,9,Team Foote Longs,Wes,149.8,Threat Level Midnight,Ken,136.4,WIN,FALSE,,,,
+2015,10,Reverend Payne,Rob,114.4,The Buzzards,Tom,159.9,LOSS,FALSE,,,,
+2015,10,Rapid City Monuments,Tsizz,123.8,Former ShepaugTeacher,Spear,152.1,LOSS,FALSE,,,,
+2015,10,Gotham City Rogues,Dan,146.7,Paper Thin Walls,Geoff,124.2,WIN,FALSE,,,,
+2015,10,Eat The Sandwich,Spencer,66.6,Johnny Man-Zeer,Gavin,160.4,LOSS,FALSE,,,,
+2015,10,Threat Level Midnight,Ken,131.9,LSC Stud Muffins,Dylan,96.1,WIN,FALSE,,,,
+2015,10,Republic City Fire Ferrets,James,145.5,Team Foote Longs,Wes,76.2,WIN,FALSE,,,,
+2015,11,The Buzzards,Tom,128.3,Rapid City Monuments,Tsizz,109.3,WIN,FALSE,,,,
+2015,11,Former ShepaugTeacher,Spear,98.6,Gotham City Rogues,Dan,150.3,LOSS,FALSE,,,,
+2015,11,Paper Thin Walls,Geoff,95.7,Eat The Sandwich,Spencer,114.1,LOSS,FALSE,,,,
+2015,11,Johnny Man-Zeer,Gavin,74.7,Threat Level Midnight,Ken,64.2,WIN,FALSE,,,,
+2015,11,LSC Stud Muffins,Dylan,93.6,Republic City Fire Ferrets,James,142.7,LOSS,FALSE,,,,
+2015,11,Team Foote Longs,Wes,92.4,Reverend Payne,Rob,146.8,LOSS,FALSE,,,,
+2015,12,The Buzzards,Tom,144.2,Gotham City Rogues,Dan,134,WIN,FALSE,,,,
+2015,12,Former ShepaugTeacher,Spear,143.7,Eat The Sandwich,Spencer,144.9,LOSS,FALSE,,,,
+2015,12,Paper Thin Walls,Geoff,85.6,Threat Level Midnight,Ken,142.6,LOSS,FALSE,,,,
+2015,12,Johnny Man-Zeer,Gavin,138.4,Republic City Fire Ferrets,James,162.8,LOSS,FALSE,,,,
+2015,12,LSC Stud Muffins,Dylan,105.8,Reverend Payne,Rob,93.1,WIN,FALSE,,,,
+2015,12,Team Foote Longs,Wes,132.1,Rapid City Monuments,Tsizz,136.6,LOSS,FALSE,,,,
+2015,13,Eat The Sandwich,Spencer,188.2,The Buzzards,Tom,176.6,WIN,FALSE,,,,
+2015,13,Threat Level Midnight,Ken,166.8,Former ShepaugTeacher,Spear,126.1,WIN,FALSE,,,,
+2015,13,Republic City Fire Ferrets,James,120.3,Paper Thin Walls,Geoff,135.9,LOSS,FALSE,,,,
+2015,13,Reverend Payne,Rob,181.3,Johnny Man-Zeer,Gavin,159.8,WIN,FALSE,,,,
+2015,13,Rapid City Monuments,Tsizz,139.1,LSC Stud Muffins,Dylan,134.3,WIN,FALSE,,,,
+2015,13,Gotham City Rogues,Dan,106.9,Team Foote Longs,Wes,135.2,LOSS,FALSE,,,,
+2015,14,Reverend Payne,Rob,325.7,Republic City Fire Ferrets,James,303.5,WIN,TRUE,Winners,1,1,4
+2015,14,The Buzzards,Tom,279.2,Gotham City Rogues,Dan,306.5,LOSS,TRUE,Winners,1,2,3
+2015,14,Johnny Man-Zeer,Gavin,258,Eat The Sandwich,Spencer,228.8,WIN,TRUE,Consolation,1,5,6
+2015,14,Rapid City Monuments,Tsizz,266.6,Team Foote Longs,Wes,189.5,WIN,TRUE,Consolation,1,7,8
+2015,14,Former ShepaugTeacher,Spear,284.9,Threat Level Midnight,Ken,288.8,LOSS,TRUE,Consolation,1,9,10
+2015,14,Paper Thin Walls,Geoff,272.5,LSC Stud Muffins,Dylan,198.5,WIN,TRUE,Consolation,1,11,12
+2015,15,Reverend Payne,Rob,255.1,Gotham City Rogues,Dan,269.9,LOSS,TRUE,Winners,2,1,3
+2015,15,The Buzzards,Tom,226.1,Republic City Fire Ferrets,James,192.8,WIN,TRUE,Winners,2,2,4
+2015,15,Johnny Man-Zeer,Gavin,285.9,Rapid City Monuments,Tsizz,238.2,WIN,TRUE,Consolation,2,5,7
+2015,15,Eat The Sandwich,Spencer,180.5,Threat Level Midnight,Ken,286.9,LOSS,TRUE,Consolation,2,6,10
+2015,15,Team Foote Longs,Wes,221.1,Paper Thin Walls,Geoff,281.7,LOSS,TRUE,Consolation,2,8,11
+2015,15,Former ShepaugTeacher,Spear,276.2,LSC Stud Muffins,Dylan,156.2,WIN,TRUE,Consolation,2,9,12
+2016,1,Nothing to see Here,Ken,138.5,Kirk's Sinking Enterprise,James,127.2,WIN,FALSE,,,,
+2016,1,Gotham City Rogues,Dan,131.8,To Me Those BallsArePerfect,Tsizz,120.6,WIN,FALSE,,,,
+2016,1,Eat The Sandwich,Spencer,167.5,Reverend Payne,Rob,164.1,WIN,FALSE,,,,
+2016,1,Former ShepaugTeacher,Spear,123.6,LSC Stud Muffins,Dylan,104.2,WIN,FALSE,,,,
+2016,1,Team Foote Longs,Wes,110.6,Johnny Man-Zeer,Gavin,149.8,LOSS,FALSE,,,,
+2016,1,The Phenomenal Ones,Tom,156.9,Seabass and the Fellas,Geoff,179.3,LOSS,FALSE,,,,
+2016,2,Kirk's Sinking Enterprise,James,123.2,To Me Those BallsArePerfect,Tsizz,160.6,LOSS,FALSE,,,,
+2016,2,Reverend Payne,Rob,151.5,Nothing to see Here,Ken,149.3,WIN,FALSE,,,,
+2016,2,Eat The Sandwich,Spencer,153.2,Gotham City Rogues,Dan,118.2,WIN,FALSE,,,,
+2016,2,LSC Stud Muffins,Dylan,81.6,Johnny Man-Zeer,Gavin,118.1,LOSS,FALSE,,,,
+2016,2,Seabass and the Fellas,Geoff,128.9,Former ShepaugTeacher,Spear,116.7,WIN,FALSE,,,,
+2016,2,The Phenomenal Ones,Tom,144.2,Team Foote Longs,Wes,92.8,WIN,FALSE,,,,
+2016,3,Reverend Payne,Rob,189.8,Kirk's Sinking Enterprise,James,174.4,WIN,FALSE,,,,
+2016,3,To Me Those BallsArePerfect,Tsizz,65,Eat The Sandwich,Spencer,141,LOSS,FALSE,,,,
+2016,3,Nothing to see Here,Ken,153,Gotham City Rogues,Dan,97.5,WIN,FALSE,,,,
+2016,3,Seabass and the Fellas,Geoff,108.7,LSC Stud Muffins,Dylan,134.9,LOSS,FALSE,,,,
+2016,3,Johnny Man-Zeer,Gavin,144.1,The Phenomenal Ones,Tom,144.3,LOSS,FALSE,,,,
+2016,3,Former ShepaugTeacher,Spear,104.9,Team Foote Longs,Wes,120.2,LOSS,FALSE,,,,
+2016,4,Kirk's Sinking Enterprise,James,105.7,Eat The Sandwich,Spencer,110,LOSS,FALSE,,,,
+2016,4,Gotham City Rogues,Dan,74.8,Reverend Payne,Rob,156.9,LOSS,FALSE,,,,
+2016,4,Nothing to see Here,Ken,78.2,To Me Those BallsArePerfect,Tsizz,122.7,LOSS,FALSE,,,,
+2016,4,LSC Stud Muffins,Dylan,134.1,The Phenomenal Ones,Tom,135,LOSS,FALSE,,,,
+2016,4,Team Foote Longs,Wes,127.2,Seabass and the Fellas,Geoff,159,LOSS,FALSE,,,,
+2016,4,Former ShepaugTeacher,Spear,128.4,Johnny Man-Zeer,Gavin,155.6,LOSS,FALSE,,,,
+2016,5,Gotham City Rogues,Dan,94.1,Kirk's Sinking Enterprise,James,160.2,LOSS,FALSE,,,,
+2016,5,Eat The Sandwich,Spencer,136.6,Nothing to see Here,Ken,138.7,LOSS,FALSE,,,,
+2016,5,Reverend Payne,Rob,159.4,To Me Those BallsArePerfect,Tsizz,137.9,WIN,FALSE,,,,
+2016,5,Team Foote Longs,Wes,144.4,LSC Stud Muffins,Dylan,145.9,LOSS,FALSE,,,,
+2016,5,The Phenomenal Ones,Tom,90.6,Former ShepaugTeacher,Spear,93.9,LOSS,FALSE,,,,
+2016,5,Seabass and the Fellas,Geoff,81.2,Johnny Man-Zeer,Gavin,149,LOSS,FALSE,,,,
+2016,6,Kirk's Sinking Enterprise,James,221.6,LSC Stud Muffins,Dylan,96,WIN,FALSE,,,,
+2016,6,Nothing to see Here,Ken,99.6,Former ShepaugTeacher,Spear,81.3,WIN,FALSE,,,,
+2016,6,To Me Those BallsArePerfect,Tsizz,136.5,Johnny Man-Zeer,Gavin,104.9,WIN,FALSE,,,,
+2016,6,Reverend Payne,Rob,120.5,Seabass and the Fellas,Geoff,188.6,LOSS,FALSE,,,,
+2016,6,Eat The Sandwich,Spencer,96.7,The Phenomenal Ones,Tom,118.1,LOSS,FALSE,,,,
+2016,6,Gotham City Rogues,Dan,144.6,Team Foote Longs,Wes,83.4,WIN,FALSE,,,,
+2016,7,LSC Stud Muffins,Dylan,134.9,Nothing to see Here,Ken,131.4,WIN,FALSE,,,,
+2016,7,Former ShepaugTeacher,Spear,156,To Me Those BallsArePerfect,Tsizz,113.9,WIN,FALSE,,,,
+2016,7,Johnny Man-Zeer,Gavin,114.2,Reverend Payne,Rob,190.4,LOSS,FALSE,,,,
+2016,7,Seabass and the Fellas,Geoff,148.9,Eat The Sandwich,Spencer,124.9,WIN,FALSE,,,,
+2016,7,The Phenomenal Ones,Tom,78.8,Gotham City Rogues,Dan,138.9,LOSS,FALSE,,,,
+2016,7,Team Foote Longs,Wes,115.9,Kirk's Sinking Enterprise,James,88.6,WIN,FALSE,,,,
+2016,8,To Me Those BallsArePerfect,Tsizz,62.5,LSC Stud Muffins,Dylan,104,LOSS,FALSE,,,,
+2016,8,Reverend Payne,Rob,152.4,Former ShepaugTeacher,Spear,162.3,LOSS,FALSE,,,,
+2016,8,Eat The Sandwich,Spencer,124.5,Johnny Man-Zeer,Gavin,137.1,LOSS,FALSE,,,,
+2016,8,Gotham City Rogues,Dan,145.9,Seabass and the Fellas,Geoff,96.2,WIN,FALSE,,,,
+2016,8,Kirk's Sinking Enterprise,James,136.4,The Phenomenal Ones,Tom,172.5,LOSS,FALSE,,,,
+2016,8,Nothing to see Here,Ken,108.5,Team Foote Longs,Wes,124.2,LOSS,FALSE,,,,
+2016,9,LSC Stud Muffins,Dylan,143.1,Reverend Payne,Rob,112.5,WIN,FALSE,,,,
+2016,9,Former ShepaugTeacher,Spear,122.4,Eat The Sandwich,Spencer,123.4,LOSS,FALSE,,,,
+2016,9,Johnny Man-Zeer,Gavin,110.7,Gotham City Rogues,Dan,115.1,LOSS,FALSE,,,,
+2016,9,Seabass and the Fellas,Geoff,182.6,Kirk's Sinking Enterprise,James,161.3,WIN,FALSE,,,,
+2016,9,The Phenomenal Ones,Tom,124.7,Nothing to see Here,Ken,131,LOSS,FALSE,,,,
+2016,9,Team Foote Longs,Wes,106.6,To Me Those BallsArePerfect,Tsizz,138.9,LOSS,FALSE,,,,
+2016,10,Eat The Sandwich,Spencer,149.7,LSC Stud Muffins,Dylan,137.1,WIN,FALSE,,,,
+2016,10,Gotham City Rogues,Dan,130.9,Former ShepaugTeacher,Spear,123.8,WIN,FALSE,,,,
+2016,10,Kirk's Sinking Enterprise,James,118.2,Johnny Man-Zeer,Gavin,120.7,LOSS,FALSE,,,,
+2016,10,Nothing to see Here,Ken,158.7,Seabass and the Fellas,Geoff,128,WIN,FALSE,,,,
+2016,10,To Me Those BallsArePerfect,Tsizz,127.7,The Phenomenal Ones,Tom,140.6,LOSS,FALSE,,,,
+2016,10,Reverend Payne,Rob,141.6,Team Foote Longs,Wes,98.6,WIN,FALSE,,,,
+2016,11,LSC Stud Muffins,Dylan,151,Gotham City Rogues,Dan,109.6,WIN,FALSE,,,,
+2016,11,Former ShepaugTeacher,Spear,116.3,Kirk's Sinking Enterprise,James,134.3,LOSS,FALSE,,,,
+2016,11,Johnny Man-Zeer,Gavin,139,Nothing to see Here,Ken,153.8,LOSS,FALSE,,,,
+2016,11,Seabass and the Fellas,Geoff,88.3,To Me Those BallsArePerfect,Tsizz,129.3,LOSS,FALSE,,,,
+2016,11,The Phenomenal Ones,Tom,143.8,Reverend Payne,Rob,158.2,LOSS,FALSE,,,,
+2016,11,Team Foote Longs,Wes,97.9,Eat The Sandwich,Spencer,84.3,WIN,FALSE,,,,
+2016,12,LSC Stud Muffins,Dylan,142.8,Kirk's Sinking Enterprise,James,199.2,LOSS,FALSE,,,,
+2016,12,Former ShepaugTeacher,Spear,117.3,Nothing to see Here,Ken,122.8,LOSS,FALSE,,,,
+2016,12,Johnny Man-Zeer,Gavin,122.9,To Me Those BallsArePerfect,Tsizz,129.7,LOSS,FALSE,,,,
+2016,12,Seabass and the Fellas,Geoff,111.6,Reverend Payne,Rob,186.7,LOSS,FALSE,,,,
+2016,12,The Phenomenal Ones,Tom,127.2,Eat The Sandwich,Spencer,94.3,WIN,FALSE,,,,
+2016,12,Team Foote Longs,Wes,96.9,Gotham City Rogues,Dan,109,LOSS,FALSE,,,,
+2016,13,Nothing to see Here,Ken,103,LSC Stud Muffins,Dylan,178.5,LOSS,FALSE,,,,
+2016,13,To Me Those BallsArePerfect,Tsizz,117.3,Former ShepaugTeacher,Spear,132.3,LOSS,FALSE,,,,
+2016,13,Reverend Payne,Rob,151.8,Johnny Man-Zeer,Gavin,118.4,WIN,FALSE,,,,
+2016,13,Eat The Sandwich,Spencer,143,Seabass and the Fellas,Geoff,138,WIN,FALSE,,,,
+2016,13,Gotham City Rogues,Dan,99.3,The Phenomenal Ones,Tom,129,LOSS,FALSE,,,,
+2016,13,Kirk's Sinking Enterprise,James,147.5,Team Foote Longs,Wes,129.4,WIN,FALSE,,,,
+2016,14,LSC Stud Muffins,Dylan,174.6,To Me Those BallsArePerfect,Tsizz,107.2,WIN,FALSE,,,,
+2016,14,Former ShepaugTeacher,Spear,60.1,Reverend Payne,Rob,102,LOSS,FALSE,,,,
+2016,14,Johnny Man-Zeer,Gavin,116.5,Eat The Sandwich,Spencer,104,WIN,FALSE,,,,
+2016,14,Seabass and the Fellas,Geoff,106.2,Gotham City Rogues,Dan,128.5,LOSS,FALSE,,,,
+2016,14,The Phenomenal Ones,Tom,117.1,Kirk's Sinking Enterprise,James,131,LOSS,FALSE,,,,
+2016,14,Team Foote Longs,Wes,114.6,Nothing to see Here,Ken,111.8,WIN,FALSE,,,,
+2016,15,Reverend Payne,Rob,138.9,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2016,15,Nothing to see Here,Ken,134.1,Gotham City Rogues,Dan,93.8,WIN,TRUE,Winners,1,4,5
+2016,15,The Phenomenal Ones,Tom,87.2,Johnny Man-Zeer,Gavin,159,LOSS,TRUE,Winners,1,3,6
+2016,15,LSC Stud Muffins,Dylan,123.2,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2016,15,Eat The Sandwich,Spencer,90.3,Kirk's Sinking Enterprise,James,146.1,LOSS,TRUE,Consolation,1,7,8
+2016,15,Seabass and the Fellas,Geoff,173.5,To Me Those BallsArePerfect,Tsizz,99.9,WIN,TRUE,Consolation,1,9,10
+2016,15,Former ShepaugTeacher,Spear,123,Team Foote Longs,Wes,93.1,WIN,TRUE,Consolation,1,11,12
+2016,16,Reverend Payne,Rob,152.2,Nothing to see Here,Ken,155.1,LOSS,TRUE,Winners,2,1,4
+2016,16,LSC Stud Muffins,Dylan,187.6,Johnny Man-Zeer,Gavin,122.8,WIN,TRUE,Winners,2,2,6
+2016,16,The Phenomenal Ones,Tom,133.8,Gotham City Rogues,Dan,128.4,WIN,TRUE,Winners,2,3,5
+2016,16,Kirk's Sinking Enterprise,James,168.6,Seabass and the Fellas,Geoff,94.8,WIN,TRUE,Consolation,2,8,9
+2016,16,Eat The Sandwich,Spencer,93.6,Former ShepaugTeacher,Spear,87,WIN,TRUE,Consolation,2,7,11
+2016,16,To Me Those BallsArePerfect,Tsizz,117,Team Foote Longs,Wes,49.6,WIN,TRUE,Consolation,2,10,12
+2016,17,LSC Stud Muffins,Dylan,139.3,Nothing to see Here,Ken,123.9,WIN,TRUE,Winners,3,2,4
+2016,17,Reverend Payne,Rob,161.1,Johnny Man-Zeer,Gavin,80,WIN,TRUE,Winners,3,1,6
+2016,17,The Phenomenal Ones,Tom,80.4,Gotham City Rogues,Dan,88.7,LOSS,TRUE,Winners,3,3,5
+2016,17,Eat The Sandwich,Spencer,73.5,Kirk's Sinking Enterprise,James,110.6,LOSS,TRUE,Consolation,3,7,8
+2016,17,Seabass and the Fellas,Geoff,163.1,To Me Those BallsArePerfect,Tsizz,106.7,WIN,TRUE,Consolation,3,9,10
+2016,17,Former ShepaugTeacher,Spear,86.4,Team Foote Longs,Wes,84.7,WIN,TRUE,Consolation,3,11,12
+2017,1,Thanks.,Tsizz,117.6,Reverend Payne,Rob,112.8,WIN,FALSE,,,,
+2017,1,Captain Kirk's Enterprise,James,151.1,Eat The Sandwich,Spencer,103.5,WIN,FALSE,,,,
+2017,1,Nothing to see Here,Ken,92.3,Gotham City Rogues,Dan,67.2,WIN,FALSE,,,,
+2017,1,Team Foote Longs,Wes,130.4,The J.O.B. Squad,Tom,111.8,WIN,FALSE,,,,
+2017,1,Pray For Johnny Man-Zeer,Gavin,122,Seabass and the Fellas,Geoff,110.6,WIN,FALSE,,,,
+2017,1,LSC Stud Muffins,Dylan,114.6,Former ShepaugTeacher,Spear,131.9,LOSS,FALSE,,,,
+2017,2,Reverend Payne,Rob,122.9,Eat The Sandwich,Spencer,106.3,WIN,FALSE,,,,
+2017,2,Gotham City Rogues,Dan,147,Thanks.,Tsizz,120.2,WIN,FALSE,,,,
+2017,2,Nothing to see Here,Ken,101.4,Captain Kirk's Enterprise,James,129.7,LOSS,FALSE,,,,
+2017,2,The J.O.B. Squad,Tom,106.6,Seabass and the Fellas,Geoff,161.1,LOSS,FALSE,,,,
+2017,2,Former ShepaugTeacher,Spear,104.6,Team Foote Longs,Wes,85.5,WIN,FALSE,,,,
+2017,2,LSC Stud Muffins,Dylan,132.2,Pray For Johnny Man-Zeer,Gavin,126,WIN,FALSE,,,,
+2017,3,Gotham City Rogues,Dan,139.3,Reverend Payne,Rob,143.4,LOSS,FALSE,,,,
+2017,3,Eat The Sandwich,Spencer,75.6,Nothing to see Here,Ken,128.4,LOSS,FALSE,,,,
+2017,3,Thanks.,Tsizz,122.3,Captain Kirk's Enterprise,James,160.9,LOSS,FALSE,,,,
+2017,3,Former ShepaugTeacher,Spear,133.1,The J.O.B. Squad,Tom,72.3,WIN,FALSE,,,,
+2017,3,Seabass and the Fellas,Geoff,110.3,LSC Stud Muffins,Dylan,109.4,WIN,FALSE,,,,
+2017,3,Team Foote Longs,Wes,161.5,Pray For Johnny Man-Zeer,Gavin,181,LOSS,FALSE,,,,
+2017,4,Reverend Payne,Rob,87.8,Nothing to see Here,Ken,86,WIN,FALSE,,,,
+2017,4,Captain Kirk's Enterprise,James,129.6,Gotham City Rogues,Dan,107.3,WIN,FALSE,,,,
+2017,4,Thanks.,Tsizz,126.8,Eat The Sandwich,Spencer,129.9,LOSS,FALSE,,,,
+2017,4,The J.O.B. Squad,Tom,115.9,LSC Stud Muffins,Dylan,131.4,LOSS,FALSE,,,,
+2017,4,Pray For Johnny Man-Zeer,Gavin,119.7,Former ShepaugTeacher,Spear,82.4,WIN,FALSE,,,,
+2017,4,Team Foote Longs,Wes,126.3,Seabass and the Fellas,Geoff,170,LOSS,FALSE,,,,
+2017,5,Captain Kirk's Enterprise,James,148.9,Reverend Payne,Rob,136.6,WIN,FALSE,,,,
+2017,5,Nothing to see Here,Ken,106.1,Thanks.,Tsizz,112.1,LOSS,FALSE,,,,
+2017,5,Gotham City Rogues,Dan,89.5,Eat The Sandwich,Spencer,104.3,LOSS,FALSE,,,,
+2017,5,Pray For Johnny Man-Zeer,Gavin,142.1,The J.O.B. Squad,Tom,155.9,LOSS,FALSE,,,,
+2017,5,LSC Stud Muffins,Dylan,137.5,Team Foote Longs,Wes,94.3,WIN,FALSE,,,,
+2017,5,Former ShepaugTeacher,Spear,141,Seabass and the Fellas,Geoff,119.6,WIN,FALSE,,,,
+2017,6,Reverend Payne,Rob,98.8,The J.O.B. Squad,Tom,146.1,LOSS,FALSE,,,,
+2017,6,Thanks.,Tsizz,96.7,Team Foote Longs,Wes,128.4,LOSS,FALSE,,,,
+2017,6,Eat The Sandwich,Spencer,149.7,Seabass and the Fellas,Geoff,88.2,WIN,FALSE,,,,
+2017,6,Gotham City Rogues,Dan,134.2,Former ShepaugTeacher,Spear,140.8,LOSS,FALSE,,,,
+2017,6,Nothing to see Here,Ken,113,LSC Stud Muffins,Dylan,107.1,WIN,FALSE,,,,
+2017,6,Captain Kirk's Enterprise,James,165.6,Pray For Johnny Man-Zeer,Gavin,153.6,WIN,FALSE,,,,
+2017,7,The J.O.B. Squad,Tom,179.6,Thanks.,Tsizz,160.3,WIN,FALSE,,,,
+2017,7,Team Foote Longs,Wes,118.8,Eat The Sandwich,Spencer,88.6,WIN,FALSE,,,,
+2017,7,Seabass and the Fellas,Geoff,129.1,Gotham City Rogues,Dan,84.7,WIN,FALSE,,,,
+2017,7,Former ShepaugTeacher,Spear,92.1,Nothing to see Here,Ken,139,LOSS,FALSE,,,,
+2017,7,LSC Stud Muffins,Dylan,75,Captain Kirk's Enterprise,James,141.9,LOSS,FALSE,,,,
+2017,7,Pray For Johnny Man-Zeer,Gavin,85.5,Reverend Payne,Rob,91.8,LOSS,FALSE,,,,
+2017,8,Eat The Sandwich,Spencer,131,The J.O.B. Squad,Tom,117.2,WIN,FALSE,,,,
+2017,8,Gotham City Rogues,Dan,142.5,Team Foote Longs,Wes,112.4,WIN,FALSE,,,,
+2017,8,Nothing to see Here,Ken,160.5,Seabass and the Fellas,Geoff,137.5,WIN,FALSE,,,,
+2017,8,Captain Kirk's Enterprise,James,115.9,Former ShepaugTeacher,Spear,141.4,LOSS,FALSE,,,,
+2017,8,Reverend Payne,Rob,96.8,LSC Stud Muffins,Dylan,90.3,WIN,FALSE,,,,
+2017,8,Thanks.,Tsizz,113.2,Pray For Johnny Man-Zeer,Gavin,140.8,LOSS,FALSE,,,,
+2017,9,The J.O.B. Squad,Tom,118.1,Gotham City Rogues,Dan,157.6,LOSS,FALSE,,,,
+2017,9,Team Foote Longs,Wes,106.1,Nothing to see Here,Ken,114.3,LOSS,FALSE,,,,
+2017,9,Seabass and the Fellas,Geoff,111.5,Captain Kirk's Enterprise,James,80.1,WIN,FALSE,,,,
+2017,9,Former ShepaugTeacher,Spear,94.7,Reverend Payne,Rob,111.7,LOSS,FALSE,,,,
+2017,9,LSC Stud Muffins,Dylan,102.5,Thanks.,Tsizz,149.3,LOSS,FALSE,,,,
+2017,9,Pray For Johnny Man-Zeer,Gavin,151.4,Eat The Sandwich,Spencer,99.9,WIN,FALSE,,,,
+2017,10,Nothing to see Here,Ken,131.6,The J.O.B. Squad,Tom,121.5,WIN,FALSE,,,,
+2017,10,Captain Kirk's Enterprise,James,116.4,Team Foote Longs,Wes,89.1,WIN,FALSE,,,,
+2017,10,Reverend Payne,Rob,109.8,Seabass and the Fellas,Geoff,83.5,WIN,FALSE,,,,
+2017,10,Thanks.,Tsizz,113.6,Former ShepaugTeacher,Spear,165.9,LOSS,FALSE,,,,
+2017,10,Eat The Sandwich,Spencer,124.9,LSC Stud Muffins,Dylan,119.6,WIN,FALSE,,,,
+2017,10,Gotham City Rogues,Dan,159.7,Pray For Johnny Man-Zeer,Gavin,148.4,WIN,FALSE,,,,
+2017,11,The J.O.B. Squad,Tom,132.2,Captain Kirk's Enterprise,James,104.6,WIN,FALSE,,,,
+2017,11,Team Foote Longs,Wes,104.2,Reverend Payne,Rob,164.2,LOSS,FALSE,,,,
+2017,11,Seabass and the Fellas,Geoff,143.2,Thanks.,Tsizz,139.2,WIN,FALSE,,,,
+2017,11,Former ShepaugTeacher,Spear,135.2,Eat The Sandwich,Spencer,74.2,WIN,FALSE,,,,
+2017,11,LSC Stud Muffins,Dylan,97,Gotham City Rogues,Dan,142.5,LOSS,FALSE,,,,
+2017,11,Pray For Johnny Man-Zeer,Gavin,146,Nothing to see Here,Ken,139.5,WIN,FALSE,,,,
+2017,12,The J.O.B. Squad,Tom,104,Reverend Payne,Rob,105.9,LOSS,FALSE,,,,
+2017,12,Team Foote Longs,Wes,125.7,Thanks.,Tsizz,127.9,LOSS,FALSE,,,,
+2017,12,Seabass and the Fellas,Geoff,185.3,Eat The Sandwich,Spencer,97.5,WIN,FALSE,,,,
+2017,12,Former ShepaugTeacher,Spear,88.5,Gotham City Rogues,Dan,163.6,LOSS,FALSE,,,,
+2017,12,LSC Stud Muffins,Dylan,136.1,Nothing to see Here,Ken,103.6,WIN,FALSE,,,,
+2017,12,Pray For Johnny Man-Zeer,Gavin,178.6,Captain Kirk's Enterprise,James,116.3,WIN,FALSE,,,,
+2017,13,Thanks.,Tsizz,147,The J.O.B. Squad,Tom,130.9,WIN,FALSE,,,,
+2017,13,Eat The Sandwich,Spencer,75.9,Team Foote Longs,Wes,105.3,LOSS,FALSE,,,,
+2017,13,Gotham City Rogues,Dan,108.6,Seabass and the Fellas,Geoff,144.7,LOSS,FALSE,,,,
+2017,13,Nothing to see Here,Ken,161.1,Former ShepaugTeacher,Spear,119.2,WIN,FALSE,,,,
+2017,13,Captain Kirk's Enterprise,James,92.5,LSC Stud Muffins,Dylan,106.8,LOSS,FALSE,,,,
+2017,13,Reverend Payne,Rob,169.6,Pray For Johnny Man-Zeer,Gavin,117.7,WIN,FALSE,,,,
+2017,14,Reverend Payne,Rob,93.4,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2017,14,Nothing to see Here,Ken,142.3,Former ShepaugTeacher,Spear,122.5,WIN,TRUE,Winners,1,4,5
+2017,14,Captain Kirk's Enterprise,James,121.1,Pray For Johnny Man-Zeer,Gavin,145.5,LOSS,TRUE,Winners,1,3,6
+2017,14,Seabass and the Fellas,Geoff,120.4,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2017,14,Gotham City Rogues,Dan,99.7,Thanks.,Tsizz,138.6,LOSS,TRUE,Consolation,1,7,8
+2017,14,LSC Stud Muffins,Dylan,152.2,Eat The Sandwich,Spencer,106.3,WIN,TRUE,Consolation,1,9,10
+2017,14,The J.O.B. Squad,Tom,149.5,Team Foote Longs,Wes,139.2,WIN,TRUE,Consolation,1,11,12
+2017,15,Reverend Payne,Rob,133.2,Nothing to see Here,Ken,94.8,WIN,TRUE,Winners,2,1,4
+2017,15,Seabass and the Fellas,Geoff,145.3,Pray For Johnny Man-Zeer,Gavin,141.1,WIN,TRUE,Winners,2,2,6
+2017,15,Captain Kirk's Enterprise,James,150.1,Former ShepaugTeacher,Spear,128.6,WIN,TRUE,Winners,2,3,5
+2017,15,Thanks.,Tsizz,125.2,LSC Stud Muffins,Dylan,130.2,LOSS,TRUE,Consolation,2,8,9
+2017,15,Gotham City Rogues,Dan,141.9,The J.O.B. Squad,Tom,137.8,WIN,TRUE,Consolation,2,7,11
+2017,15,Eat The Sandwich,Spencer,150.7,Team Foote Longs,Wes,118.9,WIN,TRUE,Consolation,2,10,12
+2017,16,Reverend Payne,Rob,104.9,Seabass and the Fellas,Geoff,140.3,LOSS,TRUE,Winners,3,1,2
+2017,16,Nothing to see Here,Ken,126.6,Pray For Johnny Man-Zeer,Gavin,128.8,LOSS,TRUE,Winners,3,4,6
+2017,16,Captain Kirk's Enterprise,James,133.4,Former ShepaugTeacher,Spear,119.5,WIN,TRUE,Winners,3,3,5
+2017,16,Gotham City Rogues,Dan,127.4,LSC Stud Muffins,Dylan,100.3,WIN,TRUE,Consolation,3,7,9
+2017,16,Thanks.,Tsizz,67.5,Eat The Sandwich,Spencer,72.5,LOSS,TRUE,Consolation,3,8,10
+2017,16,The J.O.B. Squad,Tom,128.2,Team Foote Longs,Wes,144.7,LOSS,TRUE,Consolation,3,11,12
+2018,1,Reverend Payne,Rob,131.9,Eat The Sandwich,Spencer,119.9,WIN,FALSE,,,,
+2018,1,Ez Win 4U,Ken,138.5,Gotham City Rogues,Dan,196.1,LOSS,FALSE,,,,
+2018,1,Team To Be Named Later,James,150.5,Spock's 1995 Toyota Camry,Tsizz,138.1,WIN,FALSE,,,,
+2018,1,Team Foote Longs,Wes,95.2,LSC Stud Muffins,Dylan,84.7,WIN,FALSE,,,,
+2018,1,Seabass and the Fellas,Geoff,133.7,Former ShepaugTeacher,Spear,133.7,TIE,FALSE,,,,
+2018,1,Trust The Process,Tom,116.7,The Comeback of Johnny Man-Zeer,Gavin,152.9,LOSS,FALSE,,,,
+2018,2,Eat The Sandwich,Spencer,131.2,Gotham City Rogues,Dan,141.2,LOSS,FALSE,,,,
+2018,2,Spock's 1995 Toyota Camry,Tsizz,170.5,Reverend Payne,Rob,175,LOSS,FALSE,,,,
+2018,2,Team To Be Named Later,James,134.8,Ez Win 4U,Ken,105.5,WIN,FALSE,,,,
+2018,2,LSC Stud Muffins,Dylan,118.7,Former ShepaugTeacher,Spear,136.5,LOSS,FALSE,,,,
+2018,2,The Comeback of Johnny Man-Zeer,Gavin,140.2,Team Foote Longs,Wes,93.7,WIN,FALSE,,,,
+2018,2,Trust The Process,Tom,177.1,Seabass and the Fellas,Geoff,120.8,WIN,FALSE,,,,
+2018,3,Spock's 1995 Toyota Camry,Tsizz,107.9,Eat The Sandwich,Spencer,114.3,LOSS,FALSE,,,,
+2018,3,Gotham City Rogues,Dan,111.9,Team To Be Named Later,James,147.4,LOSS,FALSE,,,,
+2018,3,Reverend Payne,Rob,148.6,Ez Win 4U,Ken,129,WIN,FALSE,,,,
+2018,3,The Comeback of Johnny Man-Zeer,Gavin,129,LSC Stud Muffins,Dylan,153.4,LOSS,FALSE,,,,
+2018,3,Former ShepaugTeacher,Spear,148.1,Trust The Process,Tom,127.1,WIN,FALSE,,,,
+2018,3,Team Foote Longs,Wes,67.2,Seabass and the Fellas,Geoff,121.1,LOSS,FALSE,,,,
+2018,4,Eat The Sandwich,Spencer,109.7,Team To Be Named Later,James,113.7,LOSS,FALSE,,,,
+2018,4,Ez Win 4U,Ken,150.9,Spock's 1995 Toyota Camry,Tsizz,161.3,LOSS,FALSE,,,,
+2018,4,Reverend Payne,Rob,137.4,Gotham City Rogues,Dan,128.5,WIN,FALSE,,,,
+2018,4,LSC Stud Muffins,Dylan,173.4,Trust The Process,Tom,139.4,WIN,FALSE,,,,
+2018,4,Seabass and the Fellas,Geoff,149.1,The Comeback of Johnny Man-Zeer,Gavin,168.4,LOSS,FALSE,,,,
+2018,4,Team Foote Longs,Wes,94.4,Former ShepaugTeacher,Spear,179.6,LOSS,FALSE,,,,
+2018,5,Ez Win 4U,Ken,111.1,Eat The Sandwich,Spencer,86.1,WIN,FALSE,,,,
+2018,5,Team To Be Named Later,James,131.3,Reverend Payne,Rob,125.3,WIN,FALSE,,,,
+2018,5,Spock's 1995 Toyota Camry,Tsizz,83.1,Gotham City Rogues,Dan,184.8,LOSS,FALSE,,,,
+2018,5,Seabass and the Fellas,Geoff,96,LSC Stud Muffins,Dylan,119.5,LOSS,FALSE,,,,
+2018,5,Trust The Process,Tom,139.3,Team Foote Longs,Wes,95.7,WIN,FALSE,,,,
+2018,5,The Comeback of Johnny Man-Zeer,Gavin,170.8,Former ShepaugTeacher,Spear,145.2,WIN,FALSE,,,,
+2018,6,Eat The Sandwich,Spencer,128.4,LSC Stud Muffins,Dylan,148.1,LOSS,FALSE,,,,
+2018,6,Reverend Payne,Rob,120,Team Foote Longs,Wes,113.8,WIN,FALSE,,,,
+2018,6,Gotham City Rogues,Dan,130.2,Former ShepaugTeacher,Spear,146.6,LOSS,FALSE,,,,
+2018,6,Spock's 1995 Toyota Camry,Tsizz,123.4,The Comeback of Johnny Man-Zeer,Gavin,137.9,LOSS,FALSE,,,,
+2018,6,Team To Be Named Later,James,140.1,Trust The Process,Tom,170.3,LOSS,FALSE,,,,
+2018,6,Ez Win 4U,Ken,107.8,Seabass and the Fellas,Geoff,132.7,LOSS,FALSE,,,,
+2018,7,LSC Stud Muffins,Dylan,72.5,Reverend Payne,Rob,112.9,LOSS,FALSE,,,,
+2018,7,Team Foote Longs,Wes,110.3,Gotham City Rogues,Dan,98.7,WIN,FALSE,,,,
+2018,7,Former ShepaugTeacher,Spear,155.3,Spock's 1995 Toyota Camry,Tsizz,176.6,LOSS,FALSE,,,,
+2018,7,The Comeback of Johnny Man-Zeer,Gavin,133.3,Team To Be Named Later,James,140.1,LOSS,FALSE,,,,
+2018,7,Trust The Process,Tom,138.7,Ez Win 4U,Ken,105.3,WIN,FALSE,,,,
+2018,7,Seabass and the Fellas,Geoff,119.3,Eat The Sandwich,Spencer,131.3,LOSS,FALSE,,,,
+2018,8,Gotham City Rogues,Dan,167.8,LSC Stud Muffins,Dylan,61.2,WIN,FALSE,,,,
+2018,8,Spock's 1995 Toyota Camry,Tsizz,145.4,Team Foote Longs,Wes,121.7,WIN,FALSE,,,,
+2018,8,Team To Be Named Later,James,145.5,Former ShepaugTeacher,Spear,140.1,WIN,FALSE,,,,
+2018,8,Ez Win 4U,Ken,178.5,The Comeback of Johnny Man-Zeer,Gavin,161.8,WIN,FALSE,,,,
+2018,8,Eat The Sandwich,Spencer,116.1,Trust The Process,Tom,160.2,LOSS,FALSE,,,,
+2018,8,Reverend Payne,Rob,140.7,Seabass and the Fellas,Geoff,128.6,WIN,FALSE,,,,
+2018,9,LSC Stud Muffins,Dylan,86.1,Spock's 1995 Toyota Camry,Tsizz,114.7,LOSS,FALSE,,,,
+2018,9,Team Foote Longs,Wes,116.9,Team To Be Named Later,James,168.7,LOSS,FALSE,,,,
+2018,9,Former ShepaugTeacher,Spear,147.2,Ez Win 4U,Ken,116.1,WIN,FALSE,,,,
+2018,9,The Comeback of Johnny Man-Zeer,Gavin,129.4,Eat The Sandwich,Spencer,122.8,WIN,FALSE,,,,
+2018,9,Trust The Process,Tom,113.6,Reverend Payne,Rob,129.5,LOSS,FALSE,,,,
+2018,9,Seabass and the Fellas,Geoff,130.4,Gotham City Rogues,Dan,151.1,LOSS,FALSE,,,,
+2018,10,Team To Be Named Later,James,162.2,LSC Stud Muffins,Dylan,150.9,WIN,FALSE,,,,
+2018,10,Ez Win 4U,Ken,156.5,Team Foote Longs,Wes,92.5,WIN,FALSE,,,,
+2018,10,Eat The Sandwich,Spencer,102.3,Former ShepaugTeacher,Spear,144,LOSS,FALSE,,,,
+2018,10,Reverend Payne,Rob,153.8,The Comeback of Johnny Man-Zeer,Gavin,167.9,LOSS,FALSE,,,,
+2018,10,Gotham City Rogues,Dan,153.3,Trust The Process,Tom,144.4,WIN,FALSE,,,,
+2018,10,Spock's 1995 Toyota Camry,Tsizz,156.4,Seabass and the Fellas,Geoff,117.5,WIN,FALSE,,,,
+2018,11,LSC Stud Muffins,Dylan,95.5,Ez Win 4U,Ken,91.4,WIN,FALSE,,,,
+2018,11,Team Foote Longs,Wes,102.7,Eat The Sandwich,Spencer,90.5,WIN,FALSE,,,,
+2018,11,Former ShepaugTeacher,Spear,106.4,Reverend Payne,Rob,178.6,LOSS,FALSE,,,,
+2018,11,The Comeback of Johnny Man-Zeer,Gavin,117.8,Gotham City Rogues,Dan,145.8,LOSS,FALSE,,,,
+2018,11,Trust The Process,Tom,125.3,Spock's 1995 Toyota Camry,Tsizz,178.1,LOSS,FALSE,,,,
+2018,11,Seabass and the Fellas,Geoff,108.7,Team To Be Named Later,James,186.3,LOSS,FALSE,,,,
+2018,12,LSC Stud Muffins,Dylan,86.8,Eat The Sandwich,Spencer,120.5,LOSS,FALSE,,,,
+2018,12,Team Foote Longs,Wes,113,Reverend Payne,Rob,144,LOSS,FALSE,,,,
+2018,12,Former ShepaugTeacher,Spear,119.9,Gotham City Rogues,Dan,161.4,LOSS,FALSE,,,,
+2018,12,The Comeback of Johnny Man-Zeer,Gavin,169.8,Spock's 1995 Toyota Camry,Tsizz,187.7,LOSS,FALSE,,,,
+2018,12,Trust The Process,Tom,132.7,Team To Be Named Later,James,109.8,WIN,FALSE,,,,
+2018,12,Seabass and the Fellas,Geoff,82.9,Ez Win 4U,Ken,161.3,LOSS,FALSE,,,,
+2018,13,Gotham City Rogues,Dan,121.6,LSC Stud Muffins,Dylan,98.4,WIN,FALSE,,,,
+2018,13,Eat The Sandwich,Spencer,96.2,Spock's 1995 Toyota Camry,Tsizz,161.5,LOSS,FALSE,,,,
+2018,13,Team To Be Named Later,James,133.1,Former ShepaugTeacher,Spear,114.6,WIN,FALSE,,,,
+2018,13,Ez Win 4U,Ken,114,The Comeback of Johnny Man-Zeer,Gavin,139.2,LOSS,FALSE,,,,
+2018,13,Team Foote Longs,Wes,95.8,Trust The Process,Tom,123.6,LOSS,FALSE,,,,
+2018,13,Reverend Payne,Rob,93.1,Seabass and the Fellas,Geoff,101.4,LOSS,FALSE,,,,
+2018,14,Team To Be Named Later,James,129.9,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2018,14,Gotham City Rogues,Dan,161.8,Spock's 1995 Toyota Camry,Tsizz,152.7,WIN,TRUE,Winners,1,4,5
+2018,14,Reverend Payne,Rob,128.8,Trust The Process,Tom,108.5,WIN,TRUE,Winners,1,3,6
+2018,14,The Comeback of Johnny Man-Zeer,Gavin,104.7,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2018,14,Former ShepaugTeacher,Spear,135.3,LSC Stud Muffins,Dylan,109.6,WIN,TRUE,Consolation,1,7,8
+2018,14,Ez Win 4U,Ken,104.7,Seabass and the Fellas,Geoff,114.4,LOSS,TRUE,Consolation,1,9,10
+2018,14,Eat The Sandwich,Spencer,112.9,Team Foote Longs,Wes,90.6,WIN,TRUE,Consolation,1,11,12
+2018,15,Team To Be Named Later,James,127.4,Gotham City Rogues,Dan,75.8,WIN,TRUE,Winners,2,1,4
+2018,15,The Comeback of Johnny Man-Zeer,Gavin,136.8,Reverend Payne,Rob,133.7,WIN,TRUE,Winners,2,2,3
+2018,15,Spock's 1995 Toyota Camry,Tsizz,81.8,Trust The Process,Tom,106.6,LOSS,TRUE,Winners,2,5,6
+2018,15,Former ShepaugTeacher,Spear,106.3,Seabass and the Fellas,Geoff,125.9,LOSS,TRUE,Consolation,2,7,10
+2018,15,LSC Stud Muffins,Dylan,81.7,Eat The Sandwich,Spencer,121.2,LOSS,TRUE,Consolation,2,8,11
+2018,15,Ez Win 4U,Ken,97.2,Team Foote Longs,Wes,127.4,LOSS,TRUE,Consolation,2,9,12
+2018,16,Team To Be Named Later,James,205.2,The Comeback of Johnny Man-Zeer,Gavin,180.6,WIN,TRUE,Winners,3,1,2
+2018,16,Reverend Payne,Rob,142.5,Gotham City Rogues,Dan,118.7,WIN,TRUE,Winners,3,3,4
+2018,16,Spock's 1995 Toyota Camry,Tsizz,124.2,Trust The Process,Tom,107.6,WIN,TRUE,Winners,3,5,6
+2018,16,Seabass and the Fellas,Geoff,89.8,Eat The Sandwich,Spencer,94,LOSS,TRUE,Consolation,3,10,11
+2018,16,Former ShepaugTeacher,Spear,155.1,Team Foote Longs,Wes,126.4,WIN,TRUE,Consolation,3,7,12
+2018,16,LSC Stud Muffins,Dylan,97,Ez Win 4U,Ken,108.8,LOSS,TRUE,Consolation,3,8,9
+2019,1,SCOTTS TOTS,Ken,115.1,The Thirteenth District,James,98.1,WIN,FALSE,,,,
+2019,1,Eat The Sandwich,Spencer,156.6,Gotham City Rogues,Dan,95,WIN,FALSE,,,,
+2019,1,Subverted Expectations,Tsizz,128.1,Reverend Payne,Rob,127.7,WIN,FALSE,,,,
+2019,1,Clutch Gene,Spear,93.2,Trust The Process,Tom,127.8,LOSS,FALSE,,,,
+2019,1,The Comeback of Johnny Man-Zeer,Gavin,140.8,Seabass and the Fellas,Geoff,186.4,LOSS,FALSE,,,,
+2019,1,LSC Stud Muffins,Dylan,159.1,Victim Complexes,Wes,165.4,LOSS,FALSE,,,,
+2019,2,Gotham City Rogues,Dan,134.1,Reverend Payne,Rob,148.9,LOSS,FALSE,,,,
+2019,2,SCOTTS TOTS,Ken,97.4,Rapid City Monuments,Tsizz,83.8,WIN,FALSE,,,,
+2019,2,John Loves Dogs,James,176.1,Eat The Sandwich,Spencer,136.7,WIN,FALSE,,,,
+2019,2,Trust The Process,Tom,120.4,LSC Stud Muffins,Dylan,133.3,LOSS,FALSE,,,,
+2019,2,The Comeback of Johnny Man-Zeer,Gavin,111.5,Clutch Gene,Spear,112.1,LOSS,FALSE,,,,
+2019,2,Victim Complexes,Wes,149.6,Seabass and the Fellas,Geoff,116.9,WIN,FALSE,,,,
+2019,3,Gotham City Rogues,Dan,96.1,SCOTTS TOTS,Ken,132,LOSS,FALSE,,,,
+2019,3,John Loves Dogs,James,134.4,Rapid City Monuments,Tsizz,145.8,LOSS,FALSE,,,,
+2019,3,Reverend Payne,Rob,144.6,Eat The Sandwich,Spencer,190.3,LOSS,FALSE,,,,
+2019,3,Seabass and the Fellas,Geoff,181.2,Trust The Process,Tom,107.3,WIN,FALSE,,,,
+2019,3,Clutch Gene,Spear,196.2,LSC Stud Muffins,Dylan,155.5,WIN,FALSE,,,,
+2019,3,Victim Complexes,Wes,131.3,The Comeback of Johnny Man-Zeer,Gavin,130.2,WIN,FALSE,,,,
+2019,4,Reverend Payne,Rob,108.7,SCOTTS TOTS,Ken,121.6,LOSS,FALSE,,,,
+2019,4,Eat The Sandwich,Spencer,113.1,Rapid City Monuments,Tsizz,144.7,LOSS,FALSE,,,,
+2019,4,Gotham City Rogues,Dan,140.2,The Thirteenth District,James,151.8,LOSS,FALSE,,,,
+2019,4,Clutch Gene,Spear,72.4,Victim Complexes,Wes,187.7,LOSS,FALSE,,,,
+2019,4,Trust The Process,Tom,166.3,Gavin,Gavin,82.6,WIN,FALSE,,,,
+2019,4,Seabass and the Fellas,Geoff,105.7,LSC Stud Muffins,Dylan,100.6,WIN,FALSE,,,,
+2019,5,Reverend Payne,Rob,138,The Thirteenth District,James,187.6,LOSS,FALSE,,,,
+2019,5,Subverted Expectations,Tsizz,159.1,Gotham City Rogues,Dan,102.7,WIN,FALSE,,,,
+2019,5,SCOTTS TOTS,Ken,146.2,Eat The Sandwich,Spencer,148.6,LOSS,FALSE,,,,
+2019,5,Victim Complexes,Wes,142.1,Trust The Process,Tom,178.6,LOSS,FALSE,,,,
+2019,5,LSC Stud Muffins,Dylan,127.8,The Comeback of Johnny Man-Zeer,Gavin,126.5,WIN,FALSE,,,,
+2019,5,Seabass and the Fellas,Geoff,99.7,Clutch Gene,Spear,137.5,LOSS,FALSE,,,,
+2019,6,John Loves Dogs,James,137.2,The Comeback of Johnny Man-Zeer,Gavin,86.7,WIN,FALSE,,,,
+2019,6,Gotham City Rogues,Dan,159.2,Trust The Process,Tom,105.2,WIN,FALSE,,,,
+2019,6,Reverend Payne,Rob,150.1,LSC Stud Muffins,Dylan,124.3,WIN,FALSE,,,,
+2019,6,SCOTTS TOTS,Ken,108.8,Seabass and the Fellas,Geoff,108,WIN,FALSE,,,,
+2019,6,Subverted Expectations,Tsizz,131.3,Victim Complexes,Wes,130.3,WIN,FALSE,,,,
+2019,6,Eat The Sandwich,Spencer,155.4,Clutch Gene,Spear,168.1,LOSS,FALSE,,,,
+2019,7,Clutch Gene,Spear,91.3,Gotham City Rogues,Dan,150.6,LOSS,FALSE,,,,
+2019,7,Victim Complexes,Wes,118.2,Reverend Payne,Rob,115.1,WIN,FALSE,,,,
+2019,7,The Comeback of Johnny Man-Zeer,Gavin,139.2,SCOTTS TOTS,Ken,124.7,WIN,FALSE,,,,
+2019,7,Trust The Process,Tom,96.2,Rapid City Monuments,Tsizz,128.9,LOSS,FALSE,,,,
+2019,7,Seabass and the Fellas,Geoff,52.6,Eat The Sandwich,Spencer,141.1,LOSS,FALSE,,,,
+2019,7,LSC Stud Muffins,Dylan,70.3,The Thirteenth District,James,120.5,LOSS,FALSE,,,,
+2019,8,Reverend Payne,Rob,127.7,Trust The Process,Tom,145,LOSS,FALSE,,,,
+2019,8,SCOTTS TOTS,Ken,89.6,LSC Stud Muffins,Dylan,127.8,LOSS,FALSE,,,,
+2019,8,Subverted Expectations,Tsizz,101.8,Clutch Gene,Spear,159.1,LOSS,FALSE,,,,
+2019,8,Eat The Sandwich,Spencer,151.7,The Comeback of Johnny Man-Zeer,Gavin,136.3,WIN,FALSE,,,,
+2019,8,John Loves Dogs,James,152.7,Victim Complexes,Wes,113.1,WIN,FALSE,,,,
+2019,8,Gotham City Rogues,Dan,157.8,Seabass and the Fellas,Geoff,75.8,WIN,FALSE,,,,
+2019,9,Victim Complexes,Wes,118.8,SCOTTS TOTS,Ken,126.7,LOSS,FALSE,,,,
+2019,9,Seabass and the Fellas,Geoff,119.5,Rapid City Monuments,Tsizz,162.7,LOSS,FALSE,,,,
+2019,9,LSC Stud Muffins,Dylan,89.8,Eat The Sandwich,Spencer,131.5,LOSS,FALSE,,,,
+2019,9,Trust The Process,Tom,184.6,The Thirteenth District,James,123.4,WIN,FALSE,,,,
+2019,9,The Comeback of Johnny Man-Zeer,Gavin,142.8,Gotham City Rogues,Dan,103,WIN,FALSE,,,,
+2019,9,Clutch Gene,Spear,173,Reverend Payne,Rob,102.9,WIN,FALSE,,,,
+2019,10,Subverted Expectations,Tsizz,150.2,The Comeback of Johnny Man-Zeer,Gavin,131.5,WIN,FALSE,,,,
+2019,10,Eat The Sandwich,Spencer,133.7,Victim Complexes,Wes,123.8,WIN,FALSE,,,,
+2019,10,John Loves Dogs,James,148.8,Clutch Gene,Spear,93.7,WIN,FALSE,,,,
+2019,10,Gotham City Rogues,Dan,170.7,LSC Stud Muffins,Dylan,134.4,WIN,FALSE,,,,
+2019,10,Reverend Payne,Rob,144.3,Seabass and the Fellas,Geoff,145.1,LOSS,FALSE,,,,
+2019,10,SCOTTS TOTS,Ken,73.5,Trust The Process,Tom,152.4,LOSS,FALSE,,,,
+2019,11,Trust The Process,Tom,95.7,Eat The Sandwich,Spencer,122.5,LOSS,FALSE,,,,
+2019,11,Seabass and the Fellas,Geoff,147.7,The Thirteenth District,James,120.4,WIN,FALSE,,,,
+2019,11,Victim Complexes,Wes,153.5,Gotham City Rogues,Dan,127.6,WIN,FALSE,,,,
+2019,11,The Comeback of Johnny Man-Zeer,Gavin,133.4,Reverend Payne,Rob,128.6,WIN,FALSE,,,,
+2019,11,Clutch Gene,Spear,93.8,SCOTTS TOTS,Ken,103.3,LOSS,FALSE,,,,
+2019,11,LSC Stud Muffins,Dylan,113.3,Rapid City Monuments,Tsizz,105.3,WIN,FALSE,,,,
+2019,12,Trust The Process,Tom,109.9,Clutch Gene,Spear,141.4,LOSS,FALSE,,,,
+2019,12,Eat The Sandwich,Spencer,93.2,Gotham City Rogues,Dan,106.9,LOSS,FALSE,,,,
+2019,12,Subverted Expectations,Tsizz,135.4,Reverend Payne,Rob,122,WIN,FALSE,,,,
+2019,12,John Loves Dogs,James,135.7,SCOTTS TOTS,Ken,98.7,WIN,FALSE,,,,
+2019,12,LSC Stud Muffins,Dylan,99.5,Victim Complexes,Wes,111.1,LOSS,FALSE,,,,
+2019,12,The Comeback of Johnny Man-Zeer,Gavin,215.3,Seabass and the Fellas,Geoff,106.3,WIN,FALSE,,,,
+2019,13,Gotham City Rogues,Dan,106.9,Reverend Payne,Rob,153.3,LOSS,FALSE,,,,
+2019,13,Clutch Gene,Spear,123.4,Victim Complexes,Wes,102.1,WIN,FALSE,,,,
+2019,13,SCOTTS TOTS,Ken,82,LSC Stud Muffins,Dylan,78.9,WIN,FALSE,,,,
+2019,13,Subverted Expectations,Tsizz,99.9,Trust The Process,Tom,105.7,LOSS,FALSE,,,,
+2019,13,Eat The Sandwich,Spencer,147.2,Seabass and the Fellas,Geoff,105,WIN,FALSE,,,,
+2019,13,John Loves Dogs,James,126.3,The Comeback of Johnny Man-Zeer,Gavin,143.7,LOSS,FALSE,,,,
+2019,14,Eat The Sandwich,Spencer,100.9,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2019,14,John Loves Dogs,James,145.4,SCOTTS TOTS,Ken,90.2,WIN,TRUE,Winners,1,4,5
+2019,14,Subverted Expectations,Tsizz,84.6,Victim Complexes,Wes,163.5,LOSS,TRUE,Winners,1,3,6
+2019,14,Clutch Gene,Spear,133.1,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2019,14,Trust The Process,Tom,146.6,The Comeback of Johnny Man-Zeer,Gavin,182.8,LOSS,TRUE,Consolation,1,7,8
+2019,14,Gotham City Rogues,Dan,145.6,Seabass and the Fellas,Geoff,104.5,WIN,TRUE,Consolation,1,9,10
+2019,14,LSC Stud Muffins,Dylan,101.4,Reverend Payne,Rob,131.9,LOSS,TRUE,Consolation,1,11,12
+2019,15,Eat The Sandwich,Spencer,161.5,The Thirteenth District,James,159.4,WIN,TRUE,Winners,2,1,4
+2019,15,Clutch Gene,Spear,159.8,Victim Complexes,Wes,131.7,WIN,TRUE,Winners,2,2,6
+2019,15,Subverted Expectations,Tsizz,139.8,SCOTTS TOTS,Ken,170.6,LOSS,TRUE,Winners,2,3,5
+2019,15,The Comeback of Johnny Man-Zeer,Gavin,145.8,Gotham City Rogues,Dan,136.6,WIN,TRUE,Consolation,2,8,9
+2019,15,Trust The Process,Tom,136.5,Reverend Payne,Rob,139.7,LOSS,TRUE,Consolation,2,7,12
+2019,15,Seabass and the Fellas,Geoff,101.3,LSC Stud Muffins,Dylan,107.4,LOSS,TRUE,Consolation,2,10,11
+2019,16,Eat The Sandwich,Spencer,122.6,Clutch Gene,Spear,91.6,WIN,TRUE,Winners,3,1,2
+2019,16,John Loves Dogs,James,180.9,Victim Complexes,Wes,114,WIN,TRUE,Winners,3,4,6
+2019,16,Subverted Expectations,Tsizz,113.1,SCOTTS TOTS,Ken,105.3,WIN,TRUE,Winners,3,3,5
+2019,16,The Comeback of Johnny Man-Zeer,Gavin,90.1,Reverend Payne,Rob,120.5,LOSS,TRUE,Consolation,3,8,12
+2019,16,Gotham City Rogues,Dan,150.3,LSC Stud Muffins,Dylan,131,WIN,TRUE,Consolation,3,9,11
+2019,16,Trust The Process,Tom,142.1,Seabass and the Fellas,Geoff,95.9,WIN,TRUE,Consolation,3,7,10
+2020,1,"Make POs, Lose In QFs, Repeat",Tsizz,124.6,Eat The Sandwich,Spencer,120.3,WIN,FALSE,,,,
+2020,1,Gotham City Rogues,Dan,119.1,The Thirteenth District,James,147.7,LOSS,FALSE,,,,
+2020,1,Threat Level Midnight,Ken,109.7,1-800-Miwacle,Rob,181.1,LOSS,FALSE,,,,
+2020,1,The Comeback of Johnny Man-Zeer,Gavin,132.8,Seabass and the Fellas,Geoff,144.4,LOSS,FALSE,,,,
+2020,1,"Set, Hut!",Connor,121,Victim Complexes,Wes,133,LOSS,FALSE,,,,
+2020,1,Wreck Everyone and Lose,Tom,117,FightOwens Fight!,Spear,154.3,LOSS,FALSE,,,,
+2020,2,"Make POs, Lose In QFs, Repeat",Tsizz,133.4,Gotham City Rogues,Dan,159.3,LOSS,FALSE,,,,
+2020,2,Eat The Sandwich,Spencer,140,He's Still Alive,Ken,129.9,WIN,FALSE,,,,
+2020,2,The Thirteenth District,James,115.7,1-800-Miwacle,Rob,160.6,LOSS,FALSE,,,,
+2020,2,FightOwens Fight!,Spear,114.4,Victim Complexes,Wes,167,LOSS,FALSE,,,,
+2020,2,"Set, Hut!",Connor,158.2,The Comeback of Johnny Man-Zeer,Gavin,92.3,WIN,FALSE,,,,
+2020,2,Wreck Everyone and Lose,Tom,166.6,Seabass and the Fellas,Geoff,183.1,LOSS,FALSE,,,,
+2020,3,The Thirteenth District,James,148.8,"Make POs, Lose In QFs, Repeat",Tsizz,148,WIN,FALSE,,,,
+2020,3,He's Still Alive,Ken,131.2,Gotham City Rogues,Dan,143.1,LOSS,FALSE,,,,
+2020,3,1-800-Miwacle,Rob,104.6,Eat The Sandwich,Spencer,147.6,LOSS,FALSE,,,,
+2020,3,Victim Complexes,Wes,128,Seabass and the Fellas,Geoff,170.8,LOSS,FALSE,,,,
+2020,3,The Comeback of Johnny Man-Zeer,Gavin,116.7,Wreck Everyone and Lose,Tom,148.2,LOSS,FALSE,,,,
+2020,3,FightOwens Fight!,Spear,86.3,"Set, Hut!",Connor,134,LOSS,FALSE,,,,
+2020,4,The Thirteenth District,James,110.6,He's Still Alive,Ken,87.6,WIN,FALSE,,,,
+2020,4,Gotham City Rogues,Dan,203.4,Eat The Sandwich,Spencer,147.6,WIN,FALSE,,,,
+2020,4,1-800-Miwacle,Rob,129.4,"Make POs, Lose In QFs, Repeat",Tsizz,124.3,WIN,FALSE,,,,
+2020,4,"Set, Hut!",Connor,140.5,Wreck Everyone and Lose,Tom,109.7,WIN,FALSE,,,,
+2020,4,FightOwens Fight!,Spear,135.9,Seabass and the Fellas,Geoff,147.2,LOSS,FALSE,,,,
+2020,4,Victim Complexes,Wes,167.5,The Comeback of Johnny Man-Zeer,Gavin,119.6,WIN,FALSE,,,,
+2020,5,Gotham City Rogues,Dan,99.6,1-800-Miwacle,Rob,178.6,LOSS,FALSE,,,,
+2020,5,"Make POs, Lose In QFs, Repeat",Tsizz,126,He's Still Alive,Ken,103.9,WIN,FALSE,,,,
+2020,5,Eat The Sandwich,Spencer,119,The Thirteenth District,James,123,LOSS,FALSE,,,,
+2020,5,Gavin,Gavin,134.4,FightOwens Fight!,Spear,116.4,WIN,FALSE,,,,
+2020,5,Wreck Everyone and Lose,Tom,202,Victim Complexes,Wes,134.8,WIN,FALSE,,,,
+2020,5,Seabass and the Fellas,Geoff,119.3,Connor,Connor,140.1,LOSS,FALSE,,,,
+2020,6,FightOwens Fight!,Spear,127.2,Eat The Sandwich,Spencer,137.2,LOSS,FALSE,,,,
+2020,6,1-800-Miwacle,Rob,134.2,"Set, Hut!",Connor,100.3,WIN,FALSE,,,,
+2020,6,He's Still Alive,Ken,119.1,Seabass and the Fellas,Geoff,105.2,WIN,FALSE,,,,
+2020,6,The Thirteenth District,James,109.5,The Comeback of Johnny Man-Zeer,Gavin,147.3,LOSS,FALSE,,,,
+2020,6,Wreck Everyone and Lose,Tom,114.4,Gotham City Rogues,Dan,122.2,LOSS,FALSE,,,,
+2020,6,"Make POs, Lose In QFs, Repeat",Tsizz,164.1,Victim Complexes,Wes,120.4,WIN,FALSE,,,,
+2020,7,Victim Complexes,Wes,114.6,1-800-Miwacle,Rob,114.5,WIN,FALSE,,,,
+2020,7,The Comeback of Johnny Man-Zeer,Gavin,104.9,He's Still Alive,Ken,126,LOSS,FALSE,,,,
+2020,7,"Set, Hut!",Connor,123.4,The Thirteenth District,James,153.1,LOSS,FALSE,,,,
+2020,7,"Make POs, Lose In QFs, Repeat",Tsizz,136.5,Wreck Everyone and Lose,Tom,97.7,WIN,FALSE,,,,
+2020,7,FightOwens Fight!,Spear,119,Gotham City Rogues,Dan,140.3,LOSS,FALSE,,,,
+2020,7,Seabass and the Fellas,Geoff,221.6,Eat The Sandwich,Spencer,109,WIN,FALSE,,,,
+2020,8,Wreck Everyone and Lose,Tom,133.5,1-800-Miwacle,Rob,83,WIN,FALSE,,,,
+2020,8,Victim Complexes,Wes,68.9,The Thirteenth District,James,130,LOSS,FALSE,,,,
+2020,8,"Make POs, Lose In QFs, Repeat",Tsizz,147.9,FightOwens Fight!,Spear,109.7,WIN,FALSE,,,,
+2020,8,Gotham City Rogues,Dan,120.4,Seabass and the Fellas,Geoff,171.1,LOSS,FALSE,,,,
+2020,8,Eat The Sandwich,Spencer,91.2,The Comeback of Johnny Man-Zeer,Gavin,112,LOSS,FALSE,,,,
+2020,8,He's Still Alive,Ken,148.1,"Set, Hut!",Connor,125.6,WIN,FALSE,,,,
+2020,9,FightOwens Fight!,Spear,103.2,1-800-Miwacle,Rob,117.7,LOSS,FALSE,,,,
+2020,9,Seabass and the Fellas,Geoff,159.1,"Make POs, Lose In QFs, Repeat",Tsizz,119.7,WIN,FALSE,,,,
+2020,9,The Comeback of Johnny Man-Zeer,Gavin,132.8,Gotham City Rogues,Dan,111.7,WIN,FALSE,,,,
+2020,9,Victim Complexes,Wes,112.1,He's Still Alive,Ken,112.6,LOSS,FALSE,,,,
+2020,9,The Thirteenth District,James,123.2,Wreck Everyone and Lose,Tom,172.5,LOSS,FALSE,,,,
+2020,9,"Set, Hut!",Connor,134.8,Eat The Sandwich,Spencer,111.3,WIN,FALSE,,,,
+2020,10,"Make POs, Lose In QFs, Repeat",Tsizz,85.1,The Comeback of Johnny Man-Zeer,Gavin,124.4,LOSS,FALSE,,,,
+2020,10,Gotham City Rogues,Dan,125.6,"Set, Hut!",Connor,153,LOSS,FALSE,,,,
+2020,10,FightOwens Fight!,Spear,164.8,The Thirteenth District,James,98,WIN,FALSE,,,,
+2020,10,1-800-Miwacle,Rob,109.8,Seabass and the Fellas,Geoff,100.7,WIN,FALSE,,,,
+2020,10,Threat Level Midnight,Ken,91.5,Wreck Everyone and Lose,Tom,84.9,WIN,FALSE,,,,
+2020,10,Eat The Sandwich,Spencer,120.1,Victim Complexes,Wes,145.4,LOSS,FALSE,,,,
+2020,11,Victim Complexes,Wes,159.7,Gotham City Rogues,Dan,120.8,WIN,FALSE,,,,
+2020,11,Seabass and the Fellas,Geoff,169.4,The Thirteenth District,James,147.1,WIN,FALSE,,,,
+2020,11,He's Still Alive,Ken,156.1,1-800-Miwacle,Rob,133.8,WIN,FALSE,,,,
+2020,11,The Comeback of Johnny Man-Zeer,Gavin,113.8,FightOwens Fight!,Spear,82.8,WIN,FALSE,,,,
+2020,11,Salsa Dancing,Tom,130.1,Eat The Sandwich,Spencer,96.7,WIN,FALSE,,,,
+2020,11,"Set, Hut!",Connor,124.9,"Make POs, Lose In QFs, Repeat",Tsizz,129,LOSS,FALSE,,,,
+2020,12,Eat The Sandwich,Spencer,118.1,FightOwens Fight!,Spear,126.3,LOSS,FALSE,,,,
+2020,12,John Loves Dogs,James,167.7,Victim Complexes,Wes,77.4,WIN,FALSE,,,,
+2020,12,"Make POs, Lose In QFs, Repeat",Tsizz,159.6,He's Still Alive,Ken,117.6,WIN,FALSE,,,,
+2020,12,Wreck Everyone and Lose,Tom,158.6,Seabass and the Fellas,Geoff,140.8,WIN,FALSE,,,,
+2020,12,1-800-Miwacle,Rob,124.8,The Comeback of Johnny Man-Zeer,Gavin,122.8,WIN,FALSE,,,,
+2020,12,Gotham City Rogues,Dan,137.6,"Set, Hut!",Connor,131,WIN,FALSE,,,,
+2020,13,Wreck Everyone and Lose,Tom,108.7,Victim Complexes,Wes,140.7,LOSS,FALSE,,,,
+2020,13,The Comeback of Johnny Man-Zeer,Gavin,157.8,"Set, Hut!",Connor,104.6,WIN,FALSE,,,,
+2020,13,Seabass and the Fellas,Geoff,174.6,FightOwens Fight!,Spear,145.5,WIN,FALSE,,,,
+2020,13,1-800-Miwacle,Rob,168.3,"Make POs, Lose In QFs, Repeat",Tsizz,145.2,WIN,FALSE,,,,
+2020,13,Gotham City Rogues,Dan,135.6,He's Still Alive,Ken,123.5,WIN,FALSE,,,,
+2020,13,John Loves Dogs,James,137.7,Eat The Sandwich,Spencer,108,WIN,FALSE,,,,
+2020,14,Seabass and the Fellas,Geoff,180.1,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2020,14,"Make POs, Lose In QFs, Repeat",Tsizz,139.8,Gotham City Rogues,Dan,165.7,LOSS,TRUE,Winners,1,4,5
+2020,14,John Loves Dogs,James,145,Victim Complexes,Wes,100.3,WIN,TRUE,Winners,1,3,6
+2020,14,1-800-Miwacle,Rob,126.3,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2020,14,The Comeback of Johnny Man-Zeer,Gavin,97.3,Wreck Everyone and Lose,Tom,117.6,LOSS,TRUE,Consolation,1,7,8
+2020,14,"Set, Hut!",Connor,100.8,He's Still Alive,Ken,133.4,LOSS,TRUE,Consolation,1,9,10
+2020,14,FightOwens Fight!,Spear,144,Eat The Sandwich,Spencer,102.2,WIN,TRUE,Consolation,1,11,12
+2020,15,Seabass and the Fellas,Geoff,140.2,Gotham City Rogues,Dan,92.6,WIN,TRUE,Winners,2,1,5
+2020,15,1-800-Miwacle,Rob,170.1,John Loves Dogs,James,157.7,WIN,TRUE,Winners,2,2,3
+2020,15,"Make POs, Lose In QFs, Repeat",Tsizz,126.4,Victim Complexes,Wes,130.7,LOSS,TRUE,Winners,2,4,6
+2020,15,Wreck Everyone and Lose,Tom,144.7,Def Done After This Season,Ken,88.6,WIN,TRUE,Consolation,2,8,10
+2020,15,The Comeback of Johnny Man-Zeer,Gavin,108.4,FightOwens Fight!,Spear,175.8,LOSS,TRUE,Consolation,2,7,11
+2020,15,"Set, Hut!",Connor,130.1,Eat The Sandwich,Spencer,100.3,WIN,TRUE,Consolation,2,9,12
+2020,16,Seabass and the Fellas,Geoff,109,1-800-Miwacle,Rob,184,LOSS,TRUE,Winners,3,1,2
+2020,16,John Loves Dogs,James,157.5,Gotham City Rogues,Dan,175.7,LOSS,TRUE,Winners,3,3,5
+2020,16,"Make POs, Lose In QFs, Repeat",Tsizz,100.5,Victim Complexes,Wes,135.6,LOSS,TRUE,Winners,3,4,5
+2020,16,Wreck Everyone and Lose,Tom,149.4,FightOwens Fight!,Spear,165.7,LOSS,TRUE,Consolation,3,8,11
+2020,16,"Set, Hut!",Connor,135.8,He's Still Alive,Ken,139.3,LOSS,TRUE,Consolation,3,9,10
+2020,16,The Comeback of Johnny Man-Zeer,Gavin,95.3,Eat The Sandwich,Spencer,124,LOSS,TRUE,Consolation,3,7,12
+2021,1,The Best In The World,Tom,133.7,John Loves Dogs,James,152.3,LOSS,FALSE,,,,
+2021,1,Eat The Sandwich,Spencer,125.4,. Cush . (Connor),Connor,181,LOSS,FALSE,,,,
+2021,1,Gotham City Rogues,Dan,149.7,FightOwens Fight!,Spear,130.4,WIN,FALSE,,,,
+2021,1,Victim Complexes,Wes,96.1,The Comeback of Johnny Man-Zeer,Gavin,110.4,LOSS,FALSE,,,,
+2021,1,Seabass and the Fellas,Geoff,147.2,1-800-Miwacle,Rob,175.9,LOSS,FALSE,,,,
+2021,1,Def Done After This Season,Ken,128.3,Ride of the Symphirrim,Tsizz,144.4,LOSS,FALSE,,,,
+2021,2,John Loves Dogs,James,149,. Cush . (Connor),Connor,136.4,WIN,FALSE,,,,
+2021,2,The Best In The World,Tom,156.2,Eat The Sandwich,Spencer,119.8,WIN,FALSE,,,,
+2021,2,FightOwens Fight!,Spear,94.7,The Comeback of Johnny Man-Zeer,Gavin,119.6,LOSS,FALSE,,,,
+2021,2,Victim Complexes,Wes,182.8,Gotham City Rogues,Dan,85.8,WIN,FALSE,,,,
+2021,2,1-800-Miwacle,Rob,152.6,Ride of the Symphirrim,Tsizz,162,LOSS,FALSE,,,,
+2021,2,Seabass and the Fellas,Geoff,125.7,Def Done After This Season,Ken,123.8,WIN,FALSE,,,,
+2021,3,Eat The Sandwich,Spencer,131.4,John Loves Dogs,James,177.2,LOSS,FALSE,,,,
+2021,3,. Cush . (Connor),Connor,118.1,The Best In The World,Tom,118.8,LOSS,FALSE,,,,
+2021,3,Victim Complexes,Wes,127.6,FightOwens Fight!,Spear,145.6,LOSS,FALSE,,,,
+2021,3,The Comeback of Johnny Man-Zeer,Gavin,102.1,Gotham City Rogues,Dan,107.9,LOSS,FALSE,,,,
+2021,3,Def Done After This Season,Ken,129.2,1-800-Miwacle,Rob,115.7,WIN,FALSE,,,,
+2021,3,Ride of the Symphirrim,Tsizz,186.9,Seabass and the Fellas,Geoff,116.9,WIN,FALSE,,,,
+2021,4,John Loves Dogs,James,136.3,Ride of the Symphirrim,Tsizz,112.4,WIN,FALSE,,,,
+2021,4,Gotham City Rogues,Dan,104.9,Eat The Sandwich,Spencer,116.1,LOSS,FALSE,,,,
+2021,4,Def Done After This Season,Ken,111.5,FightOwens Fight!,Spear,193.8,LOSS,FALSE,,,,
+2021,4,Seabass and the Fellas,Geoff,150.9,. Cush . (Connor),Connor,117.2,WIN,FALSE,,,,
+2021,4,The Comeback of Johnny Man-Zeer,Gavin,136,1-800-Miwacle,Rob,115.3,WIN,FALSE,,,,
+2021,4,The Best In The World,Tom,128.6,Victim Complexes,Wes,115.8,WIN,FALSE,,,,
+2021,5,FightOwens Fight!,Spear,111.7,John Loves Dogs,James,194.8,LOSS,FALSE,,,,
+2021,5,Ride of the Symphirrim,Tsizz,207.9,Eat The Sandwich,Spencer,175,WIN,FALSE,,,,
+2021,5,The Best In The World,Tom,145.4,Seabass and the Fellas,Geoff,97.8,WIN,FALSE,,,,
+2021,5,The Comeback of Johnny Man-Zeer,Gavin,127.3,. Cush . (Connor),Connor,142.2,LOSS,FALSE,,,,
+2021,5,Victim Complexes,Wes,162.2,1-800-Miwacle,Rob,137.7,WIN,FALSE,,,,
+2021,5,Def Done After This Season,Ken,124.9,Gotham City Rogues,Dan,151.1,LOSS,FALSE,,,,
+2021,6,John Loves Dogs,James,167.8,Seabass and the Fellas,Geoff,116.6,WIN,FALSE,,,,
+2021,6,. Cush . (Connor),Connor,113.8,1-800-Miwacle,Rob,145,LOSS,FALSE,,,,
+2021,6,The Comeback of Johnny Man-Zeer,Gavin,139.9,Def Done After This Season,Ken,146.1,LOSS,FALSE,,,,
+2021,6,Eat The Sandwich,Spencer,169.3,Victim Complexes,Wes,97.2,WIN,FALSE,,,,
+2021,6,FightOwens Fight!,Spear,115.4,Ride of the Symphirrim,Tsizz,133.2,LOSS,FALSE,,,,
+2021,6,Gotham City Rogues,Dan,127.7,The Best In The World,Tom,181,LOSS,FALSE,,,,
+2021,7,Seabass and the Fellas,Geoff,95.8,Eat The Sandwich,Spencer,117.5,LOSS,FALSE,,,,
+2021,7,. Cush . (Connor),Connor,142.9,Ride of the Symphirrim,Tsizz,150.8,LOSS,FALSE,,,,
+2021,7,Victim Complexes,Wes,110.3,Def Done After This Season,Ken,106.1,WIN,FALSE,,,,
+2021,7,FightOwens Fight!,Spear,158.7,The Best In The World,Tom,102.2,WIN,FALSE,,,,
+2021,7,1-800-Miwacle,Rob,67.7,Gotham City Rogues,Dan,171.6,LOSS,FALSE,,,,
+2021,7,The Comeback of Johnny Man-Zeer,Gavin,135.6,John Loves Dogs,James,121.2,WIN,FALSE,,,,
+2021,8,John Loves Dogs,James,124.7,Gotham City Rogues,Dan,122,WIN,FALSE,,,,
+2021,8,. Cush . (Connor),Connor,109.7,Victim Complexes,Wes,113.7,LOSS,FALSE,,,,
+2021,8,1-800-Miwacle,Rob,132.7,FightOwens Fight!,Spear,142.8,LOSS,FALSE,,,,
+2021,8,Ride of the Symphirrim,Tsizz,84.6,The Best In The World,Tom,83.3,WIN,FALSE,,,,
+2021,8,Seabass and the Fellas,Geoff,107.3,The Comeback of Johnny Man-Zeer,Gavin,106.7,WIN,FALSE,,,,
+2021,8,Eat The Sandwich,Spencer,91.9,Def Done After This Season,Ken,153.3,LOSS,FALSE,,,,
+2021,9,The Best In The World,Tom,115.7,Gavin,Gavin,100.5,WIN,FALSE,,,,
+2021,9,Gotham City Rogues,Dan,101.1,Seabass and the Fellas,Geoff,115.9,LOSS,FALSE,,,,
+2021,9,Def Done After This Season,Ken,136.1,. Cush . (Connor),Connor,129.1,WIN,FALSE,,,,
+2021,9,Victim Complexes,Wes,104.6,Ride of the Symphirrim,Tsizz,139,LOSS,FALSE,,,,
+2021,9,Eat The Sandwich,Spencer,120.4,FightOwens Fight!,Spear,139,LOSS,FALSE,,,,
+2021,9,1-800-Miwacle,Rob,74.7,John Loves Dogs,James,99.8,LOSS,FALSE,,,,
+2021,10,FightOwens Fight!,Spear,87.9,Seabass and the Fellas,Geoff,121.5,LOSS,FALSE,,,,
+2021,10,Gotham City Rogues,Dan,116.5,. Cush . (Connor),Connor,127.8,LOSS,FALSE,,,,
+2021,10,Ride of the Symphirrim,Tsizz,104.6,The Comeback of Johnny Man-Zeer,Gavin,108.7,LOSS,FALSE,,,,
+2021,10,Victim Complexes,Wes,100.5,John Loves Dogs,James,136.8,LOSS,FALSE,,,,
+2021,10,1-800-Miwacle,Rob,109.5,Eat The Sandwich,Spencer,111.8,LOSS,FALSE,,,,
+2021,10,Def Done After This Season,Ken,97.7,The Best In The World,Tom,183.7,LOSS,FALSE,,,,
+2021,11,Ride of the Symphirrim,Tsizz,161.3,Gotham City Rogues,Dan,121.7,WIN,FALSE,,,,
+2021,11,Seabass and the Fellas,Geoff,128.2,Victim Complexes,Wes,103.4,WIN,FALSE,,,,
+2021,11,The Best In The World,Tom,91.4,1-800-Miwacle,Rob,94.4,LOSS,FALSE,,,,
+2021,11,The Comeback of Johnny Man-Zeer,Gavin,162.3,Eat The Sandwich,Spencer,164.4,LOSS,FALSE,,,,
+2021,11,John Loves Dogs,James,162.9,Def Done After This Season,Ken,80.8,WIN,FALSE,,,,
+2021,11,. Cush . (Connor),Connor,112.5,FightOwens Fight!,Spear,98.2,WIN,FALSE,,,,
+2021,12,1-800-Miwacle,Rob,98.1,Def Done After This Season,Ken,130.5,LOSS,FALSE,,,,
+2021,12,Seabass and the Fellas,Geoff,83.7,Ride of the Symphirrim,Tsizz,85.2,LOSS,FALSE,,,,
+2021,12,Eat The Sandwich,Spencer,177.8,The Best In The World,Tom,163.1,WIN,FALSE,,,,
+2021,12,FightOwens Fight!,Spear,130.2,Gotham City Rogues,Dan,130.7,LOSS,FALSE,,,,
+2021,12,The Comeback of Johnny Man-Zeer,Gavin,113.5,Victim Complexes,Wes,75.4,WIN,FALSE,,,,
+2021,12,. Cush . (Connor),Connor,81.4,John Loves Dogs,James,168.7,LOSS,FALSE,,,,
+2021,13,Ride of the Symphirrim,Tsizz,109.6,Def Done After This Season,Ken,139.8,LOSS,FALSE,,,,
+2021,13,1-800-Miwacle,Rob,107,Seabass and the Fellas,Geoff,93.3,WIN,FALSE,,,,
+2021,13,FightOwens Fight!,Spear,109.3,Victim Complexes,Wes,115.8,LOSS,FALSE,,,,
+2021,13,Gotham City Rogues,Dan,164.4,The Comeback of Johnny Man-Zeer,Gavin,160.8,WIN,FALSE,,,,
+2021,13,John Loves Dogs,James,153.3,The Best In The World,Tom,125,WIN,FALSE,,,,
+2021,13,. Cush . (Connor),Connor,92.2,Eat The Sandwich,Spencer,106.7,LOSS,FALSE,,,,
+2021,14,Ride of the Symphirrim,Tsizz,123.9,1-800-Miwacle,Rob,116.4,WIN,FALSE,,,,
+2021,14,Def Done After This Season,Ken,97.4,Seabass and the Fellas,Geoff,151.8,LOSS,FALSE,,,,
+2021,14,The Comeback of Johnny Man-Zeer,Gavin,84.7,FightOwens Fight!,Spear,98.3,LOSS,FALSE,,,,
+2021,14,Gotham City Rogues,Dan,203.5,Victim Complexes,Wes,119.8,WIN,FALSE,,,,
+2021,14,John Loves Dogs,James,171.8,Eat The Sandwich,Spencer,148.6,WIN,FALSE,,,,
+2021,14,The Best In The World,Tom,136.2,. Cush . (Connor),Connor,81.4,WIN,FALSE,,,,
+2021,15,John Loves Dogs,James,147.9,BYE,BYE,,BYE,TRUE,Winners,1,1,
+2021,15,The Best In The World,Tom,138.2,Eat The Sandwich,Spencer,166.6,LOSS,TRUE,Winners,1,4,5
+2021,15,Gotham City Rogues,Dan,94.8,Seabass and the Fellas,Geoff,126.5,LOSS,TRUE,Winners,1,3,6
+2021,15,Ride of the Symphirrim,Tsizz,75.3,BYE,BYE,,BYE,TRUE,Winners,1,2,
+2021,15,FightOwens Fight!,Spear,111.2,The Comeback of Johnny Man-Zeer,Gavin,96.2,WIN,TRUE,Consolation,1,7,8
+2021,15,Def Done After This Season,Ken,103.9,Victim Complexes,Wes,81.3,WIN,TRUE,Consolation,1,9,10
+2021,15,. Cush . (Connor),Connor,137.8,1-800-Miwacle,Rob,86.9,WIN,TRUE,Consolation,1,11,12
+2021,16,John Loves Dogs,James,202.3,Eat The Sandwich,Spencer,125.7,WIN,TRUE,Winners,2,1,5
+2021,16,Ride of the Symphirrim,Tsizz,96.4,Seabass and the Fellas,Geoff,119.1,LOSS,TRUE,Winners,2,2,6
+2021,16,Gotham City Rogues,Dan,164.8,The Best In The World,Tom,118.7,WIN,TRUE,Winners,2,3,4
+2021,16,The Comeback of Johnny Man-Zeer,Gavin,112.6,Victim Complexes,Wes,97.4,WIN,TRUE,Consolation,2,9,12
+2021,16,FightOwens Fight!,Spear,115.4,. Cush . (Connor),Connor,112.1,WIN,TRUE,Consolation,2,7,11
+2021,16,1-800-Miwacle,Rob,73.7,Def Done After This Season,Ken,124,LOSS,TRUE,Consolation,2,8,10
+2021,17,John Loves Dogs,James,162.7,Seabass and the Fellas,Geoff,104.3,WIN,TRUE,Winners,3,1,6
+2021,17,Ride of the Symphirrim,Tsizz,95,Eat The Sandwich,Spencer,124.6,LOSS,TRUE,Winners,3,2,5
+2021,17,Gotham City Rogues,Dan,158.1,The Best In The World,Tom,111.2,WIN,TRUE,Winners,3,3,4
+2021,17,FightOwens Fight!,Spear,203.1,Def Done After This Season,Ken,116.3,WIN,TRUE,Consolation,3,7,9
+2021,17,The Comeback of Johnny Man-Zeer,Gavin,118.3,Victim Complexes,Wes,60.7,WIN,TRUE,Consolation,3,8,10
+2021,17,. Cush . (Connor),Connor,157.9,1-800-Miwacle,Rob,109.4,WIN,TRUE,Consolation,3,11,12
