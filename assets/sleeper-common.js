@@ -349,60 +349,18 @@
     });
   }
 
-  function buildTeamSchedule(allWeeksMatchups, rosterId, rosterMap) {
-    var schedule = [];
-    Object.keys(allWeeksMatchups)
-      .map(Number)
-      .sort(function (a, b) {
-        return a - b;
-      })
-      .forEach(function (week) {
-        var weekMatchups = allWeeksMatchups[week];
-        if (!weekMatchups || weekMatchups.length === 0) return;
-
-        var mine = weekMatchups.find(function (m) {
-          return m.roster_id === rosterId;
-        });
-        if (!mine) return;
-
-        var opponent = weekMatchups.find(function (m) {
-          return m.matchup_id === mine.matchup_id && m.roster_id !== rosterId;
-        });
-
-        var myPoints = mine.points || 0;
-        var oppPoints = opponent ? opponent.points || 0 : 0;
-        var result = !opponent ? "BYE" : myPoints > oppPoints ? "W" : myPoints < oppPoints ? "L" : "T";
-
-        schedule.push({
-          week: week,
-          opponentRosterId: opponent ? opponent.roster_id : null,
-          opponentName: opponent
-            ? (rosterMap[opponent.roster_id] ? rosterMap[opponent.roster_id].teamName : "Roster " + opponent.roster_id)
-            : "BYE",
-          myPoints: myPoints,
-          opponentPoints: opponent ? oppPoints : null,
-          result: result,
-        });
-      });
-    return schedule;
-  }
-
   /**
    * Compute every roster's cumulative regular-season win-loss(-tie)
    * record through and including a given week, from Sleeper's raw
    * per-week matchup arrays (allWeeksMatchups, as returned by
    * getAllWeeksMatchups). Sleeper matchup rows already come in pairs
    * sharing the same matchup_id, so both sides of every game are
-   * available directly - no inversion logic needed (unlike the ESPN
-   * CSV loader, which stores one row per game and must credit both
-   * sides explicitly).
+   * available directly.
    *
    * Playoff weeks are excluded from the record so a team's "regular
-   * season" record doesn't change during the playoffs, matching the
-   * behavior of the ESPN loader's equivalent function. Since Sleeper's
-   * API doesn't flag which weeks are playoffs on the matchup objects
-   * themselves, pass playoffStartWeek (from league.settings
-   * .playoff_week_start) so weeks at or after that cutoff are excluded.
+   * season" record doesn't change during the playoffs. Pass
+   * playoffStartWeek (from league.settings.playoff_week_start) so weeks
+   * at or after that cutoff are excluded.
    *
    * Returns { rosterId: "W-L" } (or "W-L-T" if that roster has any ties).
    */
@@ -469,8 +427,6 @@
   /**
    * Precompute running records for every week present in
    * allWeeksMatchups in one pass, returning { week: { rosterId: "W-L" } }.
-   * Mirrors EspnLoader.buildAllRunningRecords for the same purpose on
-   * ESPN-era seasons.
    */
   function buildAllRunningRecords(allWeeksMatchups, playoffStartWeek) {
     var result = {};
@@ -480,6 +436,61 @@
         result[week] = buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek);
       });
     return result;
+  }
+
+  /**
+   * Full season schedule for one team, with an added `recordAfter` field
+   * on each game showing that team's cumulative regular-season record
+   * immediately following that week (or "-" for playoff weeks), matching
+   * the same field/format used by the ESPN loader's buildTeamSchedule so
+   * the "By Team" schedule view renders identically for both data
+   * sources. Pass runningRecordsByWeek (from buildAllRunningRecords) so
+   * this doesn't have to recompute records from scratch.
+   */
+  function buildTeamSchedule(allWeeksMatchups, rosterId, rosterMap, runningRecordsByWeek, playoffStartWeek) {
+    var schedule = [];
+    Object.keys(allWeeksMatchups)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (week) {
+        var weekMatchups = allWeeksMatchups[week];
+        if (!weekMatchups || weekMatchups.length === 0) return;
+
+        var mine = weekMatchups.find(function (m) {
+          return m.roster_id === rosterId;
+        });
+        if (!mine) return;
+
+        var opponent = weekMatchups.find(function (m) {
+          return m.matchup_id === mine.matchup_id && m.roster_id !== rosterId;
+        });
+
+        var myPoints = mine.points || 0;
+        var oppPoints = opponent ? opponent.points || 0 : 0;
+        var result = !opponent ? "BYE" : myPoints > oppPoints ? "W" : myPoints < oppPoints ? "L" : "T";
+
+        var isPlayoffWeek = !!playoffStartWeek && week >= playoffStartWeek;
+        var recordAfter = "-";
+        if (!isPlayoffWeek && runningRecordsByWeek && runningRecordsByWeek[week]) {
+          recordAfter = runningRecordsByWeek[week][rosterId] || "-";
+        }
+
+        schedule.push({
+          week: week,
+          opponentRosterId: opponent ? opponent.roster_id : null,
+          opponentName: opponent
+            ? (rosterMap[opponent.roster_id] ? rosterMap[opponent.roster_id].teamName : "Roster " + opponent.roster_id)
+            : "BYE",
+          myPoints: myPoints,
+          opponentPoints: opponent ? oppPoints : null,
+          result: result,
+          isPlayoff: isPlayoffWeek,
+          recordAfter: recordAfter,
+        });
+      });
+    return schedule;
   }
 
   function resolvePlayoffResults(bracket) {
