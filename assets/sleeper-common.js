@@ -730,6 +730,14 @@
       });
   }
 
+  /**
+   * Resolves a Sleeper transaction into display-ready detail, including
+   * BOTH team names (`teams`) and their owners (`owners`), kept as
+   * parallel arrays indexed the same way, so callers can render
+   * "Team Name (Owner)" pairs for each side of the transaction. Owner
+   * names respect owner-overrides.js automatically, since they come
+   * from each roster's already-resolved displayName.
+   */
   function resolveTransactionDetail(txn, rosterMap, playersMap) {
     function playerLabel(pid) {
       var meta = (playersMap && playersMap[pid]) || {};
@@ -741,18 +749,39 @@
       var team = rosterMap[rosterId];
       return team ? team.teamName : "Roster " + rosterId;
     }
+    function ownerLabel(rosterId) {
+      var team = rosterMap[rosterId];
+      return team ? team.displayName : "Unknown";
+    }
+    function teamWithOwnerLabel(rosterId) {
+      var team = teamLabel(rosterId);
+      var owner = ownerLabel(rosterId);
+      return owner && owner !== team ? team + " (" + owner + ")" : team;
+    }
 
     var adds = [];
     if (txn.adds) {
       Object.keys(txn.adds).forEach(function (pid) {
-        adds.push({ player: playerLabel(pid), team: teamLabel(txn.adds[pid]), rosterId: txn.adds[pid] });
+        adds.push({
+          player: playerLabel(pid),
+          team: teamLabel(txn.adds[pid]),
+          owner: ownerLabel(txn.adds[pid]),
+          teamWithOwner: teamWithOwnerLabel(txn.adds[pid]),
+          rosterId: txn.adds[pid],
+        });
       });
     }
 
     var drops = [];
     if (txn.drops) {
       Object.keys(txn.drops).forEach(function (pid) {
-        drops.push({ player: playerLabel(pid), team: teamLabel(txn.drops[pid]), rosterId: txn.drops[pid] });
+        drops.push({
+          player: playerLabel(pid),
+          team: teamLabel(txn.drops[pid]),
+          owner: ownerLabel(txn.drops[pid]),
+          teamWithOwner: teamWithOwnerLabel(txn.drops[pid]),
+          rosterId: txn.drops[pid],
+        });
       });
     }
 
@@ -782,6 +811,8 @@
       statusUpdated: txn.status_updated,
       rosterIds: txn.roster_ids || [],
       teams: (txn.roster_ids || []).map(teamLabel),
+      owners: (txn.roster_ids || []).map(ownerLabel),
+      teamsWithOwners: (txn.roster_ids || []).map(teamWithOwnerLabel),
       adds: adds,
       drops: drops,
       draftPicks: draftPicks,
