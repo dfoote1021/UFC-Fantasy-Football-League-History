@@ -387,6 +387,101 @@
     return schedule;
   }
 
+  /**
+   * Compute every roster's cumulative regular-season win-loss(-tie)
+   * record through and including a given week, from Sleeper's raw
+   * per-week matchup arrays (allWeeksMatchups, as returned by
+   * getAllWeeksMatchups). Sleeper matchup rows already come in pairs
+   * sharing the same matchup_id, so both sides of every game are
+   * available directly - no inversion logic needed (unlike the ESPN
+   * CSV loader, which stores one row per game and must credit both
+   * sides explicitly).
+   *
+   * Playoff weeks are excluded from the record so a team's "regular
+   * season" record doesn't change during the playoffs, matching the
+   * behavior of the ESPN loader's equivalent function. Since Sleeper's
+   * API doesn't flag which weeks are playoffs on the matchup objects
+   * themselves, pass playoffStartWeek (from league.settings
+   * .playoff_week_start) so weeks at or after that cutoff are excluded.
+   *
+   * Returns { rosterId: "W-L" } (or "W-L-T" if that roster has any ties).
+   */
+  function buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek) {
+    var tally = {};
+
+    function ensure(rosterId) {
+      if (!tally[rosterId]) tally[rosterId] = { wins: 0, losses: 0, ties: 0 };
+    }
+
+    Object.keys(allWeeksMatchups)
+      .map(Number)
+      .filter(function (w) {
+        var withinRange = w <= week;
+        var isRegularSeason = !playoffStartWeek || w < playoffStartWeek;
+        return withinRange && isRegularSeason;
+      })
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (w) {
+        var weekMatchups = allWeeksMatchups[w] || [];
+        var grouped = {};
+        weekMatchups.forEach(function (m) {
+          if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
+          grouped[m.matchup_id].push(m);
+        });
+
+        Object.keys(grouped).forEach(function (matchupId) {
+          var pair = grouped[matchupId];
+          var a = pair[0];
+          var b = pair[1];
+          if (!a) return;
+
+          ensure(a.roster_id);
+          if (!b) return; // bye week - no result to credit
+          ensure(b.roster_id);
+
+          var aPoints = a.points || 0;
+          var bPoints = b.points || 0;
+
+          if (aPoints > bPoints) {
+            tally[a.roster_id].wins += 1;
+            tally[b.roster_id].losses += 1;
+          } else if (aPoints < bPoints) {
+            tally[a.roster_id].losses += 1;
+            tally[b.roster_id].wins += 1;
+          } else {
+            tally[a.roster_id].ties += 1;
+            tally[b.roster_id].ties += 1;
+          }
+        });
+      });
+
+    var recordStrings = {};
+    Object.keys(tally).forEach(function (rosterId) {
+      var t = tally[rosterId];
+      recordStrings[rosterId] =
+        t.ties > 0 ? t.wins + "-" + t.losses + "-" + t.ties : t.wins + "-" + t.losses;
+    });
+    return recordStrings;
+  }
+
+  /**
+   * Precompute running records for every week present in
+   * allWeeksMatchups in one pass, returning { week: { rosterId: "W-L" } }.
+   * Mirrors EspnLoader.buildAllRunningRecords for the same purpose on
+   * ESPN-era seasons.
+   */
+  function buildAllRunningRecords(allWeeksMatchups, playoffStartWeek) {
+    var result = {};
+    Object.keys(allWeeksMatchups)
+      .map(Number)
+      .forEach(function (week) {
+        result[week] = buildRunningRecordsThroughWeek(allWeeksMatchups, week, playoffStartWeek);
+      });
+    return result;
+  }
+
   function resolvePlayoffResults(bracket) {
     if (!bracket || bracket.length === 0) {
       return { rounds: [], championRosterId: null, runnerUpRosterId: null };
@@ -763,6 +858,8 @@
     getDefaultWeek: getDefaultWeek,
     getAllWeeksMatchups: getAllWeeksMatchups,
     buildTeamSchedule: buildTeamSchedule,
+    buildRunningRecordsThroughWeek: buildRunningRecordsThroughWeek,
+    buildAllRunningRecords: buildAllRunningRecords,
     resolvePlayoffResults: resolvePlayoffResults,
     buildBracketView: buildBracketView,
     buildFinalStandings: buildFinalStandings,
