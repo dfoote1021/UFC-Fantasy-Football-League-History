@@ -15,9 +15,12 @@
  *   result,is_playoff,bracket_type,playoff_round,team_seed,opponent_seed
  *   result is one of: WIN, LOSS, TIE, BYE (from the perspective of `team`).
  *
- * Standings CSV columns (case-insensitive; lowercase as authored):
- *   year,team,division,division_standing,owner,wins,losses,ties,
- *   points_for,points_against,final_rank,made_playoffs,champion,runner_up
+ * Standings CSV columns (case-insensitive; header name ALIASES also
+ * accepted - see ALIAS_MAP below - so "season" works the same as "year"
+ * and "final_standing" works the same as "final_rank"):
+ *   year (or season), team, division, division_standing, owner, wins,
+ *   losses, ties, points_for, points_against, final_rank (or
+ *   final_standing), made_playoffs, champion, runner_up
  *
  * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
@@ -28,6 +31,17 @@
   var ESPN_SEASONS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021];
   var MATCHUPS_CSV_PATH = "assets/data/espn-matchups.csv";
   var STANDINGS_CSV_PATH = "assets/data/espn-standings.csv";
+
+  /**
+   * Canonical field name -> list of acceptable header spellings.
+   * getField() checks each alias (case-insensitively) in order and
+   * returns the first one present in the row. This means a CSV author
+   * can use either name and the loader "just works" either way.
+   */
+  var ALIAS_MAP = {
+    year: ["year", "season"],
+    final_rank: ["final_rank", "final_standing", "finalstanding", "rank"],
+  };
 
   var _matchupsCache = {};
   var _standingsCache = {};
@@ -93,13 +107,26 @@
     });
   }
 
-  /** Case-insensitive field lookup - works regardless of header casing. */
+  /**
+   * Case-insensitive, alias-aware field lookup. `name` should be the
+   * canonical field name (e.g. "year", "final_rank"). This checks the
+   * exact key first (fast path), then any known aliases for that
+   * canonical name, then finally falls back to a direct case-insensitive
+   * match on `name` itself for fields with no aliases registered.
+   */
   function getField(row, name) {
     if (row[name] !== undefined) return row[name];
-    var lower = name.toLowerCase();
+
     var keys = Object.keys(row);
-    for (var i = 0; i < keys.length; i++) {
-      if (keys[i].toLowerCase() === lower) return row[keys[i]];
+    var lowerKeys = keys.map(function (k) {
+      return k.toLowerCase();
+    });
+
+    var candidates = ALIAS_MAP[name] ? ALIAS_MAP[name] : [name];
+    for (var c = 0; c < candidates.length; c++) {
+      var lowerCandidate = candidates[c].toLowerCase();
+      var idx = lowerKeys.indexOf(lowerCandidate);
+      if (idx !== -1) return row[keys[idx]];
     }
     return "";
   }
@@ -183,9 +210,10 @@
 
   /**
    * Authoritative final standings rows for one season, keyed by team name.
-   * Reads: year, team, division, division_standing, owner, wins, losses,
-   * ties, points_for, points_against, final_rank, made_playoffs, champion,
-   * runner_up (case-insensitive).
+   * Reads: year (or season), team, division, division_standing, owner,
+   * wins, losses, ties, points_for, points_against, final_rank (or
+   * final_standing), made_playoffs, champion, runner_up. All lookups are
+   * case-insensitive and alias-aware, see ALIAS_MAP and getField() above.
    */
   function getStandingsRows(year) {
     return fetchRawStandingsRows().then(function (allRows) {
