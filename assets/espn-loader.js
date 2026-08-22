@@ -8,42 +8,47 @@
  * Data sources:
  *   assets/data/espn-matchups.csv   - week-by-week matchup results, playoffs
  *   assets/data/espn-standings.csv  - authoritative final win/loss/points/
- *                                     division per team per year (source of
- *                                     truth for the Standings tab)
+ *                                     division/total_moves per team per
+ *                                     year (source of truth for the
+ *                                     Standings and Teams tabs)
  *
- * ── IMPORTANT: one row per GAME, not per team ───────────────────────────
+ * ── one row per GAME, not per team (matchups CSV) ───────────────────────
  * espn-matchups.csv has exactly one row per game (12 teams = 6 rows per
  * week), with a "team" side and an "opponent" side. Any code that derives
- * wins/losses/points from these rows MUST credit BOTH sides of every row -
- * crediting only the `team` column and ignoring `opponent` silently drops
- * half the league's results. This file is careful to do that everywhere
- * records are derived (see buildRunningRecordsThroughWeek below).
+ * wins/losses/points from these rows credits BOTH sides of every row -
+ * crediting only the `team` column and ignoring `opponent` would silently
+ * drop half the league's results.
  *
- * ── IMPORTANT: how teams are matched across the two files ──────────────
+ * ── team matching across the two files ──────────────────────────────────
  * Fantasy team NAMES change from year to year (e.g. the same owner might
  * be "Team McFarland" in 2012 and "Caucasion Sasquatch" in 2013), but the
- * OWNER behind a team is stable. So this loader joins standings rows to
+ * OWNER behind a team is stable. This loader joins standings rows to
  * matchup rows using `owner` (case-insensitive, trimmed) as the primary
  * key for a given year, not the team display name. The real team name
- * shown throughout the site always comes from espn-matchups.csv (since
- * that's the fun display name), while wins/losses/points/division/
- * champion flags come from espn-standings.csv via the owner match.
+ * shown throughout the site always comes from espn-matchups.csv, while
+ * wins/losses/points/division/champion flags/total_moves come from
+ * espn-standings.csv via the owner match.
  *
  * Matchups CSV columns: year,week,team,team_owner,team_score,opponent,
  *   opponent_owner,opponent_score,result,is_playoff,bracket_type,
  *   playoff_round,team_seed,opponent_seed
  *
- *   `result` is treated as informational only (it may say WIN/LOSS,
- *   HOME/AWAY, or anything else). The actual winner/loser/tie is always
- *   computed by comparing team_score vs opponent_score directly. BYE is
- *   detected when `opponent` is literally the string "BYE".
+ *   `result` is informational only (WIN/LOSS, HOME/AWAY, etc. - wording
+ *   varies by sheet). The actual winner/loser/tie is always computed by
+ *   comparing team_score vs opponent_score directly. BYE is detected when
+ *   `opponent` is literally the string "BYE".
  *
  * Standings CSV columns (case-insensitive; common header aliases such as
  * "season" for "year" and "final_standing" for "final_rank" are accepted
  * automatically - see ALIAS_MAP below):
  *   year (or season), team, division, division_standing, owner, wins,
  *   losses, ties, points_for, points_against, final_rank (or
- *   final_standing), made_playoffs, champion, runner_up
+ *   final_standing), made_playoffs, total_moves, champion, runner_up
+ *
+ *   total_moves is optional - a plain integer count of that team's total
+ *   adds/drops/trades for the season. Leave blank for any team/year
+ *   without that data; it will show as unavailable on the site rather
+ *   than a fabricated zero.
  *
  * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
@@ -58,6 +63,7 @@
   var ALIAS_MAP = {
     year: ["year", "season"],
     final_rank: ["final_rank", "final_standing", "finalstanding", "rank"],
+    total_moves: ["total_moves", "total moves", "totalmoves", "moves", "transactions"],
   };
 
   var _matchupsCache = {};
@@ -246,7 +252,7 @@
    * (normalized lowercase/trimmed) so they can be joined reliably to
    * matchup rows even when the team display name changed that year.
    * Also indexed by team name as a fallback for sheets without owner
-   * filled in.
+   * filled in. Now also carries total_moves (optional; null if absent).
    */
   function getStandingsRows(year) {
     return fetchRawStandingsRows().then(function (allRows) {
@@ -272,6 +278,7 @@
             pointsAgainst: toNumberOrNull(getField(r, "points_against")) || 0,
             finalRank: toNumberOrNull(getField(r, "final_rank")),
             madePlayoffs: toBool(getField(r, "made_playoffs")),
+            totalMoves: toNumberOrNull(getField(r, "total_moves")),
             champion: toBool(getField(r, "champion")),
             runnerUp: toBool(getField(r, "runner_up")),
           };
@@ -309,6 +316,11 @@
     return teams; // { teamName: ownerName }
   }
 
+  /**
+   * Builds the rosterMap for a season. Each team's totalMoves is pulled
+   * from the standings CSV if present, otherwise left as null so the
+   * Teams tab can show "Not available" instead of a fabricated 0.
+   */
   function buildRosterMap(rows, standingsIndex) {
     var teamOwnerMap = getTeamsForSeason(rows);
     var teamNames = Object.keys(teamOwnerMap);
@@ -342,7 +354,7 @@
           ? Math.round(standingsEntry.pointsAgainst * 100) / 100
           : 0,
         waiverBudgetUsed: 0,
-        totalMoves: 0,
+        totalMoves: standingsEntry ? standingsEntry.totalMoves : null,
         starters: [],
         players: [],
         finalRank: standingsEntry ? standingsEntry.finalRank : null,
@@ -502,9 +514,7 @@
    * including a given week, for the regular season only. Each matchup
    * row is one GAME (both sides) - so both the `team` side AND the
    * `opponent` side must be credited from the same row, using the
-   * inverse result for the opponent. Failing to credit the opponent
-   * side is what causes teams to appear stuck at 0-0 despite having
-   * played real games.
+   * inverse result for the opponent.
    */
   function buildRunningRecordsThroughWeek(rows, week) {
     var regularRows = rows.filter(function (r) {
@@ -572,11 +582,10 @@
   }
 
   /**
-   * Full season schedule for one team. Since matchups CSV rows are keyed
-   * by whichever side is listed as `team`, a team's full schedule must
-   * include games where it appears as `team` AND games where it appears
-   * as `opponent` (mirrored so the schedule always reads from that
-   * team's own perspective).
+   * Full season schedule for one team, combining rows where they appear
+   * as `team` AND rows where they appear as `opponent` (mirrored to read
+   * from their own perspective), since matchups CSV rows are keyed by
+   * whichever side is listed as `team`.
    */
   function buildTeamSchedule(rows, teamName) {
     var asTeam = rows
