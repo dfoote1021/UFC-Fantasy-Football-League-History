@@ -312,8 +312,9 @@
 
       showInfoBanner(
         "This is a historical ESPN season loaded from local data. " +
-          "Weekly rosters and transaction detail are not available for " +
-          "ESPN-era seasons."
+          "Weekly rosters and detailed per-move transaction history are " +
+          "not available for ESPN-era seasons; the Teams tab shows total " +
+          "move counts when that data has been added."
       );
 
       renderChampionBanner();
@@ -407,12 +408,17 @@
     standings.forEach(function (team) {
       var card = document.createElement("div");
       card.className = "team-card";
+      var totalMovesHtml =
+        team.totalMoves !== undefined && team.totalMoves !== null
+          ? '<div class="team-stats-row"><span>Total Transactions</span><span>' + team.totalMoves + "</span></div>"
+          : '<div class="team-stats-row"><span>Total Transactions</span><span>Not available</span></div>';
       card.innerHTML =
         "<div><strong>" + escapeHtml(team.teamName) + "</strong></div>" +
         "<p>" + escapeHtml(team.displayName) + "</p>" +
         '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
         '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
-        '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>";
+        '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
+        totalMovesHtml;
       grid.appendChild(card);
     });
   }
@@ -516,7 +522,8 @@
     var list = byId("transactions-list");
     if (list) {
       list.innerHTML =
-        "<li>Detailed transaction history is not available for ESPN seasons.</li>";
+        "<li>Detailed per-move transaction history is not available for ESPN seasons. " +
+        "Total transaction counts, if available, show on the Teams tab for each team.</li>";
     }
   }
 
@@ -1227,6 +1234,13 @@
     select.onchange = renderTransactions;
   }
 
+  /**
+   * Renders the Transactions list. Each transaction's header now shows
+   * "Team Name (Owner)" for every team involved, and each add/drop line
+   * shows the same "Team Name (Owner)" format, using the teamsWithOwners
+   * / teamWithOwner fields SleeperAPI.resolveTransactionDetail() now
+   * provides. Owner names automatically respect owner-overrides.js.
+   */
   async function renderTransactions() {
     if (state.dataSource === "espn") {
       renderTransactionsUnavailable();
@@ -1271,8 +1285,12 @@
       var detail = SleeperAPI.resolveTransactionDetail(txn, state.rosterMap, state.playersMap);
       var li = document.createElement("li");
 
+      var teamsDisplay = detail.teamsWithOwners && detail.teamsWithOwners.length
+        ? detail.teamsWithOwners
+        : detail.teams;
+
       var headerHtml =
-        '<div class="txn-header"><span>' + escapeHtml(detail.teams.join(" ↔ ")) +
+        '<div class="txn-header"><span>' + escapeHtml(teamsDisplay.join(" ↔ ")) +
         '</span><span class="txn-type-tag">' + escapeHtml(detail.type) + "</span></div>";
 
       var dateHtml =
@@ -1281,15 +1299,17 @@
 
       var addsHtml = detail.adds.length
         ? detail.adds.map(function (a) {
+            var teamLabel = a.teamWithOwner || a.team;
             return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
-              escapeHtml(a.player) + " → " + escapeHtml(a.team) + "</div>";
+              escapeHtml(a.player) + " → " + escapeHtml(teamLabel) + "</div>";
           }).join("")
         : "";
 
       var dropsHtml = detail.drops.length
         ? detail.drops.map(function (d) {
+            var teamLabel = d.teamWithOwner || d.team;
             return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
-              escapeHtml(d.player) + " from " + escapeHtml(d.team) + "</div>";
+              escapeHtml(d.player) + " from " + escapeHtml(teamLabel) + "</div>";
           }).join("")
         : "";
 
