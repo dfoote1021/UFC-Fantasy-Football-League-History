@@ -7,6 +7,10 @@
  * Sleeper's API is public, read-only, and CORS-enabled for browser use.
  * Docs: https://docs.sleeper.com
  *
+ * Owner display names can be overridden site-wide via owner-overrides.js
+ * (optional - if that script isn't loaded, or a username has no override
+ * configured, this falls back to whatever Sleeper reports as display_name).
+ *
  * Everything is wrapped in an IIFE and attached only to window.SleeperAPI.
  * No top-level const/let/var/function declarations leak into global scope.
  */
@@ -111,6 +115,26 @@
     return _playersMapPromise;
   }
 
+  /**
+   * Resolve a Sleeper user's display name through window.OwnerOverrides
+   * if that script is loaded and has a mapping for this user (checked by
+   * both display_name and username, since either might be what you set
+   * up an override for). Falls back to the raw Sleeper display_name
+   * unchanged if no override applies.
+   */
+  function resolveDisplayName(user) {
+    var raw = user.display_name || "Unknown Owner";
+    if (window.OwnerOverrides && typeof window.OwnerOverrides.resolveOwnerName === "function") {
+      var byDisplayName = window.OwnerOverrides.resolveOwnerName(raw);
+      if (byDisplayName !== raw) return byDisplayName;
+      if (user.username) {
+        var byUsername = window.OwnerOverrides.resolveOwnerName(user.username);
+        if (byUsername !== user.username) return byUsername;
+      }
+    }
+    return raw;
+  }
+
   function buildRosterMap(users, rosters) {
     var userById = {};
     users.forEach(function (u) {
@@ -128,7 +152,7 @@
         rosterId: r.roster_id,
         ownerId: r.owner_id,
         teamName: teamName,
-        displayName: user.display_name || "Unknown Owner",
+        displayName: resolveDisplayName(user),
         avatar: user.avatar
           ? "https://sleepercdn.com/avatars/thumbs/" + user.avatar
           : null,
