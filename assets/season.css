@@ -61,6 +61,14 @@ select {
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-small { padding: 3px 10px; font-size: 0.75rem; }
 
+.btn-alltime {
+  background: linear-gradient(90deg, #4f8cff, #3a6fd8);
+  color: #fff;
+  border-color: #3a6fd8;
+  font-weight: 600;
+}
+.btn-alltime:hover { opacity: 0.9; }
+
 .badge {
   padding: 3px 8px;
   border-radius: 4px;
@@ -362,3 +370,54 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   font-size: 0.8rem;
   padding: 20px;
 }
+
+/* ---- All-Time view ---- */
+
+.alltime-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.alltime-header h2 { margin: 0; }
+
+.alltime-tabs { padding: 0; margin-bottom: 20px; background: transparent; border-bottom: 1px solid var(--border); }
+
+#career-totals-table tr.top-champion td { color: var(--gold); font-weight: 700; }
+
+.h2h-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.h2h-vs { color: var(--text-dim); font-weight: 700; }
+
+.h2h-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.h2h-stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.h2h-stat-card .h2h-stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.h2h-stat-card .h2h-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+#h2h-games-table tr.h2h-a-win td:nth-child(4) { color: var(--win); font-weight: 700; }
+#h2h-games-table tr.h2h-b-win td:nth-child(5) { color: var(--win); font-weight: 700; }
