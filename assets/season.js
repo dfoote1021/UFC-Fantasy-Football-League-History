@@ -34,6 +34,7 @@
     playoffStartWeek: null,
     espnSeasonData: null,
     espnDraftData: null,
+    sleeperRunningRecordsByWeek: null,
   };
 
   function isEspnYear(season) {
@@ -174,6 +175,7 @@
     state.allTransactionsFlat = null;
     state.espnSeasonData = null;
     state.espnDraftData = null;
+    state.sleeperRunningRecordsByWeek = null;
 
     byId("page-title").textContent = season + " Season";
 
@@ -229,6 +231,10 @@
       renderStandings();
       renderDivisionStandings();
       await ensureAllWeeksMatchups();
+      state.sleeperRunningRecordsByWeek = SleeperAPI.buildAllRunningRecords(
+        state.allWeeksMatchups,
+        state.playoffStartWeek
+      );
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelects();
@@ -443,8 +449,7 @@
    * EspnDraftLoader. Each pick's Team and Owner come straight from
    * espn-draft.csv (no cross-file join needed) and are displayed as
    * "Team Name (Owner)", matching the display convention used elsewhere
-   * on the site (e.g. matchup records, and now the Sleeper draft board
-   * too - see renderDraft() below).
+   * on the site (e.g. matchup records, and the Sleeper draft board too).
    */
   async function renderDraftEspn(season) {
     var board = byId("draft-board");
@@ -843,6 +848,13 @@
     rosterWeekSelect.onchange = renderWeeklyRoster;
   }
 
+  /**
+   * Renders the Sleeper "By Week" matchups view, now including each
+   * team's cumulative regular-season record in parentheses next to its
+   * name - "Team Name (W-L)" - matching the ESPN weekly view's format.
+   * Records come from state.sleeperRunningRecordsByWeek, precomputed
+   * once per season load via SleeperAPI.buildAllRunningRecords().
+   */
   async function renderMatchups() {
     var weekSelect = byId("week-select");
     var week = Number(weekSelect.value) || state.currentWeek;
@@ -872,6 +884,9 @@
       }
     }
 
+    var recordsThisWeek =
+      (state.sleeperRunningRecordsByWeek && state.sleeperRunningRecordsByWeek[week]) || {};
+
     var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
     list.innerHTML = "";
     pairs.forEach(function (pair, idx) {
@@ -879,13 +894,22 @@
       card.className = "matchup-card";
       var aWins = pair.teamB && pair.teamA.points > pair.teamB.points;
       var bWins = pair.teamB && pair.teamB.points > pair.teamA.points;
+
+      var aRecord = recordsThisWeek[pair.teamA.rosterId]
+        ? " (" + recordsThisWeek[pair.teamA.rosterId] + ")"
+        : "";
+      var bRecord =
+        pair.teamB && recordsThisWeek[pair.teamB.rosterId]
+          ? " (" + recordsThisWeek[pair.teamB.rosterId] + ")"
+          : "";
+
       var rowA =
         '<div class="matchup-row ' + (aWins ? "winner" : "") + '">' +
-        "<span>" + escapeHtml(pair.teamA.teamName) + "</span>" +
+        "<span>" + escapeHtml(pair.teamA.teamName) + escapeHtml(aRecord) + "</span>" +
         "<span>" + pair.teamA.points.toFixed(2) + "</span></div>";
       var rowB = pair.teamB
         ? '<div class="matchup-row ' + (bWins ? "winner" : "") + '">' +
-          "<span>" + escapeHtml(pair.teamB.teamName) + "</span>" +
+          "<span>" + escapeHtml(pair.teamB.teamName) + escapeHtml(bRecord) + "</span>" +
           "<span>" + pair.teamB.points.toFixed(2) + "</span></div>"
         : '<div class="matchup-row">BYE</div>';
 
@@ -1071,10 +1095,9 @@
   /**
    * Renders the Sleeper draft board. Each pick shows the team name plus
    * its owner in parentheses - "Team Name (Owner)" - matching the same
-   * display convention used on the ESPN draft board (see renderDraftEspn
-   * above). Owner names respect owner-overrides.js if configured, since
-   * SleeperAPI.buildDraftBoard() derives ownerName from each roster's
-   * already-resolved displayName.
+   * display convention used on the ESPN draft board. Owner names respect
+   * owner-overrides.js if configured, since SleeperAPI.buildDraftBoard()
+   * derives ownerName from each roster's already-resolved displayName.
    */
   async function renderDraft() {
     if (state.dataSource === "espn") {
