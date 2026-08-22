@@ -11,6 +11,14 @@
  * (optional - if that script isn't loaded, or a username has no override
  * configured, this falls back to whatever Sleeper reports as display_name).
  *
+ * IMPORTANT: this league does not use week 18. Some older Sleeper seasons
+ * (e.g. 2022) actually DO have real scored matchup data in week 18 from
+ * when the NFL/Sleeper schedule extended that far, but this league treats
+ * week 18 as out of scope for every season regardless of what Sleeper's
+ * API returns. MAX_SLEEPER_WEEK below is a hard cutoff applied everywhere
+ * weeks are fetched, listed, or used in calculations, so week 18 (and
+ * beyond) is never fetched, displayed, or counted - for any season.
+ *
  * Everything is wrapped in an IIFE and attached only to window.SleeperAPI.
  * No top-level const/let/var/function declarations leak into global scope.
  */
@@ -29,6 +37,14 @@
   };
 
   var CURRENT_LIVE_SEASON = 2026;
+
+  /**
+   * Hard cutoff: this league never uses week 18 or beyond, for any
+   * season, even when Sleeper's API has real data there (as it does for
+   * 2022). Every function that fetches, lists, or computes across weeks
+   * respects this constant.
+   */
+  var MAX_SLEEPER_WEEK = 17;
 
   function sleeperGet(path) {
     return fetch(SLEEPER_API + path).then(function (res) {
@@ -316,10 +332,13 @@
   function getDefaultWeek(league) {
     return getNFLState()
       .then(function (state) {
+        var week;
         if (league.season === state.season) {
-          return Math.max(1, state.display_week || state.week || 1);
+          week = Math.max(1, state.display_week || state.week || 1);
+        } else {
+          week = (league.settings && league.settings.leg) || MAX_SLEEPER_WEEK;
         }
-        return (league.settings && league.settings.leg) || 17;
+        return Math.min(week, MAX_SLEEPER_WEEK);
       })
       .catch(function () {
         return 1;
@@ -327,15 +346,11 @@
   }
 
   /**
-   * A week is considered "played" only if Sleeper returned at least one
+   * A week is considered "played" if Sleeper returned at least one
    * matchup row for it AND at least one roster in that week has a
-   * non-zero score. Sleeper's API can return an empty array ([]) for
-   * weeks past a league's actual final week (confirmed directly against
-   * this league: week 18 returns []), and those must never appear in
-   * week-select dropdowns, schedules, or running-record calculations.
-   * This is the single source of truth for that check, used by
-   * buildAllRunningRecords, buildTeamSchedule, and season.js's
-   * week-dropdown population.
+   * non-zero score. Combined with the hard MAX_SLEEPER_WEEK cutoff
+   * applied everywhere this is used, week 18+ is never fetched or
+   * considered regardless of what Sleeper's API has stored for it.
    */
   function isWeekPlayed(weekMatchups) {
     if (!weekMatchups || weekMatchups.length === 0) return false;
@@ -344,10 +359,16 @@
     });
   }
 
+  /**
+   * Fetches matchups for weeks 1..maxWeek, hard-capped at
+   * MAX_SLEEPER_WEEK regardless of what's passed in - this league never
+   * uses week 18 or beyond, for any season, so it's never even
+   * requested from Sleeper's API.
+   */
   function getAllWeeksMatchups(leagueId, maxWeek) {
-    maxWeek = maxWeek || 18;
+    var cappedMaxWeek = Math.min(maxWeek || MAX_SLEEPER_WEEK, MAX_SLEEPER_WEEK);
     var weeks = [];
-    for (var i = 1; i <= maxWeek; i++) weeks.push(i);
+    for (var i = 1; i <= cappedMaxWeek; i++) weeks.push(i);
 
     var results = {};
     var chain = Promise.resolve();
@@ -369,16 +390,14 @@
 
   /**
    * Filters allWeeksMatchups down to only the weeks that have actually
-   * been played (see isWeekPlayed above), sorted ascending. Use this
-   * wherever you need "the real list of weeks this season has played" -
-   * e.g. populating a week-select dropdown - instead of assuming every
-   * key present in allWeeksMatchups is a real week.
+   * been played (see isWeekPlayed above) AND are at or below
+   * MAX_SLEEPER_WEEK, sorted ascending.
    */
   function getPlayedWeeks(allWeeksMatchups) {
     return Object.keys(allWeeksMatchups)
       .map(Number)
       .filter(function (week) {
-        return isWeekPlayed(allWeeksMatchups[week]);
+        return week <= MAX_SLEEPER_WEEK && isWeekPlayed(allWeeksMatchups[week]);
       })
       .sort(function (a, b) {
         return a - b;
@@ -390,7 +409,7 @@
     Object.keys(allWeeksMatchups)
       .map(Number)
       .filter(function (week) {
-        return isWeekPlayed(allWeeksMatchups[week]);
+        return week <= MAX_SLEEPER_WEEK && isWeekPlayed(allWeeksMatchups[week]);
       })
       .sort(function (a, b) {
         return a - b;
@@ -435,16 +454,8 @@
 
   /**
    * Compute every roster's cumulative regular-season win-loss(-tie)
-   * record through and including a given week, from Sleeper's raw
-   * per-week matchup arrays (allWeeksMatchups, as returned by
-   * getAllWeeksMatchups). Only weeks that pass isWeekPlayed() are
-   * counted, so unplayed placeholder weeks (e.g. week 18 in a league
-   * that ends at week 17) never affect records.
-   *
-   * Playoff weeks are excluded from the record so a team's "regular
-   * season" record doesn't change during the playoffs. Pass
-   * playoffStartWeek (from league.settings.playoff_week_start) so weeks
-   * at or after that cutoff are excluded.
+   * record through and including a given week. Only weeks that are
+   * <= MAX_SLEEPER_WEEK and pass isWeekPlayed() are counted.
    *
    * Returns { rosterId: "W-L" } (or "W-L-T" if that roster has any ties).
    */
@@ -458,7 +469,7 @@
     Object.keys(allWeeksMatchups)
       .map(Number)
       .filter(function (w) {
-        var withinRange = w <= week;
+        var withinRange = w <= week && w <= MAX_SLEEPER_WEEK;
         var isRegularSeason = !playoffStartWeek || w < playoffStartWeek;
         var played = isWeekPlayed(allWeeksMatchups[w]);
         return withinRange && isRegularSeason && played;
@@ -511,10 +522,8 @@
   }
 
   /**
-   * Precompute running records for every PLAYED week in one pass,
-   * returning { week: { rosterId: "W-L" } }. Unplayed weeks (see
-   * isWeekPlayed) are skipped entirely, so they never show up as keys
-   * in the returned object.
+   * Precompute running records for every PLAYED week (up to
+   * MAX_SLEEPER_WEEK) in one pass, returning { week: { rosterId: "W-L" } }.
    */
   function buildAllRunningRecords(allWeeksMatchups, playoffStartWeek) {
     var result = {};
@@ -790,6 +799,11 @@
     return counts;
   }
 
+  /**
+   * Builds a full downloadable JSON snapshot of a season. Matchups and
+   * transactions are only fetched through MAX_SLEEPER_WEEK, since this
+   * league never uses week 18+ for any season.
+   */
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
       getLeague(leagueId),
@@ -818,7 +832,7 @@
 
       return draftPicksPromise.then(function (draftPicks) {
         var weeks = [];
-        for (var i = 1; i <= 18; i++) weeks.push(i);
+        for (var i = 1; i <= MAX_SLEEPER_WEEK; i++) weeks.push(i);
 
         var allMatchups = {};
         var allTransactions = {};
@@ -878,6 +892,7 @@
   window.SleeperAPI = {
     SLEEPER_SEASONS: SLEEPER_SEASONS,
     CURRENT_LIVE_SEASON: CURRENT_LIVE_SEASON,
+    MAX_SLEEPER_WEEK: MAX_SLEEPER_WEEK,
     getLeague: getLeague,
     getUsers: getUsers,
     getRosters: getRosters,
