@@ -8,12 +8,20 @@
  * and owner-overrides.js maps Sleeper usernames to those same names).
  *
  * Two things this module produces:
- *   1. Career totals: one row per owner, combined W-L-T, points for/
- *      against, championships, playoff appearances, seasons played -
- *      across every year of the league's history.
+ *   1. Career totals: one row per owner, W-L-T and points for/against
+ *      split into REGULAR SEASON and PLAYOFFS separately (plus a
+ *      combined total), championships, playoff appearances, seasons
+ *      played - across every year of the league's history.
  *   2. Head-to-head: for any two owners, every individual matchup
- *      they've ever played against each other, plus the aggregate
- *      record between them.
+ *      they've ever played against each other, with regular-season
+ *      and playoff results broken out separately.
+ *
+ * IMPORTANT: regular-season vs playoff splits are derived directly from
+ * the per-GAME list (each game already carries an isPlayoff flag set
+ * from ESPN's row data or from Sleeper's playoff_week_start), NOT from
+ * each source's own aggregate win/loss totals. This keeps ESPN and
+ * Sleeper seasons computed by the exact same method instead of trusting
+ * two different platforms' definitions of "wins" to already agree.
  *
  * This is intentionally a separate module from season.js/espn-loader.js
  * /sleeper-common.js - it READS data through those existing loaders
@@ -33,12 +41,23 @@
     return String(name || "").trim().toLowerCase();
   }
 
+  function newSplitRecord() {
+    return {
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      pointsFor: 0,
+      pointsAgainst: 0,
+    };
+  }
+
   /**
    * Loads and normalizes ONE ESPN season into the shape used by the
-   * aggregator: a list of per-team season summaries, plus a flat list
-   * of individual games (one entry per game, with both owners'
-   * identities and scores, so head-to-head lookups can pull either
-   * side).
+   * aggregator: a list of per-team season summaries (championship /
+   * runner-up / playoff-appearance flags only - no W-L here, those are
+   * derived from games), plus a flat list of individual games (one
+   * entry per game, with both owners' identities, scores, and an
+   * isPlayoff flag).
    */
   function loadEspnSeasonForAllTime(year) {
     return window.EspnLoader.loadSeason(year).then(function (data) {
@@ -50,11 +69,6 @@
           ownerKey: normalizeOwnerKey(t.displayName || t.ownerId),
           ownerName: t.displayName || t.ownerId,
           teamName: t.teamName,
-          wins: t.wins || 0,
-          losses: t.losses || 0,
-          ties: t.ties || 0,
-          pointsFor: t.fpts || 0,
-          pointsAgainst: t.fptsAgainst || 0,
           madePlayoffs: !!t.madePlayoffs,
           isChampion: !!t.isChampionFlag,
           isRunnerUp: !!t.isRunnerUpFlag,
@@ -72,7 +86,7 @@
           year: year,
           source: "espn",
           week: r.week,
-          isPlayoff: r.isPlayoff,
+          isPlayoff: !!r.isPlayoff,
           ownerAKey: teamOwner,
           ownerAName: r.teamOwner,
           ownerATeamName: r.team,
@@ -92,6 +106,8 @@
    * Loads and normalizes ONE Sleeper season into the same shape as
    * loadEspnSeasonForAllTime, resolving each roster's owner through
    * SleeperAPI.buildRosterMap (which already applies owner-overrides.js).
+   * madePlayoffs is derived by checking whether the roster appears
+   * anywhere in that season's winners bracket.
    */
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
@@ -114,6 +130,12 @@
       var finalStandingsInfo = SleeperAPI.buildFinalStandings(rosterMap, winnersBracket);
       var playoffStartWeek = (league.settings && league.settings.playoff_week_start) || null;
 
+      var playoffRosterIds = {};
+      (winnersBracket || []).forEach(function (m) {
+        if (m.t1) playoffRosterIds[m.t1] = true;
+        if (m.t2) playoffRosterIds[m.t2] = true;
+      });
+
       var teamSummaries = Object.keys(rosterMap).map(function (rid) {
         var t = rosterMap[rid];
         var isChamp = finalStandingsInfo.champion && finalStandingsInfo.champion.rosterId === t.rosterId;
@@ -124,12 +146,7 @@
           ownerKey: normalizeOwnerKey(t.displayName),
           ownerName: t.displayName,
           teamName: t.teamName,
-          wins: t.wins || 0,
-          losses: t.losses || 0,
-          ties: t.ties || 0,
-          pointsFor: t.fpts || 0,
-          pointsAgainst: t.fptsAgainst || 0,
-          madePlayoffs: false, // Sleeper doesn't expose a reliable per-roster playoff flag pre-completion; left false rather than guessed
+          madePlayoffs: !!playoffRosterIds[t.rosterId],
           isChampion: !!isChamp,
           isRunnerUp: !!isRunnerUp,
         };
@@ -215,11 +232,52 @@
   }
 
   /**
-   * Aggregates every season's teamSummaries into one row per owner,
-   * covering their entire career across both ESPN and Sleeper eras.
+   * Walks every game across every season once and buckets each game's
+   * result (win/loss/tie + points) onto the correct owner AND the
+   * correct split (regular vs playoff), based on the game's isPlayoff
+   * flag. This is the single source of truth both buildCareerTotals
+   * and the per-owner regular/playoff totals rely on.
+   */
+  function accumulateGameRecords(allSeasonsData) {
+    var byOwner = {}; // ownerKey -> { regular: {...}, playoff: {...} }
+
+    function ensure(ownerKey) {
+      if (!byOwner[ownerKey]) {
+        byOwner[ownerKey] = { regular: newSplitRecord(), playoff: newSplitRecord() };
+      }
+      return byOwner[ownerKey];
+    }
+
+    function applyResult(record, myScore, oppScore) {
+      record.pointsFor += myScore;
+      record.pointsAgainst += oppScore;
+      if (myScore > oppScore) record.wins += 1;
+      else if (myScore < oppScore) record.losses += 1;
+      else record.ties += 1;
+    }
+
+    allSeasonsData.forEach(function (season) {
+      season.games.forEach(function (g) {
+        var splitKey = g.isPlayoff ? "playoff" : "regular";
+        var entryA = ensure(g.ownerAKey);
+        var entryB = ensure(g.ownerBKey);
+        applyResult(entryA[splitKey], g.ownerAScore, g.ownerBScore);
+        applyResult(entryB[splitKey], g.ownerBScore, g.ownerAScore);
+      });
+    });
+
+    return byOwner;
+  }
+
+  /**
+   * Aggregates every season's teamSummaries (for seasons/championships/
+   * playoff appearances) plus the game-derived regular/playoff records
+   * (for W-L-T and points) into one row per owner, covering their
+   * entire career across both ESPN and Sleeper eras.
    */
   function buildCareerTotals(allSeasonsData) {
     var byOwner = {};
+    var gameRecords = accumulateGameRecords(allSeasonsData);
 
     allSeasonsData.forEach(function (season) {
       season.teamSummaries.forEach(function (t) {
@@ -228,11 +286,6 @@
             ownerKey: t.ownerKey,
             ownerName: t.ownerName,
             seasons: 0,
-            wins: 0,
-            losses: 0,
-            ties: 0,
-            pointsFor: 0,
-            pointsAgainst: 0,
             championships: 0,
             runnerUps: 0,
             playoffAppearances: 0,
@@ -241,11 +294,6 @@
         }
         var entry = byOwner[t.ownerKey];
         entry.seasons += 1;
-        entry.wins += t.wins;
-        entry.losses += t.losses;
-        entry.ties += t.ties;
-        entry.pointsFor += t.pointsFor;
-        entry.pointsAgainst += t.pointsAgainst;
         if (t.isChampion) entry.championships += 1;
         if (t.isRunnerUp) entry.runnerUps += 1;
         if (t.madePlayoffs) entry.playoffAppearances += 1;
@@ -256,9 +304,23 @@
     return Object.keys(byOwner)
       .map(function (k) {
         var e = byOwner[k];
-        e.pointsFor = Math.round(e.pointsFor * 100) / 100;
-        e.pointsAgainst = Math.round(e.pointsAgainst * 100) / 100;
-        e.winPct = e.wins + e.losses + e.ties > 0 ? e.wins / (e.wins + e.losses + e.ties) : 0;
+        var rec = gameRecords[k] || { regular: newSplitRecord(), playoff: newSplitRecord() };
+
+        e.regular = roundSplit(rec.regular);
+        e.playoff = roundSplit(rec.playoff);
+
+        e.combined = {
+          wins: e.regular.wins + e.playoff.wins,
+          losses: e.regular.losses + e.playoff.losses,
+          ties: e.regular.ties + e.playoff.ties,
+          pointsFor: Math.round((e.regular.pointsFor + e.playoff.pointsFor) * 100) / 100,
+          pointsAgainst: Math.round((e.regular.pointsAgainst + e.playoff.pointsAgainst) * 100) / 100,
+        };
+
+        e.regular.winPct = winPct(e.regular);
+        e.playoff.winPct = winPct(e.playoff);
+        e.combined.winPct = winPct(e.combined);
+
         e.yearsList.sort(function (a, b) {
           return a - b;
         });
@@ -266,16 +328,31 @@
       })
       .sort(function (a, b) {
         if (b.championships !== a.championships) return b.championships - a.championships;
-        if (b.winPct !== a.winPct) return b.winPct - a.winPct;
-        return b.wins - a.wins;
+        if (b.combined.winPct !== a.combined.winPct) return b.combined.winPct - a.combined.winPct;
+        return b.combined.wins - a.combined.wins;
       });
+  }
+
+  function roundSplit(rec) {
+    return {
+      wins: rec.wins,
+      losses: rec.losses,
+      ties: rec.ties,
+      pointsFor: Math.round(rec.pointsFor * 100) / 100,
+      pointsAgainst: Math.round(rec.pointsAgainst * 100) / 100,
+    };
+  }
+
+  function winPct(rec) {
+    var total = rec.wins + rec.losses + rec.ties;
+    return total > 0 ? rec.wins / total : 0;
   }
 
   /**
    * Every individual game ever played between two specific owners,
-   * across all seasons, plus the aggregate head-to-head record.
-   * ownerAQuery/ownerBQuery are matched case-insensitively against
-   * ownerKey.
+   * across all seasons, split into regular-season and playoff games,
+   * each with its own aggregate head-to-head summary. ownerAQuery/
+   * ownerBQuery are matched case-insensitively against ownerKey.
    */
   function buildHeadToHead(allSeasonsData, ownerAQuery, ownerBQuery) {
     var keyA = normalizeOwnerKey(ownerAQuery);
@@ -310,27 +387,42 @@
       return (a.week || 0) - (b.week || 0);
     });
 
-    var summary = {
-      totalGames: matchups.length,
-      ownerAWins: 0,
-      ownerBWins: 0,
-      ties: 0,
-      ownerATotalPoints: 0,
-      ownerBTotalPoints: 0,
-    };
+    function summarize(list) {
+      var summary = {
+        totalGames: list.length,
+        ownerAWins: 0,
+        ownerBWins: 0,
+        ties: 0,
+        ownerATotalPoints: 0,
+        ownerBTotalPoints: 0,
+      };
+      list.forEach(function (m) {
+        summary.ownerATotalPoints += m.ownerAScore || 0;
+        summary.ownerBTotalPoints += m.ownerBScore || 0;
+        if (m.ownerAScore > m.ownerBScore) summary.ownerAWins += 1;
+        else if (m.ownerBScore > m.ownerAScore) summary.ownerBWins += 1;
+        else summary.ties += 1;
+      });
+      summary.ownerAvgA = summary.totalGames > 0 ? summary.ownerATotalPoints / summary.totalGames : 0;
+      summary.ownerAvgB = summary.totalGames > 0 ? summary.ownerBTotalPoints / summary.totalGames : 0;
+      return summary;
+    }
 
-    matchups.forEach(function (m) {
-      summary.ownerATotalPoints += m.ownerAScore || 0;
-      summary.ownerBTotalPoints += m.ownerBScore || 0;
-      if (m.ownerAScore > m.ownerBScore) summary.ownerAWins += 1;
-      else if (m.ownerBScore > m.ownerAScore) summary.ownerBWins += 1;
-      else summary.ties += 1;
+    var regularMatchups = matchups.filter(function (m) {
+      return !m.isPlayoff;
+    });
+    var playoffMatchups = matchups.filter(function (m) {
+      return m.isPlayoff;
     });
 
-    summary.ownerAvgA = summary.totalGames > 0 ? summary.ownerATotalPoints / summary.totalGames : 0;
-    summary.ownerAvgB = summary.totalGames > 0 ? summary.ownerBTotalPoints / summary.totalGames : 0;
-
-    return { matchups: matchups, summary: summary };
+    return {
+      matchups: matchups,
+      regularMatchups: regularMatchups,
+      playoffMatchups: playoffMatchups,
+      summary: summarize(matchups),
+      regularSummary: summarize(regularMatchups),
+      playoffSummary: summarize(playoffMatchups),
+    };
   }
 
   /** Distinct list of owner names seen across all seasons, for populating head-to-head dropdowns. */
