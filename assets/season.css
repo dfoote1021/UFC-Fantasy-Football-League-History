@@ -383,6 +383,9 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 .alltime-tabs { padding: 0; margin-bottom: 20px; background: transparent; border-bottom: 1px solid var(--border); }
 
+.career-view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+.career-toggle-btn.active { border-color: var(--accent); color: var(--accent); }
+
 #career-totals-table tr.top-champion td { color: var(--gold); font-weight: 700; }
 
 .h2h-picker {
@@ -394,11 +397,21 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 }
 .h2h-vs { color: var(--text-dim); font-weight: 700; }
 
+.h2h-split-heading {
+  margin-top: 24px;
+  margin-bottom: 10px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.h2h-split-heading:first-of-type { margin-top: 0; }
+
 .h2h-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 .h2h-stat-card {
   background: var(--panel);
@@ -421,3 +434,4 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 #h2h-games-table tr.h2h-a-win td:nth-child(4) { color: var(--win); font-weight: 700; }
 #h2h-games-table tr.h2h-b-win td:nth-child(5) { color: var(--win); font-weight: 700; }
+#h2h-games-table tr.h2h-playoff-row td { background: rgba(255, 210, 92, 0.08); }
