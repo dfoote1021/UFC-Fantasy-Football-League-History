@@ -443,7 +443,8 @@
    * EspnDraftLoader. Each pick's Team and Owner come straight from
    * espn-draft.csv (no cross-file join needed) and are displayed as
    * "Team Name (Owner)", matching the display convention used elsewhere
-   * on the site (e.g. matchup records).
+   * on the site (e.g. matchup records, and now the Sleeper draft board
+   * too - see renderDraft() below).
    */
   async function renderDraftEspn(season) {
     var board = byId("draft-board");
@@ -1067,6 +1068,14 @@
     }
   }
 
+  /**
+   * Renders the Sleeper draft board. Each pick shows the team name plus
+   * its owner in parentheses - "Team Name (Owner)" - matching the same
+   * display convention used on the ESPN draft board (see renderDraftEspn
+   * above). Owner names respect owner-overrides.js if configured, since
+   * SleeperAPI.buildDraftBoard() derives ownerName from each roster's
+   * already-resolved displayName.
+   */
   async function renderDraft() {
     if (state.dataSource === "espn") {
       await renderDraftEspn(state.season);
@@ -1088,11 +1097,15 @@
       boardData.forEach(function (pick) {
         var div = document.createElement("div");
         div.className = "draft-pick";
+        var teamLabel =
+          pick.ownerName && pick.ownerName !== pick.teamName
+            ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
+            : escapeHtml(pick.teamName);
         div.innerHTML =
           '<div class="pick-num">Pick ' + pick.pickNo + " (R" + pick.round + ')</div>' +
           "<div>" + escapeHtml(pick.playerName) + "</div>" +
           "<div>" + escapeHtml(pick.position) + " " + escapeHtml(pick.nflTeam) + "</div>" +
-          '<div class="draft-owner">' + escapeHtml(pick.teamName) + "</div>";
+          '<div class="draft-owner">' + teamLabel + "</div>";
         board.appendChild(div);
       });
     } catch (e) {
