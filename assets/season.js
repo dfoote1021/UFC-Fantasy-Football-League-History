@@ -33,6 +33,7 @@
     txnCountsByRoster: {},
     playoffStartWeek: null,
     espnSeasonData: null,
+    espnDraftData: null,
   };
 
   function isEspnYear(season) {
@@ -172,6 +173,7 @@
     state.allWeeksMatchups = null;
     state.allTransactionsFlat = null;
     state.espnSeasonData = null;
+    state.espnDraftData = null;
 
     byId("page-title").textContent = season + " Season";
 
@@ -286,9 +288,8 @@
 
       showInfoBanner(
         "This is a historical ESPN season loaded from local data. " +
-          "Weekly rosters, draft board, and transaction detail are not " +
-          "available for ESPN-era seasons; team-level transaction totals " +
-          "will show if that data has been added."
+          "Weekly rosters and transaction detail are not available for " +
+          "ESPN-era seasons."
       );
 
       renderChampionBanner();
@@ -301,7 +302,7 @@
       renderTeamsEspn();
       await populateScheduleTeamSelectEspn();
       renderTeamScheduleEspn();
-      renderDraftUnavailable();
+      await renderDraftEspn(season);
       renderTransactionsUnavailable();
       renderLeagueInfoRawEspn(season);
 
@@ -387,8 +388,7 @@
         "<p>" + escapeHtml(team.displayName) + "</p>" +
         '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
         '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
-        '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
-        '<div class="team-stats-row"><span>Transactions</span><span>Not loaded</span></div>';
+        '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>";
       grid.appendChild(card);
     });
   }
@@ -438,17 +438,61 @@
     });
   }
 
-  function renderDraftUnavailable() {
+  /**
+   * Renders the ESPN draft board for the current season using
+   * EspnDraftLoader. Each pick's Team and Owner come straight from
+   * espn-draft.csv (no cross-file join needed) and are displayed as
+   * "Team Name (Owner)", matching the display convention used elsewhere
+   * on the site (e.g. matchup records).
+   */
+  async function renderDraftEspn(season) {
     var board = byId("draft-board");
-    if (board) board.innerHTML = "<p>Draft board data not available for ESPN seasons yet.</p>";
+    if (!board) return;
+
+    if (!window.EspnDraftLoader) {
+      board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
+      return;
+    }
+
+    board.innerHTML = "<p>Loading draft board…</p>";
+
+    try {
+      var draftData = await window.EspnDraftLoader.loadDraft(season);
+      state.espnDraftData = draftData;
+
+      if (!draftData.picks || draftData.picks.length === 0) {
+        board.innerHTML = "<p>No draft data found for " + season + ".</p>";
+        return;
+      }
+
+      board.innerHTML = "";
+      draftData.picks.forEach(function (pick) {
+        var div = document.createElement("div");
+        div.className = "draft-pick";
+        var teamLabel = pick.owner
+          ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
+          : escapeHtml(pick.team);
+        var keeperTag = pick.isKeeper
+          ? '<div class="draft-owner" style="color:#ffd25c;">KEEPER</div>'
+          : "";
+        div.innerHTML =
+          '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ')</div>' +
+          "<div>" + escapeHtml(pick.playerName) + "</div>" +
+          '<div class="draft-owner">' + teamLabel + "</div>" +
+          keeperTag;
+        board.appendChild(div);
+      });
+    } catch (e) {
+      console.error(e);
+      board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
+    }
   }
 
   function renderTransactionsUnavailable() {
     var list = byId("transactions-list");
     if (list) {
       list.innerHTML =
-        "<li>Detailed transaction history is not available for ESPN seasons. " +
-        "Team-level transaction totals will appear on the Teams tab once added.</li>";
+        "<li>Detailed transaction history is not available for ESPN seasons.</li>";
     }
   }
 
@@ -461,6 +505,7 @@
         source: "ESPN (local CSV)",
         teams: Object.keys(state.rosterMap).length,
         weeks: state.espnSeasonData ? state.espnSeasonData.weeks.length : 0,
+        draftPicksLoaded: state.espnDraftData ? state.espnDraftData.picks.length : 0,
       },
       null,
       2
@@ -567,7 +612,7 @@
   function renderDivisionStandings() {
     var wrap = byId("division-standings-wrap");
     if (!wrap) return;
-    if (state.dataSource === "espn") return; // handled separately by renderDivisionStandingsEspn
+    if (state.dataSource === "espn") return;
 
     var divisions = SleeperAPI.buildDivisionStandings(
       state.rosterMap,
@@ -1024,7 +1069,7 @@
 
   async function renderDraft() {
     if (state.dataSource === "espn") {
-      renderDraftUnavailable();
+      await renderDraftEspn(state.season);
       return;
     }
 
