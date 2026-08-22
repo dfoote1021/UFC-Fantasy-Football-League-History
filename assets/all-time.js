@@ -36,8 +36,9 @@
   /**
    * Loads and normalizes ONE ESPN season into the shape used by the
    * aggregator: a list of per-team season summaries, plus a flat list
-   * of individual games (one entry per team per game, so both sides of
-   * every matchup are represented for head-to-head lookups).
+   * of individual games (one entry per game, with both owners'
+   * identities and scores, so head-to-head lookups can pull either
+   * side).
    */
   function loadEspnSeasonForAllTime(year) {
     return window.EspnLoader.loadSeason(year).then(function (data) {
@@ -128,7 +129,7 @@
           ties: t.ties || 0,
           pointsFor: t.fpts || 0,
           pointsAgainst: t.fptsAgainst || 0,
-          madePlayoffs: !!(league.settings && league.settings.playoff_teams), // best-effort; real flag not always exposed per-roster
+          madePlayoffs: false, // Sleeper doesn't expose a reliable per-roster playoff flag pre-completion; left false rather than guessed
           isChampion: !!isChamp,
           isRunnerUp: !!isRunnerUp,
         };
@@ -221,7 +222,7 @@
     var byOwner = {};
 
     allSeasonsData.forEach(function (season) {
-      season.teamSummaries.forEach function (t) {
+      season.teamSummaries.forEach(function (t) {
         if (!byOwner[t.ownerKey]) {
           byOwner[t.ownerKey] = {
             ownerKey: t.ownerKey,
@@ -248,7 +249,7 @@
         if (t.isChampion) entry.championships += 1;
         if (t.isRunnerUp) entry.runnerUps += 1;
         if (t.madePlayoffs) entry.playoffAppearances += 1;
-        entry.yearsList.push(season.year);
+        entry.yearsList.push(t.year);
       });
     });
 
@@ -258,7 +259,9 @@
         e.pointsFor = Math.round(e.pointsFor * 100) / 100;
         e.pointsAgainst = Math.round(e.pointsAgainst * 100) / 100;
         e.winPct = e.wins + e.losses + e.ties > 0 ? e.wins / (e.wins + e.losses + e.ties) : 0;
-        e.yearsList.sort();
+        e.yearsList.sort(function (a, b) {
+          return a - b;
+        });
         return e;
       })
       .sort(function (a, b) {
