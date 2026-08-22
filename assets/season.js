@@ -8,6 +8,8 @@
  * Also drives the "All-Time" view (career totals + head-to-head across
  * every season), toggled via the button next to the season dropdown -
  * see showAllTimeView()/hideAllTimeView() near the bottom of this file.
+ * Career totals and head-to-head both split regular-season from playoff
+ * results (see all-time.js for how that split is computed).
  *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
@@ -46,6 +48,7 @@
     sleeperRunningRecordsByWeek: null,
     sleeperPlayedWeeks: null,
     allTimeData: null,
+    careerSplit: "combined",
   };
 
   function isEspnYear(season) {
@@ -1336,7 +1339,9 @@
    * All-Time view: career totals + head-to-head across every season.
    * Toggled via #alltime-btn / #back-to-season-btn. Data is loaded
    * once per page session via AllTimeStats.loadAllSeasons() and
-   * cached in state.allTimeData.
+   * cached in state.allTimeData. Both career totals and head-to-head
+   * split regular-season results from playoff results - see
+   * all-time.js for how that split is computed per-game.
    * ============================================================ */
 
   function showAllTimeView() {
@@ -1376,9 +1381,25 @@
     });
   }
 
+  function setupCareerToggle() {
+    var buttons = document.querySelectorAll(".career-toggle-btn");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        buttons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.careerSplit = btn.dataset.split;
+        if (state.allTimeData) {
+          renderCareerTotals(state.allTimeData, state.careerSplit);
+        }
+      });
+    });
+  }
+
   async function loadAllTimeData() {
     if (state.allTimeData) {
-      renderCareerTotals(state.allTimeData);
+      renderCareerTotals(state.allTimeData, state.careerSplit);
       populateH2hSelectors(state.allTimeData);
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
@@ -1391,7 +1412,7 @@
     try {
       var allSeasonsData = await window.AllTimeStats.loadAllSeasons();
       state.allTimeData = allSeasonsData;
-      renderCareerTotals(allSeasonsData);
+      renderCareerTotals(allSeasonsData, state.careerSplit);
       populateH2hSelectors(allSeasonsData);
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
@@ -1402,28 +1423,52 @@
     }
   }
 
-  function renderCareerTotals(allSeasonsData) {
+  /**
+   * Renders the career totals table for the given split ("combined",
+   * "regular", or "playoff"). Sort order (championships first, then
+   * win% within that split, then wins) is recomputed per split so
+   * e.g. switching to "Playoffs Only" ranks owners by playoff record
+   * rather than their overall career record.
+   */
+  function renderCareerTotals(allSeasonsData, split) {
     var tbody = document.querySelector("#career-totals-table tbody");
     if (!tbody) return;
 
     var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
+
+    var sorted = totals.slice().sort(function (a, b) {
+      if (split === "combined" || split === "regular" || split === "playoff") {
+        var recA = a[split];
+        var recB = b[split];
+        if (split === "combined" && b.championships !== a.championships) {
+          return b.championships - a.championships;
+        }
+        if (recB.winPct !== recA.winPct) return recB.winPct - recA.winPct;
+        return recB.wins - recA.wins;
+      }
+      return 0;
+    });
+
     tbody.innerHTML = "";
 
-    totals.forEach(function (owner, idx) {
+    sorted.forEach(function (owner, idx) {
+      var rec = owner[split] || owner.combined;
       var tr = document.createElement("tr");
-      if (idx === 0 && owner.championships > 0) tr.classList.add("top-champion");
+      if (idx === 0 && split === "combined" && owner.championships > 0) {
+        tr.classList.add("top-champion");
+      }
       var champHtml = owner.championships > 0 ? "🏆 x" + owner.championships : "-";
       var runnerUpHtml = owner.runnerUps > 0 ? "🥈 x" + owner.runnerUps : "-";
       tr.innerHTML =
         "<td>" + (idx + 1) + "</td>" +
         "<td>" + escapeHtml(owner.ownerName) + "</td>" +
         "<td>" + owner.seasons + "</td>" +
-        "<td>" + owner.wins + "</td>" +
-        "<td>" + owner.losses + "</td>" +
-        "<td>" + owner.ties + "</td>" +
-        "<td>" + (owner.winPct * 100).toFixed(1) + "%</td>" +
-        "<td>" + owner.pointsFor.toFixed(1) + "</td>" +
-        "<td>" + owner.pointsAgainst.toFixed(1) + "</td>" +
+        "<td>" + rec.wins + "</td>" +
+        "<td>" + rec.losses + "</td>" +
+        "<td>" + rec.ties + "</td>" +
+        "<td>" + (rec.winPct * 100).toFixed(1) + "%</td>" +
+        "<td>" + rec.pointsFor.toFixed(1) + "</td>" +
+        "<td>" + rec.pointsAgainst.toFixed(1) + "</td>" +
         "<td>" + champHtml + "</td>" +
         "<td>" + runnerUpHtml + "</td>";
       tbody.appendChild(tr);
@@ -1457,17 +1502,40 @@
     if (owners.length > 1) renderHeadToHead();
   }
 
+  function renderSummaryCards(containerId, summary, nameA, nameB) {
+    var el = byId(containerId);
+    if (!el) return;
+
+    if (summary.totalGames === 0) {
+      el.innerHTML = '<p class="status-text">No games in this split.</p>';
+      return;
+    }
+
+    el.innerHTML =
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.totalGames +
+      '</div><div class="h2h-stat-label">Games</div></div>' +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.ownerAWins + "-" + summary.ownerBWins +
+      (summary.ties ? "-" + summary.ties : "") +
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + " Record</div></div>" +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.ownerAvgA.toFixed(1) +
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + ' Avg Score</div></div>' +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.ownerAvgB.toFixed(1) +
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
+  }
+
   function renderHeadToHead() {
     var selectA = byId("h2h-owner-a");
     var selectB = byId("h2h-owner-b");
-    var summaryEl = byId("h2h-summary");
     var tbody = document.querySelector("#h2h-games-table tbody");
-    if (!selectA || !selectB || !summaryEl || !tbody || !state.allTimeData) return;
+    if (!selectA || !selectB || !tbody || !state.allTimeData) return;
 
     var keyA = selectA.value;
     var keyB = selectB.value;
+
     if (!keyA || !keyB || keyA === keyB) {
-      summaryEl.innerHTML = "<p class=\"status-text\">Pick two different owners to compare.</p>";
+      ["h2h-summary-combined", "h2h-summary-regular", "h2h-summary-playoff"].forEach(function (id) {
+        byId(id).innerHTML = '<p class="status-text">Pick two different owners to compare.</p>';
+      });
       tbody.innerHTML = "";
       return;
     }
@@ -1475,28 +1543,28 @@
     var result = window.AllTimeStats.buildHeadToHead(state.allTimeData, keyA, keyB);
     var nameA = selectA.options[selectA.selectedIndex].textContent;
     var nameB = selectB.options[selectB.selectedIndex].textContent;
-    var s = result.summary;
 
-    if (s.totalGames === 0) {
-      summaryEl.innerHTML =
+    if (result.summary.totalGames === 0) {
+      ["h2h-summary-combined", "h2h-summary-regular", "h2h-summary-playoff"].forEach(function (id) {
+        byId(id).innerHTML = "";
+      });
+      byId("h2h-summary-combined").innerHTML =
         "<p class=\"status-text\">" + escapeHtml(nameA) + " and " + escapeHtml(nameB) +
         " have never played each other.</p>";
       tbody.innerHTML = "";
       return;
     }
 
-    summaryEl.innerHTML =
-      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.totalGames + '</div><div class="h2h-stat-label">Total Games</div></div>' +
-      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAWins + "-" + s.ownerBWins + (s.ties ? "-" + s.ties : "") +
-      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + " Record</div></div>" +
-      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAvgA.toFixed(1) + '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + ' Avg Score</div></div>' +
-      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAvgB.toFixed(1) + '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
+    renderSummaryCards("h2h-summary-combined", result.summary, nameA, nameB);
+    renderSummaryCards("h2h-summary-regular", result.regularSummary, nameA, nameB);
+    renderSummaryCards("h2h-summary-playoff", result.playoffSummary, nameA, nameB);
 
     tbody.innerHTML = "";
     result.matchups.forEach(function (m) {
       var tr = document.createElement("tr");
       if (m.ownerAScore > m.ownerBScore) tr.classList.add("h2h-a-win");
       else if (m.ownerBScore > m.ownerAScore) tr.classList.add("h2h-b-win");
+      if (m.isPlayoff) tr.classList.add("h2h-playoff-row");
       var weekLabel = m.week + (m.isPlayoff ? " (Playoff)" : "") + " (" + m.source.toUpperCase() + ")";
       tr.innerHTML =
         "<td>" + m.year + "</td>" +
@@ -1525,6 +1593,7 @@
     setupFreezeButton();
     setupAllTimeButtons();
     setupAllTimeTabs();
+    setupCareerToggle();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
