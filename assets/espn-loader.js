@@ -11,6 +11,14 @@
  *                                     division per team per year (source of
  *                                     truth for the Standings tab)
  *
+ * ── IMPORTANT: one row per GAME, not per team ───────────────────────────
+ * espn-matchups.csv has exactly one row per game (12 teams = 6 rows per
+ * week), with a "team" side and an "opponent" side. Any code that derives
+ * wins/losses/points from these rows MUST credit BOTH sides of every row -
+ * crediting only the `team` column and ignoring `opponent` silently drops
+ * half the league's results. This file is careful to do that everywhere
+ * records are derived (see buildRunningRecordsThroughWeek below).
+ *
  * ── IMPORTANT: how teams are matched across the two files ──────────────
  * Fantasy team NAMES change from year to year (e.g. the same owner might
  * be "Team McFarland" in 2012 and "Caucasion Sasquatch" in 2013), but the
@@ -20,8 +28,6 @@
  * shown throughout the site always comes from espn-matchups.csv (since
  * that's the fun display name), while wins/losses/points/division/
  * champion flags come from espn-standings.csv via the owner match.
- * If a matchup row has no owner value at all, it falls back to matching
- * by team name directly (useful for partially-filled-in sheets).
  *
  * Matchups CSV columns: year,week,team,team_owner,team_score,opponent,
  *   opponent_owner,opponent_score,result,is_playoff,bracket_type,
@@ -156,6 +162,13 @@
     return "T";
   }
 
+  /** Inverse of a team-side result, for crediting the opponent side of the same row. */
+  function invertResult(result) {
+    if (result === "W") return "L";
+    if (result === "L") return "W";
+    return result; // T and BYE mirror themselves
+  }
+
   function normalizeBracketType(v) {
     var u = String(v).trim().toLowerCase();
     if (u === "winners") return "winners";
@@ -189,10 +202,10 @@
   }
 
   /**
-   * All parsed+normalized matchup rows for one season. Each row carries
-   * BOTH the display team name and (if present) the owner identifier, so
-   * downstream code can join to standings by owner while still showing
-   * the fun team name everywhere in the UI.
+   * All parsed+normalized matchup rows for one season. Each CSV row
+   * represents ONE game (both sides), not one team - `result` here is
+   * always from the `team` side's perspective; use invertResult() when
+   * you need the opponent side's outcome for the same row.
    */
   function getSeasonRows(year) {
     return fetchRawMatchupRows().then(function (allRows) {
@@ -232,9 +245,8 @@
    * Authoritative final standings rows for one season, keyed by OWNER
    * (normalized lowercase/trimmed) so they can be joined reliably to
    * matchup rows even when the team display name changed that year.
-   * Each entry also keeps the standings-file team name as a fallback
-   * label, and a secondary index keyed by team name for sheets that
-   * don't have an owner column filled in yet.
+   * Also indexed by team name as a fallback for sheets without owner
+   * filled in.
    */
   function getStandingsRows(year) {
     return fetchRawStandingsRows().then(function (allRows) {
@@ -271,11 +283,6 @@
     });
   }
 
-  /**
-   * Resolve the standings entry for a given matchup-row team, trying
-   * owner match first (reliable across name changes), then falling back
-   * to team-name match (for rows with no owner filled in).
-   */
   function resolveStandingsEntry(standingsIndex, teamName, teamOwner) {
     if (teamOwner) {
       var byOwnerHit = standingsIndex.byOwner[normalizeKey(teamOwner)];
@@ -302,14 +309,6 @@
     return teams; // { teamName: ownerName }
   }
 
-  /**
-   * Build a rosterMap-shaped object keyed by the matchup CSV's team
-   * display name (so games/brackets/schedules all resolve correctly),
-   * with wins/losses/points/division/champion flags pulled from the
-   * standings CSV via owner match (falling back to team-name match, then
-   * to deriving from matchup rows directly if no standings data exists
-   * for that team at all).
-   */
   function buildRosterMap(rows, standingsIndex) {
     var teamOwnerMap = getTeamsForSeason(rows);
     var teamNames = Object.keys(teamOwnerMap);
@@ -319,7 +318,6 @@
       (Object.keys(standingsIndex.byOwner).length > 0 ||
         Object.keys(standingsIndex.byTeamName).length > 0);
 
-    var usedStandingsEntries = {};
     var rosterMap = {};
 
     teamNames.forEach(function (team) {
@@ -353,11 +351,6 @@
         isRunnerUpFlag: standingsEntry ? standingsEntry.runnerUp : false,
         _hasStandingsMatch: !!standingsEntry,
       };
-
-      if (standingsEntry) {
-        var matchKey = owner ? normalizeKey(owner) : normalizeKey(team);
-        usedStandingsEntries[matchKey] = true;
-      }
     });
 
     if (!hasStandings) {
@@ -365,13 +358,24 @@
         return !r.isPlayoff;
       });
       regularRows.forEach(function (r) {
-        var team = rosterMap[r.team];
-        if (!team) return;
-        if (r.teamScore !== null) team.fpts += r.teamScore;
-        if (r.opponentScore !== null) team.fptsAgainst += r.opponentScore;
-        if (r.result === "W") team.wins += 1;
-        else if (r.result === "L") team.losses += 1;
-        else if (r.result === "T") team.ties += 1;
+        var teamSide = rosterMap[r.team];
+        var oppSide = rosterMap[r.opponent];
+        var oppResult = invertResult(r.result);
+
+        if (teamSide) {
+          if (r.teamScore !== null) teamSide.fpts += r.teamScore;
+          if (r.opponentScore !== null) teamSide.fptsAgainst += r.opponentScore;
+          if (r.result === "W") teamSide.wins += 1;
+          else if (r.result === "L") teamSide.losses += 1;
+          else if (r.result === "T") teamSide.ties += 1;
+        }
+        if (oppSide && r.opponent !== "BYE") {
+          if (r.opponentScore !== null) oppSide.fpts += r.opponentScore;
+          if (r.teamScore !== null) oppSide.fptsAgainst += r.teamScore;
+          if (oppResult === "W") oppSide.wins += 1;
+          else if (oppResult === "L") oppSide.losses += 1;
+          else if (oppResult === "T") oppSide.ties += 1;
+        }
       });
       Object.keys(rosterMap).forEach(function (team) {
         rosterMap[team].fpts = Math.round(rosterMap[team].fpts * 100) / 100;
@@ -461,15 +465,9 @@
       return r.week === week;
     });
 
-    var seen = {};
     var pairs = [];
 
     weekRows.forEach(function (r) {
-      var key1 = r.team + "|" + r.opponent + "|" + week;
-      var key2 = r.opponent + "|" + r.team + "|" + week;
-      if (seen[key1] || seen[key2]) return;
-      seen[key1] = true;
-
       var teamAInfo = rosterMap[r.team] || { teamName: r.team, rosterId: r.team };
       var teamA = Object.assign({}, teamAInfo, {
         points: r.teamScore || 0,
@@ -499,6 +497,15 @@
     return pairs;
   }
 
+  /**
+   * Compute every team's running (cumulative) record through and
+   * including a given week, for the regular season only. Each matchup
+   * row is one GAME (both sides) - so both the `team` side AND the
+   * `opponent` side must be credited from the same row, using the
+   * inverse result for the opponent. Failing to credit the opponent
+   * side is what causes teams to appear stuck at 0-0 despite having
+   * played real games.
+   */
   function buildRunningRecordsThroughWeek(rows, week) {
     var regularRows = rows.filter(function (r) {
       return !r.isPlayoff && r.week <= week;
@@ -523,11 +530,22 @@
       })
       .forEach(function (w) {
         weeksSorted[w].forEach(function (r) {
-          var t = tally[r.team];
-          if (!t) return;
-          if (r.result === "W") t.wins += 1;
-          else if (r.result === "L") t.losses += 1;
-          else if (r.result === "T") t.ties += 1;
+          var teamTally = tally[r.team];
+          if (teamTally) {
+            if (r.result === "W") teamTally.wins += 1;
+            else if (r.result === "L") teamTally.losses += 1;
+            else if (r.result === "T") teamTally.ties += 1;
+          }
+
+          if (r.opponent && r.opponent !== "BYE") {
+            var oppTally = tally[r.opponent];
+            if (oppTally) {
+              var oppResult = invertResult(r.result);
+              if (oppResult === "W") oppTally.wins += 1;
+              else if (oppResult === "L") oppTally.losses += 1;
+              else if (oppResult === "T") oppTally.ties += 1;
+            }
+          }
         });
       });
 
@@ -553,41 +571,67 @@
     return result;
   }
 
+  /**
+   * Full season schedule for one team. Since matchups CSV rows are keyed
+   * by whichever side is listed as `team`, a team's full schedule must
+   * include games where it appears as `team` AND games where it appears
+   * as `opponent` (mirrored so the schedule always reads from that
+   * team's own perspective).
+   */
   function buildTeamSchedule(rows, teamName) {
-    var runningWins = 0;
-    var runningLosses = 0;
-    var runningTies = 0;
-
-    return rows
+    var asTeam = rows
       .filter(function (r) {
         return r.team === teamName;
       })
-      .sort(function (a, b) {
-        return a.week - b.week;
-      })
       .map(function (r) {
-        var recordAfter = "-";
-        if (!r.isPlayoff) {
-          if (r.result === "W") runningWins += 1;
-          else if (r.result === "L") runningLosses += 1;
-          else if (r.result === "T") runningTies += 1;
-          recordAfter =
-            runningTies > 0
-              ? runningWins + "-" + runningLosses + "-" + runningTies
-              : runningWins + "-" + runningLosses;
-        }
-
         return {
           week: r.week,
-          opponentRosterId: r.opponent,
           opponentName: r.opponent,
           myPoints: r.teamScore || 0,
           opponentPoints: r.opponent === "BYE" ? null : r.opponentScore,
           result: r.result,
           isPlayoff: r.isPlayoff,
-          recordAfter: recordAfter,
         };
       });
+
+    var asOpponent = rows
+      .filter(function (r) {
+        return r.opponent === teamName;
+      })
+      .map(function (r) {
+        return {
+          week: r.week,
+          opponentName: r.team,
+          myPoints: r.opponentScore || 0,
+          opponentPoints: r.teamScore,
+          result: invertResult(r.result),
+          isPlayoff: r.isPlayoff,
+        };
+      });
+
+    var combined = asTeam.concat(asOpponent).sort(function (a, b) {
+      return a.week - b.week;
+    });
+
+    var runningWins = 0;
+    var runningLosses = 0;
+    var runningTies = 0;
+
+    return combined.map(function (game) {
+      var recordAfter = "-";
+      if (!game.isPlayoff) {
+        if (game.result === "W") runningWins += 1;
+        else if (game.result === "L") runningLosses += 1;
+        else if (game.result === "T") runningTies += 1;
+        recordAfter =
+          runningTies > 0
+            ? runningWins + "-" + runningLosses + "-" + runningTies
+            : runningWins + "-" + runningLosses;
+      }
+      game.recordAfter = recordAfter;
+      game.opponentRosterId = game.opponentName;
+      return game;
+    });
   }
 
   function buildBracketView(rows, bracketType) {
@@ -597,16 +641,10 @@
 
     if (playoffRows.length === 0) return [];
 
-    var seen = {};
     var roundsMap = {};
 
     playoffRows.forEach(function (r) {
       var round = r.playoffRound;
-      var key1 = round + "|" + r.team + "|" + r.opponent;
-      var key2 = round + "|" + r.opponent + "|" + r.team;
-      if (seen[key1] || seen[key2]) return;
-      seen[key1] = true;
-
       var isBye = r.opponent === "BYE";
 
       var slot1 = {
