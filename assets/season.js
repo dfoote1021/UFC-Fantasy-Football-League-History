@@ -849,11 +849,11 @@
   }
 
   /**
-   * Renders the Sleeper "By Week" matchups view, now including each
-   * team's cumulative regular-season record in parentheses next to its
-   * name - "Team Name (W-L)" - matching the ESPN weekly view's format.
-   * Records come from state.sleeperRunningRecordsByWeek, precomputed
-   * once per season load via SleeperAPI.buildAllRunningRecords().
+   * Renders the Sleeper "By Week" matchups view, including each team's
+   * cumulative regular-season record in parentheses next to its name -
+   * "Team Name (W-L)" - matching the ESPN weekly view's format. Records
+   * come from state.sleeperRunningRecordsByWeek, precomputed once per
+   * season load via SleeperAPI.buildAllRunningRecords().
    */
   async function renderMatchups() {
     var weekSelect = byId("week-select");
@@ -955,6 +955,13 @@
     select.onchange = renderTeamSchedule;
   }
 
+  /**
+   * Renders the Sleeper "By Team (Full Schedule)" view, now including a
+   * Record column that shows each game's cumulative regular-season
+   * record immediately after that week - matching the exact 6-column
+   * layout (Week, Opponent, Result, My Score, Opp Score, Record) already
+   * used by the ESPN schedule view (renderTeamScheduleEspn above).
+   */
   async function renderTeamSchedule() {
     if (state.dataSource === "espn") {
       renderTeamScheduleEspn();
@@ -968,12 +975,26 @@
     var rosterId = Number(select.value);
     if (!rosterId) return;
 
-    tbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
     await ensureAllWeeksMatchups();
 
-    var schedule = SleeperAPI.buildTeamSchedule(state.allWeeksMatchups, rosterId, state.rosterMap);
+    if (!state.sleeperRunningRecordsByWeek) {
+      state.sleeperRunningRecordsByWeek = SleeperAPI.buildAllRunningRecords(
+        state.allWeeksMatchups,
+        state.playoffStartWeek
+      );
+    }
+
+    var schedule = SleeperAPI.buildTeamSchedule(
+      state.allWeeksMatchups,
+      rosterId,
+      state.rosterMap,
+      state.sleeperRunningRecordsByWeek,
+      state.playoffStartWeek
+    );
+
     if (!schedule || schedule.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5">No schedule data available.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6">No schedule data available.</td></tr>';
       return;
     }
 
@@ -982,12 +1003,14 @@
       var tr = document.createElement("tr");
       if (game.result === "W") tr.classList.add("result-w");
       if (game.result === "L") tr.classList.add("result-l");
+      var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
       tr.innerHTML =
-        "<td>" + game.week + "</td>" +
+        "<td>" + weekLabel + "</td>" +
         "<td>" + escapeHtml(game.opponentName) + "</td>" +
         "<td>" + game.result + "</td>" +
         "<td>" + game.myPoints.toFixed(2) + "</td>" +
-        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>";
+        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>" +
+        "<td>" + escapeHtml(game.recordAfter) + "</td>";
       tbody.appendChild(tr);
     });
   }
