@@ -5,6 +5,10 @@
  * ?season=YYYY in the URL. The season listed as SleeperAPI.CURRENT_LIVE_SEASON
  * auto-refreshes; ESPN years are static historical data loaded from CSV.
  *
+ * Also drives the "All-Time" view (career totals + head-to-head across
+ * every season), toggled via the button next to the season dropdown -
+ * see showAllTimeView()/hideAllTimeView() near the bottom of this file.
+ *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
  * applied at the data-fetching layer. This file's week loops (e.g. the
@@ -41,6 +45,7 @@
     espnDraftData: null,
     sleeperRunningRecordsByWeek: null,
     sleeperPlayedWeeks: null,
+    allTimeData: null,
   };
 
   function isEspnYear(season) {
@@ -75,13 +80,13 @@
   }
 
   function setupTabs() {
-    var tabBtns = document.querySelectorAll(".tab-btn");
+    var tabBtns = document.querySelectorAll("#season-tabs .tab-btn");
     tabBtns.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        document.querySelectorAll(".tab-btn").forEach(function (b) {
+        document.querySelectorAll("#season-tabs .tab-btn").forEach(function (b) {
           b.classList.remove("active");
         });
-        document.querySelectorAll(".tab-panel").forEach(function (p) {
+        document.querySelectorAll("#season-main .tab-panel").forEach(function (p) {
           p.classList.remove("active");
         });
         btn.classList.add("active");
@@ -121,7 +126,7 @@
   }
 
   function showFatalError(message) {
-    var main = document.querySelector("main");
+    var main = document.querySelector("#season-main");
     if (!main) return;
     var banner = byId("fatal-error-banner");
     if (!banner) {
@@ -140,7 +145,7 @@
   }
 
   function showInfoBanner(message) {
-    var main = document.querySelector("main");
+    var main = document.querySelector("#season-main");
     if (!main) return;
     var banner = byId("info-banner");
     if (!banner) {
@@ -468,13 +473,6 @@
     });
   }
 
-  /**
-   * Renders the ESPN draft board for the current season using
-   * EspnDraftLoader. Each pick's Team and Owner come straight from
-   * espn-draft.csv (no cross-file join needed) and are displayed as
-   * "Team Name (Owner)", matching the display convention used elsewhere
-   * on the site (e.g. matchup records, and the Sleeper draft board too).
-   */
   async function renderDraftEspn(season) {
     var board = byId("draft-board");
     if (!board) return;
@@ -553,10 +551,6 @@
     return state.allWeeksMatchups;
   }
 
-  /**
-   * Fetches all transactions, capped at SleeperAPI.MAX_SLEEPER_WEEK
-   * (17) since this league never uses week 18+.
-   */
   async function ensureAllTransactions() {
     if (state.dataSource !== "sleeper") return [];
     if (state.allTransactionsFlat) return state.allTransactionsFlat;
@@ -854,16 +848,6 @@
     return "<ul>" + items + "</ul>";
   }
 
-  /**
-   * Populates the Week (matchups), Transactions-week, and Roster-week
-   * dropdowns. The Matchups and Roster dropdowns only list weeks that
-   * have actually been played AND are within SleeperAPI.MAX_SLEEPER_WEEK
-   * (17), so week 18 never appears for any season even when Sleeper's
-   * API has real scored data there (as it does for 2022). The
-   * Transactions dropdown lists weeks 1 through MAX_SLEEPER_WEEK too,
-   * since waiver moves/trades can occur in weeks without a scored
-   * matchup, but is capped at the same 17-week limit.
-   */
   async function populateWeekSelects() {
     var weekSelect = byId("week-select");
     var txnWeekSelect = byId("txn-week-select");
@@ -905,14 +889,6 @@
     rosterWeekSelect.onchange = renderWeeklyRoster;
   }
 
-  /**
-   * Renders the Sleeper "By Week" matchups view, including each team's
-   * cumulative regular-season record in parentheses next to its name -
-   * "Team Name (W-L)" - matching the ESPN weekly view's format. Records
-   * come from state.sleeperRunningRecordsByWeek, precomputed once per
-   * season load via SleeperAPI.buildAllRunningRecords(), which already
-   * excludes week 18+ and unplayed weeks.
-   */
   async function renderMatchups() {
     var weekSelect = byId("week-select");
     var week = Number(weekSelect.value) || state.currentWeek;
@@ -1013,16 +989,6 @@
     select.onchange = renderTeamSchedule;
   }
 
-  /**
-   * Renders the Sleeper "By Team (Full Schedule)" view. Only includes
-   * weeks that have actually been played and are within
-   * SleeperAPI.MAX_SLEEPER_WEEK (buildTeamSchedule filters this
-   * internally), so week 18 never shows a row for any season, even 2022
-   * where Sleeper's API does have real scored data for that week.
-   * Includes a Record column showing each game's cumulative
-   * regular-season record immediately after that week, matching the
-   * 6-column layout already used by the ESPN schedule view.
-   */
   async function renderTeamSchedule() {
     if (state.dataSource === "espn") {
       renderTeamScheduleEspn();
@@ -1176,13 +1142,6 @@
     }
   }
 
-  /**
-   * Renders the Sleeper draft board. Each pick shows the team name plus
-   * its owner in parentheses - "Team Name (Owner)" - matching the same
-   * display convention used on the ESPN draft board. Owner names respect
-   * owner-overrides.js if configured, since SleeperAPI.buildDraftBoard()
-   * derives ownerName from each roster's already-resolved displayName.
-   */
   async function renderDraft() {
     if (state.dataSource === "espn") {
       await renderDraftEspn(state.season);
@@ -1211,7 +1170,6 @@
         div.innerHTML =
           '<div class="pick-num">Pick ' + pick.pickNo + " (R" + pick.round + ')</div>' +
           "<div>" + escapeHtml(pick.playerName) + "</div>" +
-          "<div>" + escapeHtml(pick.position) + " " + escapeHtml(pick.nflTeam) + "</div>" +
           '<div class="draft-owner">' + teamLabel + "</div>";
         board.appendChild(div);
       });
@@ -1234,13 +1192,6 @@
     select.onchange = renderTransactions;
   }
 
-  /**
-   * Renders the Transactions list. Each transaction's header now shows
-   * "Team Name (Owner)" for every team involved, and each add/drop line
-   * shows the same "Team Name (Owner)" format, using the teamsWithOwners
-   * / teamWithOwner fields SleeperAPI.resolveTransactionDetail() now
-   * provides. Owner names automatically respect owner-overrides.js.
-   */
   async function renderTransactions() {
     if (state.dataSource === "espn") {
       renderTransactionsUnavailable();
@@ -1381,6 +1332,183 @@
       .replace(/'/g, "&#39;");
   }
 
+  /* ============================================================
+   * All-Time view: career totals + head-to-head across every season.
+   * Toggled via #alltime-btn / #back-to-season-btn. Data is loaded
+   * once per page session via AllTimeStats.loadAllSeasons() and
+   * cached in state.allTimeData.
+   * ============================================================ */
+
+  function showAllTimeView() {
+    byId("season-tabs").hidden = true;
+    byId("season-main").hidden = true;
+    byId("alltime-main").hidden = false;
+    loadAllTimeData();
+  }
+
+  function hideAllTimeView() {
+    byId("alltime-main").hidden = true;
+    byId("season-tabs").hidden = false;
+    byId("season-main").hidden = false;
+  }
+
+  function setupAllTimeButtons() {
+    var openBtn = byId("alltime-btn");
+    var backBtn = byId("back-to-season-btn");
+    if (openBtn) openBtn.addEventListener("click", showAllTimeView);
+    if (backBtn) backBtn.addEventListener("click", hideAllTimeView);
+  }
+
+  function setupAllTimeTabs() {
+    var tabBtns = document.querySelectorAll(".alltime-tabs .tab-btn");
+    tabBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        tabBtns.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        document.querySelectorAll("#alltime-content .tab-panel").forEach(function (p) {
+          p.classList.remove("active");
+        });
+        btn.classList.add("active");
+        var panel = byId("alltime-" + btn.dataset.alltimeTab);
+        if (panel) panel.classList.add("active");
+      });
+    });
+  }
+
+  async function loadAllTimeData() {
+    if (state.allTimeData) {
+      renderCareerTotals(state.allTimeData);
+      populateH2hSelectors(state.allTimeData);
+      byId("alltime-loading").hidden = true;
+      byId("alltime-content").hidden = false;
+      return;
+    }
+
+    byId("alltime-loading").hidden = false;
+    byId("alltime-content").hidden = true;
+
+    try {
+      var allSeasonsData = await window.AllTimeStats.loadAllSeasons();
+      state.allTimeData = allSeasonsData;
+      renderCareerTotals(allSeasonsData);
+      populateH2hSelectors(allSeasonsData);
+      byId("alltime-loading").hidden = true;
+      byId("alltime-content").hidden = false;
+    } catch (err) {
+      console.error("Failed to load all-time data", err);
+      byId("alltime-loading").textContent =
+        "Could not load all-time data. Details: " + (err && err.message ? err.message : err);
+    }
+  }
+
+  function renderCareerTotals(allSeasonsData) {
+    var tbody = document.querySelector("#career-totals-table tbody");
+    if (!tbody) return;
+
+    var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
+    tbody.innerHTML = "";
+
+    totals.forEach(function (owner, idx) {
+      var tr = document.createElement("tr");
+      if (idx === 0 && owner.championships > 0) tr.classList.add("top-champion");
+      var champHtml = owner.championships > 0 ? "🏆 x" + owner.championships : "-";
+      var runnerUpHtml = owner.runnerUps > 0 ? "🥈 x" + owner.runnerUps : "-";
+      tr.innerHTML =
+        "<td>" + (idx + 1) + "</td>" +
+        "<td>" + escapeHtml(owner.ownerName) + "</td>" +
+        "<td>" + owner.seasons + "</td>" +
+        "<td>" + owner.wins + "</td>" +
+        "<td>" + owner.losses + "</td>" +
+        "<td>" + owner.ties + "</td>" +
+        "<td>" + (owner.winPct * 100).toFixed(1) + "%</td>" +
+        "<td>" + owner.pointsFor.toFixed(1) + "</td>" +
+        "<td>" + owner.pointsAgainst.toFixed(1) + "</td>" +
+        "<td>" + champHtml + "</td>" +
+        "<td>" + runnerUpHtml + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+
+  function populateH2hSelectors(allSeasonsData) {
+    var selectA = byId("h2h-owner-a");
+    var selectB = byId("h2h-owner-b");
+    if (!selectA || !selectB) return;
+
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    [selectA, selectB].forEach(function (sel) {
+      sel.innerHTML = "";
+      owners.forEach(function (o) {
+        var opt = document.createElement("option");
+        opt.value = o.key;
+        opt.textContent = o.name;
+        sel.appendChild(opt);
+      });
+    });
+
+    if (owners.length > 1) {
+      selectA.value = owners[0].key;
+      selectB.value = owners[1].key;
+    }
+
+    selectA.onchange = renderHeadToHead;
+    selectB.onchange = renderHeadToHead;
+
+    if (owners.length > 1) renderHeadToHead();
+  }
+
+  function renderHeadToHead() {
+    var selectA = byId("h2h-owner-a");
+    var selectB = byId("h2h-owner-b");
+    var summaryEl = byId("h2h-summary");
+    var tbody = document.querySelector("#h2h-games-table tbody");
+    if (!selectA || !selectB || !summaryEl || !tbody || !state.allTimeData) return;
+
+    var keyA = selectA.value;
+    var keyB = selectB.value;
+    if (!keyA || !keyB || keyA === keyB) {
+      summaryEl.innerHTML = "<p class=\"status-text\">Pick two different owners to compare.</p>";
+      tbody.innerHTML = "";
+      return;
+    }
+
+    var result = window.AllTimeStats.buildHeadToHead(state.allTimeData, keyA, keyB);
+    var nameA = selectA.options[selectA.selectedIndex].textContent;
+    var nameB = selectB.options[selectB.selectedIndex].textContent;
+    var s = result.summary;
+
+    if (s.totalGames === 0) {
+      summaryEl.innerHTML =
+        "<p class=\"status-text\">" + escapeHtml(nameA) + " and " + escapeHtml(nameB) +
+        " have never played each other.</p>";
+      tbody.innerHTML = "";
+      return;
+    }
+
+    summaryEl.innerHTML =
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.totalGames + '</div><div class="h2h-stat-label">Total Games</div></div>' +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAWins + "-" + s.ownerBWins + (s.ties ? "-" + s.ties : "") +
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + " Record</div></div>" +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAvgA.toFixed(1) + '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + ' Avg Score</div></div>' +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + s.ownerAvgB.toFixed(1) + '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
+
+    tbody.innerHTML = "";
+    result.matchups.forEach(function (m) {
+      var tr = document.createElement("tr");
+      if (m.ownerAScore > m.ownerBScore) tr.classList.add("h2h-a-win");
+      else if (m.ownerBScore > m.ownerAScore) tr.classList.add("h2h-b-win");
+      var weekLabel = m.week + (m.isPlayoff ? " (Playoff)" : "") + " (" + m.source.toUpperCase() + ")";
+      tr.innerHTML =
+        "<td>" + m.year + "</td>" +
+        "<td>" + weekLabel + "</td>" +
+        "<td>" + escapeHtml(m.ownerATeamName) + "</td>" +
+        "<td>" + m.ownerAScore.toFixed(2) + "</td>" +
+        "<td>" + m.ownerBScore.toFixed(2) + "</td>" +
+        "<td>" + escapeHtml(m.ownerBTeamName) + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+
   async function init() {
     if (!window.SleeperAPI) {
       showFatalError(
@@ -1395,6 +1523,8 @@
     setupMatchupViewToggle();
     setupTxnFilterToggle();
     setupFreezeButton();
+    setupAllTimeButtons();
+    setupAllTimeTabs();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
