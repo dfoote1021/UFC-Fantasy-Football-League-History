@@ -164,6 +164,7 @@
     <nav class="tabs alltime-tabs">
       <button class="tab-btn active" data-alltime-tab="career">Career Totals</button>
       <button class="tab-btn" data-alltime-tab="h2h">Head-to-Head</button>
+      <button class="tab-btn" data-alltime-tab="vsfield">Vs. The Field</button>
     </nav>
 
     <section id="alltime-career" class="tab-panel active">
@@ -205,6 +206,35 @@
       <table id="h2h-games-table" class="data-table">
         <thead>
           <tr><th>Year</th><th>Week</th><th>Team A</th><th>Score</th><th>Score</th><th>Team B</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="alltime-vsfield" class="tab-panel">
+      <div class="vsfield-picker">
+        <label for="vsfield-owner-select">Owner:</label>
+        <select id="vsfield-owner-select"></select>
+      </div>
+
+      <h3 class="h2h-split-heading">Overall Regular Season Record (vs. Everyone)</h3>
+      <div id="vsfield-overall-regular" class="h2h-summary"></div>
+
+      <h3 class="h2h-split-heading">Overall Playoff Record (vs. Everyone)</h3>
+      <div id="vsfield-overall-playoff" class="h2h-summary"></div>
+
+      <h3 class="h2h-split-heading">Record By Opponent</h3>
+      <table id="vsfield-table" class="data-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Opponent</th>
+            <th colspan="5" class="vsfield-group-header">Regular Season</th>
+            <th colspan="5" class="vsfield-group-header">Playoffs</th>
+          </tr>
+          <tr>
+            <th>W</th><th>L</th><th>T</th><th>PF</th><th>PA</th>
+            <th>W</th><th>L</th><th>T</th><th>PF</th><th>PA</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
