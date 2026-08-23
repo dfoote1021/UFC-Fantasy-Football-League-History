@@ -7,7 +7,7 @@
  * already use real names like "Dan"/"Spencer" as their owner column,
  * and owner-overrides.js maps Sleeper usernames to those same names).
  *
- * Two things this module produces:
+ * Three things this module produces:
  *   1. Career totals: one row per owner, W-L-T and points for/against
  *      split into REGULAR SEASON and PLAYOFFS separately (plus a
  *      combined total), championships, playoff appearances, seasons
@@ -15,6 +15,10 @@
  *   2. Head-to-head: for any two owners, every individual matchup
  *      they've ever played against each other, with regular-season
  *      and playoff results broken out separately.
+ *   3. Owner vs. the field: for a single owner, their regular-season
+ *      and playoff record against EVERY opponent they've ever played,
+ *      one row per opponent, plus their overall combined record across
+ *      all opponents.
  *
  * Each game is classified into exactly one of three buckets:
  *   - "regular"     games during the normal season schedule.
@@ -35,9 +39,10 @@
  *                   placement game (3rd place, etc.) inside the
  *                   winners-bracket data structure, PLUS any
  *                   later-round winners-bracket game for a team that
- *                   already lost an earlier round. Excluded from both
- *                   the regular and playoff W-L/points totals. Still
- *                   shown in the head-to-head game log (tagged
+ *                   already lost an earlier round. Excluded from all
+ *                   regular/playoff W-L/points totals in every view
+ *                   (career totals, head-to-head, and owner-vs-field).
+ *                   Still shown in the head-to-head game log (tagged
  *                   "Consolation") for transparency.
  *
  * IMPORTANT - byes: a team with a first-round BYE never appears in a
@@ -47,20 +52,13 @@
  * winners-bracket match. A bye team never loses anything in round 1
  * (it simply doesn't play), so it's never added to the eliminated set
  * and is automatically still eligible for its round-2 (and, if it wins,
- * round-3) games. Building this as an "alive" allow-list instead would
- * require explicitly re-adding every bye team each round, which is
- * exactly the bug this version fixes - the elimination-based approach
- * handles byes for free since there's nothing to add.
+ * round-3) games.
  *
  * For Sleeper seasons, this is determined by walking the winners
  * bracket round by round using each match's actual winner (the `w`
  * field once played) to mark the LOSER as eliminated. A round-N match
  * counts as "playoff" only if NEITHER of its participants has been
- * eliminated in an earlier round. This correctly excludes: the
- * separate losers/consolation bracket entirely, placement games (3rd
- * place, etc.) within the winners bracket structure, and any game an
- * eliminated team plays in a later round - while still correctly
- * counting byes' later-round games as real playoff games.
+ * eliminated in an earlier round.
  *
  * For ESPN seasons, the per-row bracket type from espn-loader.js is
  * used if available (checked defensively across a few possible field
@@ -163,9 +161,6 @@
             eliminatedRosterIds[loser] = true;
           }
         }
-        // If either side was already eliminated, this shouldn't normally
-        // happen for a non-placement match, but if the bracket data is
-        // unusual, we simply don't count it as a playoff game.
       });
     });
 
@@ -447,8 +442,8 @@
   /**
    * Loads every ESPN + Sleeper season once and caches the combined
    * result for the rest of the page session (so switching between
-   * career totals and head-to-head, or re-picking owners, doesn't
-   * re-fetch everything from scratch).
+   * career totals, head-to-head, and owner-vs-field, or re-picking
+   * owners, doesn't re-fetch everything from scratch).
    */
   function loadAllSeasons() {
     if (_allSeasonsCache) return _allSeasonsCache;
@@ -600,6 +595,30 @@
     return total > 0 ? rec.wins / total : 0;
   }
 
+  function summarizeGames(list) {
+    var summary = {
+      totalGames: list.length,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      pointsFor: 0,
+      pointsAgainst: 0,
+    };
+    list.forEach(function (m) {
+      summary.pointsFor += m.myScore;
+      summary.pointsAgainst += m.oppScore;
+      if (m.myScore > m.oppScore) summary.wins += 1;
+      else if (m.myScore < m.oppScore) summary.losses += 1;
+      else summary.ties += 1;
+    });
+    summary.pointsFor = Math.round(summary.pointsFor * 100) / 100;
+    summary.pointsAgainst = Math.round(summary.pointsAgainst * 100) / 100;
+    summary.avgFor = summary.totalGames > 0 ? summary.pointsFor / summary.totalGames : 0;
+    summary.avgAgainst = summary.totalGames > 0 ? summary.pointsAgainst / summary.totalGames : 0;
+    summary.winPct = winPct(summary);
+    return summary;
+  }
+
   /**
    * Every individual game ever played between two specific owners,
    * across all seasons, split into regular-season, playoff (active
@@ -685,7 +704,79 @@
     };
   }
 
-  /** Distinct list of owner names seen across all seasons, for populating head-to-head dropdowns. */
+  /**
+   * For a single owner, builds their regular-season and playoff record
+   * against EVERY opponent they've ever played (one row per opponent),
+   * plus their overall regular-season and playoff record combined
+   * across all opponents. Consolation games are excluded from both
+   * the per-opponent rows and the overall totals, same as everywhere
+   * else in this module. Opponent rows are sorted alphabetically by
+   * opponent name.
+   */
+  function buildOwnerVsAll(allSeasonsData, ownerQuery) {
+    var ownerKey = normalizeOwnerKey(ownerQuery);
+
+    var byOpponent = {}; // opponentKey -> { opponentName, regularGames: [], playoffGames: [] }
+    var overallRegularGames = [];
+    var overallPlayoffGames = [];
+
+    allSeasonsData.forEach(function (season) {
+      season.games.forEach(function (g) {
+        if (g.gameType === "consolation") return;
+        if (g.ownerAKey !== ownerKey && g.ownerBKey !== ownerKey) return;
+
+        var iAmA = g.ownerAKey === ownerKey;
+        var opponentKey = iAmA ? g.ownerBKey : g.ownerAKey;
+        var opponentName = iAmA ? g.ownerBName : g.ownerAName;
+        var myScore = iAmA ? g.ownerAScore : g.ownerBScore;
+        var oppScore = iAmA ? g.ownerBScore : g.ownerAScore;
+
+        if (!byOpponent[opponentKey]) {
+          byOpponent[opponentKey] = {
+            opponentKey: opponentKey,
+            opponentName: opponentName,
+            regularGames: [],
+            playoffGames: [],
+          };
+        }
+
+        var gameRecord = { year: g.year, week: g.week, myScore: myScore, oppScore: oppScore };
+
+        if (g.gameType === "playoff") {
+          byOpponent[opponentKey].playoffGames.push(gameRecord);
+          overallPlayoffGames.push(gameRecord);
+        } else {
+          byOpponent[opponentKey].regularGames.push(gameRecord);
+          overallRegularGames.push(gameRecord);
+        }
+      });
+    });
+
+    var rows = Object.keys(byOpponent)
+      .map(function (k) {
+        var entry = byOpponent[k];
+        return {
+          opponentKey: entry.opponentKey,
+          opponentName: entry.opponentName,
+          regularSummary: summarizeGames(entry.regularGames),
+          playoffSummary: summarizeGames(entry.playoffGames),
+        };
+      })
+      .filter(function (row) {
+        return row.regularSummary.totalGames > 0 || row.playoffSummary.totalGames > 0;
+      })
+      .sort(function (a, b) {
+        return a.opponentName.localeCompare(b.opponentName);
+      });
+
+    return {
+      overallRegular: summarizeGames(overallRegularGames),
+      overallPlayoff: summarizeGames(overallPlayoffGames),
+      byOpponent: rows,
+    };
+  }
+
+  /** Distinct list of owner names seen across all seasons, for populating head-to-head and owner-vs-field dropdowns. */
   function getAllOwnerNames(allSeasonsData) {
     var seen = {};
     allSeasonsData.forEach(function (season) {
@@ -708,6 +799,7 @@
     loadAllSeasons: loadAllSeasons,
     buildCareerTotals: buildCareerTotals,
     buildHeadToHead: buildHeadToHead,
+    buildOwnerVsAll: buildOwnerVsAll,
     getAllOwnerNames: getAllOwnerNames,
   };
 })();
