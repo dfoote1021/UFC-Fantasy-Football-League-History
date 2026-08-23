@@ -435,3 +435,4 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 #h2h-games-table tr.h2h-a-win td:nth-child(4) { color: var(--win); font-weight: 700; }
 #h2h-games-table tr.h2h-b-win td:nth-child(5) { color: var(--win); font-weight: 700; }
 #h2h-games-table tr.h2h-playoff-row td { background: rgba(255, 210, 92, 0.08); }
+#h2h-games-table tr.h2h-consolation-row td { background: rgba(154, 161, 171, 0.08); color: var(--text-dim); }
