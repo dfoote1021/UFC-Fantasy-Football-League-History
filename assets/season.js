@@ -9,7 +9,11 @@
  * every season), toggled via the button next to the season dropdown -
  * see showAllTimeView()/hideAllTimeView() near the bottom of this file.
  * Career totals and head-to-head both split regular-season from playoff
- * results (see all-time.js for how that split is computed).
+ * (winners-bracket-only) results, and exclude consolation/toilet-bowl
+ * games from both totals entirely - see all-time.js for how that
+ * three-way classification (regular / playoff / consolation) is
+ * computed per-game. Consolation games still show in the head-to-head
+ * game log, tagged accordingly, just not counted in any summary.
  *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
@@ -1340,8 +1344,10 @@
    * Toggled via #alltime-btn / #back-to-season-btn. Data is loaded
    * once per page session via AllTimeStats.loadAllSeasons() and
    * cached in state.allTimeData. Both career totals and head-to-head
-   * split regular-season results from playoff results - see
-   * all-time.js for how that split is computed per-game.
+   * split regular-season results from playoff (winners-bracket-only)
+   * results, and consolation/toilet-bowl games are excluded from both
+   * totals - see all-time.js for how that three-way classification is
+   * computed per-game.
    * ============================================================ */
 
   function showAllTimeView() {
@@ -1425,10 +1431,12 @@
 
   /**
    * Renders the career totals table for the given split ("combined",
-   * "regular", or "playoff"). Sort order (championships first, then
-   * win% within that split, then wins) is recomputed per split so
-   * e.g. switching to "Playoffs Only" ranks owners by playoff record
-   * rather than their overall career record.
+   * "regular", or "playoff"). "Playoff" here means winners-bracket
+   * games only - consolation/toilet-bowl games are excluded from all
+   * three splits (see all-time.js accumulateGameRecords). Sort order
+   * (championships first for combined, then win% within that split,
+   * then wins) is recomputed per split so e.g. switching to "Playoffs
+   * Only" ranks owners by playoff record rather than career record.
    */
   function renderCareerTotals(allSeasonsData, split) {
     var tbody = document.querySelector("#career-totals-table tbody");
@@ -1523,6 +1531,13 @@
       '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
   }
 
+  /**
+   * Renders the head-to-head view: three summary blocks (combined =
+   * regular + playoff only, regular-only, playoff-only) plus the full
+   * game log. Consolation games are included in the game log (tagged
+   * "Consolation") for transparency but never factored into any of
+   * the three summary blocks above it.
+   */
   function renderHeadToHead() {
     var selectA = byId("h2h-owner-a");
     var selectB = byId("h2h-owner-b");
@@ -1544,7 +1559,7 @@
     var nameA = selectA.options[selectA.selectedIndex].textContent;
     var nameB = selectB.options[selectB.selectedIndex].textContent;
 
-    if (result.summary.totalGames === 0) {
+    if (result.matchups.length === 0) {
       ["h2h-summary-combined", "h2h-summary-regular", "h2h-summary-playoff"].forEach(function (id) {
         byId(id).innerHTML = "";
       });
@@ -1564,8 +1579,17 @@
       var tr = document.createElement("tr");
       if (m.ownerAScore > m.ownerBScore) tr.classList.add("h2h-a-win");
       else if (m.ownerBScore > m.ownerAScore) tr.classList.add("h2h-b-win");
-      if (m.isPlayoff) tr.classList.add("h2h-playoff-row");
-      var weekLabel = m.week + (m.isPlayoff ? " (Playoff)" : "") + " (" + m.source.toUpperCase() + ")";
+
+      var weekTag = "";
+      if (m.gameType === "playoff") {
+        tr.classList.add("h2h-playoff-row");
+        weekTag = " (Playoff)";
+      } else if (m.gameType === "consolation") {
+        tr.classList.add("h2h-consolation-row");
+        weekTag = " (Consolation)";
+      }
+
+      var weekLabel = m.week + weekTag + " (" + m.source.toUpperCase() + ")";
       tr.innerHTML =
         "<td>" + m.year + "</td>" +
         "<td>" + weekLabel + "</td>" +
