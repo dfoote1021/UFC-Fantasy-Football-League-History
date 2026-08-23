@@ -18,29 +18,47 @@
  *
  * Each game is classified into exactly one of three buckets:
  *   - "regular"     games during the normal season schedule.
- *   - "playoff"     games that are part of the actual WINNERS bracket
- *                   (the championship path).
- *   - "consolation" games played during playoff weeks by teams that
- *                   are NOT in the winners bracket that week (toilet
- *                   bowl / consolation ladder games, including
- *                   third-place or seeding games outside the title
- *                   path). These are excluded from both the regular
- *                   and playoff W-L/points totals, since they're
- *                   neither part of the real regular-season schedule
- *                   nor the championship bracket. They still appear
- *                   in the head-to-head game log (tagged "Consolation")
- *                   for transparency, just not in any aggregate totals.
+ *   - "playoff"     games that are on a team's ACTIVE championship
+ *                   path in the winners bracket - i.e. both teams in
+ *                   the game won every one of their prior
+ *                   winners-bracket rounds this postseason. This is
+ *                   NOT the same as "any game inside the winners
+ *                   bracket data structure": Sleeper's winners bracket
+ *                   also contains placement games (3rd place, 5th
+ *                   place, etc.) whose participants are the LOSERS of
+ *                   earlier rounds. Those are intentionally excluded
+ *                   here, along with a first-round loser's later-round
+ *                   games of any kind, because once a team is
+ *                   eliminated from the title path none of their
+ *                   remaining "playoff bracket" games are really
+ *                   playoff games anymore.
+ *   - "consolation" everything else during playoff weeks: the
+ *                   separate loser's/toilet-bowl bracket, PLUS any
+ *                   placement game (3rd place, etc.) inside the
+ *                   winners-bracket data structure, PLUS any
+ *                   later-round winners-bracket game for a team that
+ *                   already lost an earlier round. Excluded from both
+ *                   the regular and playoff W-L/points totals. Still
+ *                   shown in the head-to-head game log (tagged
+ *                   "Consolation") for transparency.
  *
- * For Sleeper seasons, "playoff" is determined by cross-referencing
- * each playoff-week game's roster-id pair against the ACTUAL winners
- * bracket matchups for that round (round r maps to week
- * playoffStartWeek + r - 1) - not just "week >= playoffStartWeek",
- * which would incorrectly sweep in consolation-bracket games too.
+ * For Sleeper seasons, this is determined by SIMULATING the winners
+ * bracket round by round using each match's actual winner (the `w`
+ * field once played), tracking which roster IDs are still "alive" on
+ * the championship path. A round-N match counts as "playoff" only if
+ * BOTH of its participants were alive entering round N. This correctly
+ * excludes: the separate losers/consolation bracket entirely, 3rd
+ * place / placement games within the winners bracket structure, and -
+ * per league rules - any game an eliminated team plays in a later
+ * round of the winners bracket (e.g. a 3-round format where a
+ * round-1 loser's round-2 and round-3 games, including any 3rd place
+ * game, no longer count as playoff games for them).
  *
  * For ESPN seasons, the per-row bracket type from espn-loader.js is
  * used if available (checked defensively across a few possible field
- * names); otherwise the loader falls back to cross-referencing against
- * the winners bracket built by EspnLoader, same as Sleeper.
+ * names); otherwise the loader falls back to the same round-by-round
+ * "alive path" simulation against the winners bracket built by
+ * EspnLoader.
  *
  * This is intentionally a separate module from season.js/espn-loader.js
  * /sleeper-common.js - it READS data through those existing loaders
@@ -60,10 +78,10 @@
     return String(name || "").trim().toLowerCase();
   }
 
-  function pairKey(rosterIdA, rosterIdB) {
-    var a = String(rosterIdA);
-    var b = String(rosterIdB);
-    return a < b ? a + "|" + b : b + "|" + a;
+  function pairKey(a, b) {
+    var x = String(a);
+    var y = String(b);
+    return x < y ? x + "|" + y : y + "|" + x;
   }
 
   function newSplitRecord() {
@@ -77,21 +95,77 @@
   }
 
   /**
-   * Builds the set of valid winners-bracket roster-id pairings, keyed
-   * by week, from a Sleeper-style winners bracket array (entries with
-   * {r: round, t1, t2}). Round r is assumed to map to week
-   * playoffStartWeek + r - 1, which matches how Sleeper brackets are
-   * laid out (one round per week).
+   * Simulates a Sleeper-style winners bracket round by round to find,
+   * for each week, the set of roster-id pairings that represent a real
+   * "still alive on the championship path" playoff game.
+   *
+   * winnersBracket entries look like:
+   *   { r: round, m: matchId, t1, t2, w: winnerRosterId, l: loserRosterId,
+   *     t1_from: {w: matchId} | {l: matchId}, t2_from: {...}, p: placementRank }
+   *
+   * Placement games (p is set, e.g. p:3 for the 3rd place game) are
+   * always excluded - their participants are explicitly the losers of
+   * an earlier round, never the championship path.
+   *
+   * For non-placement games, a roster is only "alive" entering round N
+   * if it won every one of its prior non-placement rounds. Round 1
+   * participants are alive by definition (everyone starts on the
+   * championship path). t1/t2 that are resolved via t1_from/t2_from
+   * pointing at a match's winner (`w`) are only alive if that
+   * referenced team was itself alive and actually won.
    */
-  function buildWinnersBracketPairsByWeek(winnersBracket, playoffStartWeek) {
+  function buildActivePlayoffPairsByWeek(winnersBracket, playoffStartWeek) {
     var pairsByWeek = {};
     if (!winnersBracket || !playoffStartWeek) return pairsByWeek;
 
+    var byRound = {};
     winnersBracket.forEach(function (m) {
-      if (!m.t1 || !m.t2 || !m.r) return;
-      var week = playoffStartWeek + (m.r - 1);
-      if (!pairsByWeek[week]) pairsByWeek[week] = {};
-      pairsByWeek[week][pairKey(m.t1, m.t2)] = true;
+      var r = m.r || 1;
+      if (!byRound[r]) byRound[r] = [];
+      byRound[r].push(m);
+    });
+
+    var rounds = Object.keys(byRound)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      });
+
+    var aliveRosterIds = null; // null = round 1, everyone who appears is alive by definition
+
+    rounds.forEach(function (round) {
+      var matches = byRound[round] || [];
+      var week = playoffStartWeek + (round - 1);
+      var stillAliveAfterThisRound = {};
+
+      matches.forEach(function (m) {
+        if (m.p) return; // placement game (3rd place, etc.) - never a real playoff game
+
+        var t1 = m.t1;
+        var t2 = m.t2;
+        if (!t1 || !t2) return;
+
+        var t1Alive = aliveRosterIds === null ? true : !!aliveRosterIds[t1];
+        var t2Alive = aliveRosterIds === null ? true : !!aliveRosterIds[t2];
+
+        if (t1Alive && t2Alive) {
+          if (!pairsByWeek[week]) pairsByWeek[week] = {};
+          pairsByWeek[week][pairKey(t1, t2)] = true;
+
+          // Whoever wins (or, if unplayed yet, both provisionally) stays alive for next round.
+          if (m.w) {
+            stillAliveAfterThisRound[m.w] = true;
+          } else {
+            stillAliveAfterThisRound[t1] = true;
+            stillAliveAfterThisRound[t2] = true;
+          }
+        }
+        // If either side wasn't alive, this is a placement/consolation game
+        // in disguise (shouldn't normally happen for non-`p` matches, but
+        // if it does, neither team carries forward as "alive").
+      });
+
+      aliveRosterIds = stillAliveAfterThisRound;
     });
 
     return pairsByWeek;
@@ -107,11 +181,11 @@
    *
    * Bracket-type detection order:
    *   1. If the CSV row itself exposes a bracket-type field
-   *      (bracketType / isConsolation / isWinnersBracket / isLosersBracket),
-   *      trust it directly - this is the most accurate source when present.
+   *      (bracketType / isConsolation / isWinnersBracket / isLosersBracket)
+   *      AND an explicit elimination/placement signal, trust it directly.
    *   2. Otherwise, cross-reference against EspnLoader's own
-   *      winnersBracket for that season (same technique used for
-   *      Sleeper) to tell playoff from consolation.
+   *      winnersBracket for that season using the same round-by-round
+   *      "alive path" simulation used for Sleeper.
    *   3. If neither is available, fall back to treating every
    *      r.isPlayoff row as "playoff" (old behavior) so nothing breaks,
    *      but this case is logged so it's visible during QA.
@@ -132,25 +206,19 @@
         };
       });
 
-      var hasExplicitBracketField = (data.rows || []).some(function (r) {
-        return (
-          r.bracketType !== undefined ||
-          r.isConsolation !== undefined ||
-          r.isWinnersBracket !== undefined ||
-          r.isLosersBracket !== undefined
-        );
+      var hasExplicitEliminationField = (data.rows || []).some(function (r) {
+        return r.isEliminatedBeforeThisGame !== undefined || r.bracketRoundStatus !== undefined;
       });
 
       var winnersPairsByWeek = null;
-      if (!hasExplicitBracketField && data.winnersBracket) {
+      if (!hasExplicitEliminationField && data.winnersBracket) {
         var espnPlayoffStartWeek = (data.rows || []).reduce(function (min, r) {
           return r.isPlayoff && r.week < min ? r.week : min;
         }, Infinity);
         if (espnPlayoffStartWeek !== Infinity) {
-          winnersPairsByWeek = buildWinnersBracketPairsByWeekEspn(
+          winnersPairsByWeek = buildActivePlayoffPairsByWeekEspn(
             data.winnersBracket,
-            espnPlayoffStartWeek,
-            data.rosterMap
+            espnPlayoffStartWeek
           );
         }
       }
@@ -166,29 +234,18 @@
 
         var gameType = "regular";
         if (r.isPlayoff) {
-          if (hasExplicitBracketField) {
-            if (r.isConsolation || r.isLosersBracket || r.bracketType === "consolation") {
-              gameType = "consolation";
-            } else {
-              gameType = "playoff";
-            }
+          if (hasExplicitEliminationField) {
+            gameType = r.isEliminatedBeforeThisGame ? "consolation" : "playoff";
           } else if (winnersPairsByWeek) {
-            var teamKeyName = r.team;
-            var oppKeyName = r.opponent;
-            var isWinnersPair = isPairInWinnersBracket(
-              winnersPairsByWeek,
-              r.week,
-              teamKeyName,
-              oppKeyName
-            );
-            gameType = isWinnersPair ? "playoff" : "consolation";
+            var isActivePair = isPairActive(winnersPairsByWeek, r.week, r.team, r.opponent);
+            gameType = isActivePair ? "playoff" : "consolation";
           } else {
             if (!loggedFallbackWarning) {
               console.warn(
                 "All-time: ESPN season " +
                   year +
-                  " has no bracket-type field and no winners bracket to cross-reference; " +
-                  "treating all playoff-week games as 'playoff' (consolation games may be included)."
+                  " has no elimination-tracking field and no winners bracket to simulate; " +
+                  "treating all playoff-week games as 'playoff' (post-elimination games may be included)."
               );
               loggedFallbackWarning = true;
             }
@@ -218,32 +275,66 @@
   }
 
   /**
-   * Same idea as buildWinnersBracketPairsByWeek but keyed by team NAME
-   * pairs instead of roster IDs, since ESPN's per-row data identifies
-   * teams by name/owner rather than a numeric roster id. Falls back to
-   * matching whatever identifier is present on the bracket entries
-   * (teamName or ownerName).
+   * Same round-by-round "alive path" simulation as
+   * buildActivePlayoffPairsByWeek, but for EspnLoader's bracket shape
+   * (rounds of { round, matches: [{ slot1, slot2, winnerRosterId/winnerName }] })
+   * and keyed by team NAME pairs since ESPN rows identify teams by name.
+   * A match is treated as a placement/non-championship game if either
+   * slot is marked as coming from a prior round's LOSER (slot.fromLoserOf
+   * or similar), mirroring Sleeper's t1_from/t2_from {l: matchId} signal;
+   * if that metadata isn't present, placement games are identified by
+   * simply not being reachable via the winner-chain from round 1.
    */
-  function buildWinnersBracketPairsByWeekEspn(winnersBracket, playoffStartWeek, rosterMap) {
+  function buildActivePlayoffPairsByWeekEspn(winnersBracket, playoffStartWeek) {
     var pairsByWeek = {};
     if (!winnersBracket) return pairsByWeek;
+
+    var aliveNames = null;
 
     winnersBracket.forEach(function (roundData) {
       var round = roundData.round;
       var week = playoffStartWeek + (round - 1);
+      var stillAliveAfterThisRound = {};
+
       (roundData.matches || []).forEach(function (m) {
+        var isPlacementGame = !!(m.isPlacementGame || m.placement || (m.p && m.p > 1));
+        if (isPlacementGame) return;
+
         var nameA = m.slot1 && (m.slot1.teamName || m.slot1.ownerName);
         var nameB = m.slot2 && (m.slot2.teamName || m.slot2.ownerName);
         if (!nameA || !nameB) return;
-        if (!pairsByWeek[week]) pairsByWeek[week] = {};
-        pairsByWeek[week][pairKey(nameA, nameB)] = true;
+
+        var aAlive = aliveNames === null ? true : !!aliveNames[nameA];
+        var bAlive = aliveNames === null ? true : !!aliveNames[nameB];
+
+        if (aAlive && bAlive) {
+          if (!pairsByWeek[week]) pairsByWeek[week] = {};
+          pairsByWeek[week][pairKey(nameA, nameB)] = true;
+
+          var winnerName =
+            m.winnerName ||
+            (m.winnerRosterId && m.slot1 && m.slot1.rosterId === m.winnerRosterId
+              ? nameA
+              : m.winnerRosterId
+              ? nameB
+              : null);
+
+          if (winnerName) {
+            stillAliveAfterThisRound[winnerName] = true;
+          } else {
+            stillAliveAfterThisRound[nameA] = true;
+            stillAliveAfterThisRound[nameB] = true;
+          }
+        }
       });
+
+      aliveNames = stillAliveAfterThisRound;
     });
 
     return pairsByWeek;
   }
 
-  function isPairInWinnersBracket(pairsByWeek, week, nameA, nameB) {
+  function isPairActive(pairsByWeek, week, nameA, nameB) {
     var weekPairs = pairsByWeek[week];
     if (!weekPairs) return false;
     return !!weekPairs[pairKey(nameA, nameB)];
@@ -255,8 +346,9 @@
    * SleeperAPI.buildRosterMap (which already applies owner-overrides.js).
    * madePlayoffs is derived by checking whether the roster appears
    * anywhere in that season's winners bracket. Each game is classified
-   * as "regular", "playoff" (real winners-bracket pairing), or
-   * "consolation" (playoff-week game that isn't a winners-bracket pairing).
+   * as "regular", "playoff" (still alive on the championship path that
+   * round), or "consolation" (losers bracket, placement games, or any
+   * winners-bracket game for a team already eliminated from the title path).
    */
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
@@ -285,7 +377,7 @@
         if (m.t2) playoffRosterIds[m.t2] = true;
       });
 
-      var winnersPairsByWeek = buildWinnersBracketPairsByWeek(winnersBracket, playoffStartWeek);
+      var activePairsByWeek = buildActivePlayoffPairsByWeek(winnersBracket, playoffStartWeek);
 
       var teamSummaries = Object.keys(rosterMap).map(function (rid) {
         var t = rosterMap[rid];
@@ -328,9 +420,8 @@
 
             var gameType = "regular";
             if (isPlayoffWeek) {
-              var isWinnersPair =
-                winnersPairsByWeek[week] && winnersPairsByWeek[week][pairKey(a.roster_id, b.roster_id)];
-              gameType = isWinnersPair ? "playoff" : "consolation";
+              var isActivePair = isPairActive(activePairsByWeek, week, a.roster_id, b.roster_id);
+              gameType = isActivePair ? "playoff" : "consolation";
             }
 
             games.push({
@@ -394,9 +485,11 @@
    * Walks every game across every season once and buckets each game's
    * result (win/loss/tie + points) onto the correct owner AND the
    * correct split (regular vs playoff). Consolation games are skipped
-   * entirely here - they don't count toward either total, per league
-   * rules that only winners-bracket games count as "playoff" and only
-   * the normal schedule counts as "regular season".
+   * entirely here - they don't count toward either total. This
+   * includes: the separate losers/toilet-bowl bracket, placement games
+   * (3rd place, etc.) within the winners bracket, and any later-round
+   * winners-bracket game played by a team already eliminated from the
+   * championship path that postseason.
    */
   function accumulateGameRecords(allSeasonsData) {
     var byOwner = {}; // ownerKey -> { regular: {...}, playoff: {...} }
@@ -512,12 +605,12 @@
 
   /**
    * Every individual game ever played between two specific owners,
-   * across all seasons, split into regular-season, playoff (winners
-   * bracket only), and consolation games, each with its own aggregate
-   * head-to-head summary. Consolation games are included in the full
-   * game log (tagged accordingly) but excluded from the regular and
-   * playoff summaries. ownerAQuery/ownerBQuery are matched
-   * case-insensitively against ownerKey.
+   * across all seasons, split into regular-season, playoff (active
+   * championship-path games only), and consolation games, each with
+   * its own aggregate head-to-head summary. Consolation games are
+   * included in the full game log (tagged accordingly) but excluded
+   * from the regular and playoff summaries. ownerAQuery/ownerBQuery
+   * are matched case-insensitively against ownerKey.
    */
   function buildHeadToHead(allSeasonsData, ownerAQuery, ownerBQuery) {
     var keyA = normalizeOwnerKey(ownerAQuery);
