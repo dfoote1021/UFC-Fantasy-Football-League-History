@@ -19,19 +19,17 @@
  * Each game is classified into exactly one of three buckets:
  *   - "regular"     games during the normal season schedule.
  *   - "playoff"     games that are on a team's ACTIVE championship
- *                   path in the winners bracket - i.e. both teams in
- *                   the game won every one of their prior
- *                   winners-bracket rounds this postseason. This is
- *                   NOT the same as "any game inside the winners
- *                   bracket data structure": Sleeper's winners bracket
- *                   also contains placement games (3rd place, 5th
- *                   place, etc.) whose participants are the LOSERS of
- *                   earlier rounds. Those are intentionally excluded
- *                   here, along with a first-round loser's later-round
- *                   games of any kind, because once a team is
- *                   eliminated from the title path none of their
- *                   remaining "playoff bracket" games are really
- *                   playoff games anymore.
+ *                   path in the winners bracket - i.e. neither team in
+ *                   the game has lost an earlier winners-bracket round
+ *                   this postseason. This is NOT the same as "any game
+ *                   inside the winners bracket data structure": Sleeper's
+ *                   winners bracket also contains placement games (3rd
+ *                   place, 5th place, etc.) whose participants are the
+ *                   LOSERS of earlier rounds. Those are excluded, along
+ *                   with a first-round loser's later-round games of any
+ *                   kind, because once a team is eliminated from the
+ *                   title path none of their remaining "playoff bracket"
+ *                   games are really playoff games anymore.
  *   - "consolation" everything else during playoff weeks: the
  *                   separate loser's/toilet-bowl bracket, PLUS any
  *                   placement game (3rd place, etc.) inside the
@@ -42,23 +40,32 @@
  *                   shown in the head-to-head game log (tagged
  *                   "Consolation") for transparency.
  *
- * For Sleeper seasons, this is determined by SIMULATING the winners
+ * IMPORTANT - byes: a team with a first-round BYE never appears in a
+ * round-1 winners-bracket match at all, so playoff-eligibility is
+ * tracked as an ELIMINATION block-list rather than an alive allow-list:
+ * a roster is only excluded once it actually LOSES a non-placement
+ * winners-bracket match. A bye team never loses anything in round 1
+ * (it simply doesn't play), so it's never added to the eliminated set
+ * and is automatically still eligible for its round-2 (and, if it wins,
+ * round-3) games. Building this as an "alive" allow-list instead would
+ * require explicitly re-adding every bye team each round, which is
+ * exactly the bug this version fixes - the elimination-based approach
+ * handles byes for free since there's nothing to add.
+ *
+ * For Sleeper seasons, this is determined by walking the winners
  * bracket round by round using each match's actual winner (the `w`
- * field once played), tracking which roster IDs are still "alive" on
- * the championship path. A round-N match counts as "playoff" only if
- * BOTH of its participants were alive entering round N. This correctly
- * excludes: the separate losers/consolation bracket entirely, 3rd
- * place / placement games within the winners bracket structure, and -
- * per league rules - any game an eliminated team plays in a later
- * round of the winners bracket (e.g. a 3-round format where a
- * round-1 loser's round-2 and round-3 games, including any 3rd place
- * game, no longer count as playoff games for them).
+ * field once played) to mark the LOSER as eliminated. A round-N match
+ * counts as "playoff" only if NEITHER of its participants has been
+ * eliminated in an earlier round. This correctly excludes: the
+ * separate losers/consolation bracket entirely, placement games (3rd
+ * place, etc.) within the winners bracket structure, and any game an
+ * eliminated team plays in a later round - while still correctly
+ * counting byes' later-round games as real playoff games.
  *
  * For ESPN seasons, the per-row bracket type from espn-loader.js is
  * used if available (checked defensively across a few possible field
- * names); otherwise the loader falls back to the same round-by-round
- * "alive path" simulation against the winners bracket built by
- * EspnLoader.
+ * names); otherwise the loader falls back to the same elimination-
+ * tracking simulation against the winners bracket built by EspnLoader.
  *
  * This is intentionally a separate module from season.js/espn-loader.js
  * /sleeper-common.js - it READS data through those existing loaders
@@ -95,8 +102,8 @@
   }
 
   /**
-   * Simulates a Sleeper-style winners bracket round by round to find,
-   * for each week, the set of roster-id pairings that represent a real
+   * Walks a Sleeper-style winners bracket round by round to find, for
+   * each week, the set of roster-id pairings that represent a real
    * "still alive on the championship path" playoff game.
    *
    * winnersBracket entries look like:
@@ -107,12 +114,12 @@
    * always excluded - their participants are explicitly the losers of
    * an earlier round, never the championship path.
    *
-   * For non-placement games, a roster is only "alive" entering round N
-   * if it won every one of its prior non-placement rounds. Round 1
-   * participants are alive by definition (everyone starts on the
-   * championship path). t1/t2 that are resolved via t1_from/t2_from
-   * pointing at a match's winner (`w`) are only alive if that
-   * referenced team was itself alive and actually won.
+   * Eligibility is tracked as an ELIMINATION block-list, not an "alive"
+   * allow-list: a roster is excluded from round N onward only once it
+   * actually LOSES a non-placement match in an earlier round. A team
+   * with a first-round bye never appears in a round-1 match, so it's
+   * never marked eliminated and remains correctly eligible for its
+   * round-2 (and round-3) games without needing any special-case logic.
    */
   function buildActivePlayoffPairsByWeek(winnersBracket, playoffStartWeek) {
     var pairsByWeek = {};
@@ -131,41 +138,35 @@
         return a - b;
       });
 
-    var aliveRosterIds = null; // null = round 1, everyone who appears is alive by definition
+    var eliminatedRosterIds = {};
 
     rounds.forEach(function (round) {
       var matches = byRound[round] || [];
       var week = playoffStartWeek + (round - 1);
-      var stillAliveAfterThisRound = {};
 
       matches.forEach(function (m) {
         if (m.p) return; // placement game (3rd place, etc.) - never a real playoff game
 
         var t1 = m.t1;
         var t2 = m.t2;
-        if (!t1 || !t2) return;
+        if (!t1 || !t2) return; // bye slot with no opponent yet - nothing to pair this round
 
-        var t1Alive = aliveRosterIds === null ? true : !!aliveRosterIds[t1];
-        var t2Alive = aliveRosterIds === null ? true : !!aliveRosterIds[t2];
+        var t1Eliminated = !!eliminatedRosterIds[t1];
+        var t2Eliminated = !!eliminatedRosterIds[t2];
 
-        if (t1Alive && t2Alive) {
+        if (!t1Eliminated && !t2Eliminated) {
           if (!pairsByWeek[week]) pairsByWeek[week] = {};
           pairsByWeek[week][pairKey(t1, t2)] = true;
 
-          // Whoever wins (or, if unplayed yet, both provisionally) stays alive for next round.
           if (m.w) {
-            stillAliveAfterThisRound[m.w] = true;
-          } else {
-            stillAliveAfterThisRound[t1] = true;
-            stillAliveAfterThisRound[t2] = true;
+            var loser = m.w === t1 ? t2 : t1;
+            eliminatedRosterIds[loser] = true;
           }
         }
-        // If either side wasn't alive, this is a placement/consolation game
-        // in disguise (shouldn't normally happen for non-`p` matches, but
-        // if it does, neither team carries forward as "alive").
+        // If either side was already eliminated, this shouldn't normally
+        // happen for a non-placement match, but if the bracket data is
+        // unusual, we simply don't count it as a playoff game.
       });
-
-      aliveRosterIds = stillAliveAfterThisRound;
     });
 
     return pairsByWeek;
@@ -180,12 +181,12 @@
    * gameType of "regular" | "playoff" | "consolation").
    *
    * Bracket-type detection order:
-   *   1. If the CSV row itself exposes a bracket-type field
-   *      (bracketType / isConsolation / isWinnersBracket / isLosersBracket)
-   *      AND an explicit elimination/placement signal, trust it directly.
+   *   1. If the CSV row itself exposes an elimination-tracking field
+   *      (isEliminatedBeforeThisGame / bracketRoundStatus), trust it
+   *      directly.
    *   2. Otherwise, cross-reference against EspnLoader's own
-   *      winnersBracket for that season using the same round-by-round
-   *      "alive path" simulation used for Sleeper.
+   *      winnersBracket for that season using the same elimination-
+   *      tracking simulation used for Sleeper (handles byes the same way).
    *   3. If neither is available, fall back to treating every
    *      r.isPlayoff row as "playoff" (old behavior) so nothing breaks,
    *      but this case is logged so it's visible during QA.
@@ -275,26 +276,25 @@
   }
 
   /**
-   * Same round-by-round "alive path" simulation as
-   * buildActivePlayoffPairsByWeek, but for EspnLoader's bracket shape
-   * (rounds of { round, matches: [{ slot1, slot2, winnerRosterId/winnerName }] })
-   * and keyed by team NAME pairs since ESPN rows identify teams by name.
-   * A match is treated as a placement/non-championship game if either
-   * slot is marked as coming from a prior round's LOSER (slot.fromLoserOf
-   * or similar), mirroring Sleeper's t1_from/t2_from {l: matchId} signal;
-   * if that metadata isn't present, placement games are identified by
-   * simply not being reachable via the winner-chain from round 1.
+   * Same elimination-tracking simulation as buildActivePlayoffPairsByWeek,
+   * but for EspnLoader's bracket shape (rounds of { round, matches: [{
+   * slot1, slot2, winnerRosterId/winnerName }] }) and keyed by team NAME
+   * pairs since ESPN rows identify teams by name. A match is treated as
+   * a placement/non-championship game if either slot is marked as coming
+   * from a prior round's LOSER (mirroring Sleeper's p field / t1_from
+   * {l: matchId} signal). Byes are handled the same way as Sleeper: a
+   * team is only excluded once it's recorded as having LOST an earlier
+   * round, never by needing to be explicitly re-added when it had a bye.
    */
   function buildActivePlayoffPairsByWeekEspn(winnersBracket, playoffStartWeek) {
     var pairsByWeek = {};
     if (!winnersBracket) return pairsByWeek;
 
-    var aliveNames = null;
+    var eliminatedNames = {};
 
     winnersBracket.forEach(function (roundData) {
       var round = roundData.round;
       var week = playoffStartWeek + (round - 1);
-      var stillAliveAfterThisRound = {};
 
       (roundData.matches || []).forEach(function (m) {
         var isPlacementGame = !!(m.isPlacementGame || m.placement || (m.p && m.p > 1));
@@ -302,12 +302,12 @@
 
         var nameA = m.slot1 && (m.slot1.teamName || m.slot1.ownerName);
         var nameB = m.slot2 && (m.slot2.teamName || m.slot2.ownerName);
-        if (!nameA || !nameB) return;
+        if (!nameA || !nameB) return; // bye slot with no opponent yet
 
-        var aAlive = aliveNames === null ? true : !!aliveNames[nameA];
-        var bAlive = aliveNames === null ? true : !!aliveNames[nameB];
+        var aEliminated = !!eliminatedNames[nameA];
+        var bEliminated = !!eliminatedNames[nameB];
 
-        if (aAlive && bAlive) {
+        if (!aEliminated && !bEliminated) {
           if (!pairsByWeek[week]) pairsByWeek[week] = {};
           pairsByWeek[week][pairKey(nameA, nameB)] = true;
 
@@ -320,15 +320,11 @@
               : null);
 
           if (winnerName) {
-            stillAliveAfterThisRound[winnerName] = true;
-          } else {
-            stillAliveAfterThisRound[nameA] = true;
-            stillAliveAfterThisRound[nameB] = true;
+            var loserName = winnerName === nameA ? nameB : nameA;
+            eliminatedNames[loserName] = true;
           }
         }
       });
-
-      aliveNames = stillAliveAfterThisRound;
     });
 
     return pairsByWeek;
@@ -346,9 +342,10 @@
    * SleeperAPI.buildRosterMap (which already applies owner-overrides.js).
    * madePlayoffs is derived by checking whether the roster appears
    * anywhere in that season's winners bracket. Each game is classified
-   * as "regular", "playoff" (still alive on the championship path that
-   * round), or "consolation" (losers bracket, placement games, or any
-   * winners-bracket game for a team already eliminated from the title path).
+   * as "regular", "playoff" (not yet eliminated from the championship
+   * path that round - including bye-week advancement), or "consolation"
+   * (losers bracket, placement games, or any winners-bracket game for a
+   * team already eliminated from the title path).
    */
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
