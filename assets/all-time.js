@@ -25,49 +25,57 @@
  *   - "playoff"     games that are on a team's ACTIVE championship
  *                   path in the winners bracket - i.e. neither team in
  *                   the game has lost an earlier winners-bracket round
- *                   this postseason.
+ *                   this postseason. This INCLUDES the championship
+ *                   game itself.
  *   - "consolation" everything else during playoff weeks: the
  *                   separate loser's/toilet-bowl bracket, PLUS any
- *                   placement game (3rd place, etc.) inside the
- *                   winners-bracket data structure, PLUS any
- *                   later-round winners-bracket game for a team that
- *                   already lost an earlier round.
+ *                   placement game OTHER than the championship (3rd
+ *                   place, 5th place, etc.) inside the winners-bracket
+ *                   data structure, PLUS any later-round winners-
+ *                   bracket game for a team that already lost an
+ *                   earlier round.
  *
- * IMPORTANT - resolving bracket slots via t1_from/t2_from: Sleeper's
- * winners bracket does NOT always populate a match's t1/t2 fields with
- * literal roster IDs. For any bracket slot that is filled by the
- * WINNER (or LOSER, for placement games) of an earlier match rather
- * than being a fixed starting seed, Sleeper instead sets
- * t1_from: {w: matchId} or {l: matchId} (and t2_from similarly) and
- * leaves the literal t1/t2 field null/undefined - the consumer is
- * expected to resolve it by looking up that referenced match's actual
- * winner or loser once it's been played.
+ * CONFIRMED AGAINST SLEEPER'S OFFICIAL API DOCS (docs.sleeper.com) -
+ * three real bugs were found and fixed here in sequence:
  *
- * A previous version of this code only ever read the literal t1/t2
- * fields and skipped any match where they were missing. That silently
- * dropped real games from the "active championship path" pair set -
- * most visibly, a CHAMPIONSHIP game between two teams that both had
- * byes (so neither has a fixed t1/t2 in that match; both sides are
- * resolved via t1_from/t2_from pointing at their semifinal wins) was
- * never recognized as a playoff pairing at all, and fell through to
- * "consolation" even though it was very much a real, active-path
- * playoff game.
+ * Bug 1 (fixed earlier): eligibility must be tracked as an
+ * ELIMINATION block-list, not an "alive" allow-list, so that a team
+ * with a bye - which never appears in the round it skips - isn't
+ * wrongly excluded from its next real game. A roster is only excluded
+ * once it actually LOSES a non-championship-path match.
  *
- * FIX: buildActivePlayoffPairs (Sleeper) now resolves each match's
- * participants by first checking the literal t1/t2 field, and if
- * absent, following t1_from/t2_from to the referenced match (by its
- * `m` id) and reading that match's winner (`w`) or loser (`l`) as
- * appropriate. This correctly handles every bracket-slot origin:
- * fixed bye seeds (literal t1/t2), winners advancing from an earlier
- * round (t1_from: {w: matchId}), and losers dropping into a placement
- * game (t1_from: {l: matchId}).
+ * Bug 2 (fixed earlier): the pair-matching must NOT be tied to a
+ * specific calendar week computed via `playoffStartWeek + round - 1`.
+ * Bracket round numbers reflect bracket DEPTH, not elapsed calendar
+ * weeks, and byes can cause a round to be entirely skipped for a given
+ * pair of teams - e.g. two bye teams whose first-ever bracket
+ * appearance is the championship itself. The fix builds one flat,
+ * week-agnostic set of legitimate roster-ID pairs and matches real
+ * games against it purely by roster-ID pair.
  *
- * Eligibility itself is still tracked as an ELIMINATION block-list (a
- * roster is only excluded once it actually LOSES a non-placement
- * match), and the resulting pair set is NOT partitioned by week -
- * every real game during a playoff week is checked against this set
- * purely by roster-ID pair, since bracket round numbers don't reliably
- * map 1-to-1 with elapsed calendar weeks once any bye is involved.
+ * Bug 3 (THE ACTUAL ROOT CAUSE of the "bye winner's next game shows as
+ * consolation" symptom, fixed here): per Sleeper's own documented
+ * bracket example, the CHAMPIONSHIP game itself is tagged with `p: 1`
+ * in the raw bracket data:
+ *   {r: 3, m: 6, t1_from: {w: 3}, t2_from: {w: 4}, w: null, l: null, p: 1}
+ * The code was treating ANY truthy `p` field as "this is a placement/
+ * consolation game, skip it" - which meant the championship game
+ * itself was being silently excluded from the active-pairs set on
+ * every single bracket, not just ones involving byes. The reason this
+ * specifically manifested as "the game right after a bye-team's win"
+ * is that in a standard 3-round, 6-team bracket, that next game IS the
+ * championship. The fix only skips placement games where `p` is set
+ * AND is not 1 (i.e. p:3, p:5, etc. are still excluded as true
+ * placement/consolation games; p:1 - the championship - now correctly
+ * counts as an active playoff pairing).
+ *
+ * Also handled: Sleeper's bracket does not always populate a match's
+ * literal t1/t2 fields - for a slot filled by the WINNER (or LOSER,
+ * for placement games) of an earlier match, only t1_from: {w: matchId}
+ * or {l: matchId} is set, and the literal field is left empty. Every
+ * resolution here (resolveBracketSlot) checks the literal field first
+ * and falls back to following t1_from/t2_from to the referenced
+ * match's actual winner or loser.
  *
  * For ESPN seasons, the per-row bracket type from espn-loader.js is
  * used if available; otherwise the loader falls back to the same
@@ -108,6 +116,11 @@
     };
   }
 
+  /** True only for a genuine placement/consolation game - p is set AND is not 1 (1 = championship). */
+  function isNonChampionshipPlacementGame(m) {
+    return !!(m.p && m.p !== 1);
+  }
+
   /**
    * Resolves a bracket match's t1 or t2 participant. Tries the literal
    * field first; if that's missing, follows the corresponding
@@ -135,27 +148,29 @@
   /**
    * Walks a Sleeper-style winners bracket round by round to find the
    * set of roster-id pairings that represent a real "still alive on
-   * the championship path" playoff game, ANYWHERE in the bracket -
-   * deliberately NOT tied to a specific calendar week, and correctly
-   * resolving each match's participants even when they're only
-   * available via t1_from/t2_from rather than a literal t1/t2.
+   * the championship path" playoff game - including the championship
+   * game itself (p:1) - ANYWHERE in the bracket, deliberately NOT tied
+   * to a specific calendar week, and correctly resolving each match's
+   * participants even when they're only available via
+   * t1_from/t2_from rather than a literal t1/t2.
    *
-   * Placement games (p is set, e.g. p:3 for the 3rd place game) are
-   * always excluded - their participants are explicitly the losers of
-   * an earlier round, never the championship path.
+   * Only NON-championship placement games (p set and not equal to 1 -
+   * e.g. 3rd place, 5th place) are excluded; their participants are
+   * explicitly the losers of an earlier round, never the championship
+   * path.
    *
    * Eligibility is tracked as an ELIMINATION block-list: a roster is
    * excluded from any later round only once it actually LOSES a
    * non-placement match. A team with a bye - whether for one round or
    * for multiple rounds in a row - never appears in a match it didn't
    * play, so it's never marked eliminated and remains correctly
-   * eligible for whichever round it next appears in.
+   * eligible for whichever round it next appears in, including the
+   * championship game if that's the very next bracket appearance for
+   * both finalists.
    *
    * Returns a flat object keyed by pairKey(t1, t2) - one entry per
    * legitimate championship-path pairing across the WHOLE bracket, not
-   * partitioned by week. Callers match a real game against this set
-   * purely by roster-id pair; the game's actual calendar week is
-   * irrelevant to whether it counts as "playoff".
+   * partitioned by week.
    */
   function buildActivePlayoffPairs(winnersBracket) {
     var activePairs = {};
@@ -185,7 +200,7 @@
       var matches = byRound[round] || [];
 
       matches.forEach(function (m) {
-        if (m.p) return; // placement game (3rd place, etc.) - never a real playoff game
+        if (isNonChampionshipPlacementGame(m)) return;
 
         var t1 = resolveBracketSlot(m, "t1", byMatchId);
         var t2 = resolveBracketSlot(m, "t2", byMatchId);
@@ -305,13 +320,10 @@
 
   /**
    * Same resolved-graph, elimination-tracking pair-set simulation as
-   * buildActivePlayoffPairs, but for EspnLoader's bracket shape (rounds
-   * of { round, matches: [{ slot1, slot2, winnerRosterId/winnerName }] })
-   * and keyed by team NAME pairs since ESPN rows identify teams by
-   * name. ESPN's loader is assumed to already resolve each slot's
-   * teamName/ownerName directly (it doesn't expose a raw t1_from-style
-   * reference the way Sleeper's API does), so no additional graph
-   * resolution is needed here beyond the elimination tracking itself.
+   * buildActivePlayoffPairs (including the p:1-is-the-championship
+   * fix), but for EspnLoader's bracket shape (rounds of { round,
+   * matches: [{ slot1, slot2, winnerRosterId/winnerName }] }) and keyed
+   * by team NAME pairs since ESPN rows identify teams by name.
    */
   function buildActivePlayoffPairsEspn(winnersBracket) {
     var activePairs = {};
@@ -321,8 +333,11 @@
 
     winnersBracket.forEach(function (roundData) {
       (roundData.matches || []).forEach(function (m) {
-        var isPlacementGame = !!(m.isPlacementGame || m.placement || (m.p && m.p > 1));
-        if (isPlacementGame) return;
+        var placementValue = m.placement || m.p;
+        var isNonChampionshipPlacement = !!(
+          m.isPlacementGame && placementValue && placementValue !== 1
+        ) || !!(placementValue && placementValue !== 1);
+        if (isNonChampionshipPlacement) return;
 
         var nameA = m.slot1 && (m.slot1.teamName || m.slot1.ownerName);
         var nameB = m.slot2 && (m.slot2.teamName || m.slot2.ownerName);
@@ -360,11 +375,11 @@
    * madePlayoffs is derived by checking whether the roster appears
    * anywhere in that season's winners bracket. Each game is classified
    * as "regular", "playoff" (a legitimate championship-path pairing,
-   * correctly resolved even when a bracket slot only ever appears via
-   * t1_from/t2_from rather than a literal t1/t2 - e.g. a championship
-   * game between two teams who both had byes), or "consolation"
-   * (losers bracket, placement games, or any winners-bracket game for
-   * a team already eliminated from the title path).
+   * including the championship game itself, correctly resolved even
+   * when a bracket slot only ever appears via t1_from/t2_from rather
+   * than a literal t1/t2), or "consolation" (losers bracket, non-
+   * championship placement games, or any winners-bracket game for a
+   * team already eliminated from the title path).
    */
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
@@ -642,11 +657,12 @@
   /**
    * Every individual game ever played between two specific owners,
    * across all seasons, split into regular-season, playoff (active
-   * championship-path games only), and consolation games, each with
-   * its own aggregate head-to-head summary. Consolation games are
-   * included in the full game log (tagged accordingly) but excluded
-   * from the regular and playoff summaries. ownerAQuery/ownerBQuery
-   * are matched case-insensitively against ownerKey.
+   * championship-path games only, including the championship itself),
+   * and consolation games, each with its own aggregate head-to-head
+   * summary. Consolation games are included in the full game log
+   * (tagged accordingly) but excluded from the regular and playoff
+   * summaries. ownerAQuery/ownerBQuery are matched case-insensitively
+   * against ownerKey.
    */
   function buildHeadToHead(allSeasonsData, ownerAQuery, ownerBQuery) {
     var keyA = normalizeOwnerKey(ownerAQuery);
