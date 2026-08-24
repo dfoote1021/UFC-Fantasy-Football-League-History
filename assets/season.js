@@ -713,190 +713,150 @@
   }
 
   function renderBracket(containerId, bracketData) {
- function renderBracket(containerId, bracketData) {
-  var container = byId(containerId);
-  if (!container) return;
+    var container = byId(containerId);
+    if (!container) return;
 
-  var rounds;
-  if (state.dataSource === "espn") {
-    rounds = bracketData;
-  } else {
-    rounds = SleeperAPI.buildBracketView(
-      bracketData,
-      state.rosterMap,
-      state.seedMap,
-      state.allWeeksMatchups,
-      state.playoffStartWeek
-    );
-  }
+    var rounds;
+    if (state.dataSource === "espn") {
+      rounds = bracketData;
+    } else {
+      rounds = SleeperAPI.buildBracketView(
+        bracketData,
+        state.rosterMap,
+        state.seedMap,
+        state.allWeeksMatchups,
+        state.playoffStartWeek
+      );
+    }
 
-  if (!rounds || rounds.length === 0) {
-    container.innerHTML = "<p>No bracket data available yet for this season.</p>";
-    return;
-  }
+    if (!rounds || rounds.length === 0) {
+      container.innerHTML = "<p>No bracket data available yet for this season.</p>";
+      return;
+    }
 
-  // Only the winners/playoff bracket gets "Championship" and
-  // "Nth Place Game" placement labels. The consolation bracket (losers
-  // bracket / toilet bowl) never had a real championship or placement
-  // structure in this league, so it only ever shows plain "Round N"
-  // titles - for both Sleeper AND ESPN seasons.
-  var isPlayoffBracket = containerId === "playoff-bracket";
+    container.innerHTML = "";
+    var matchCounter = 0;
+    var totalRounds = rounds.length;
+    rounds.forEach(function (roundData, roundIndex) {
+      var roundDiv = document.createElement("div");
+      roundDiv.className = "bracket-round";
+      var roundTitle = document.createElement("h4");
+      roundTitle.textContent = bracketRoundLabel(containerId, roundIndex, totalRounds);
+      roundDiv.appendChild(roundTitle);
 
-  container.innerHTML = "";
-  var matchCounter = 0;
-  var totalRounds = rounds.length;
+      roundData.matches.forEach(function (m) {
+        matchCounter++;
+        var matchDiv = document.createElement("div");
+        matchDiv.className = "bracket-match";
 
-  rounds.forEach(function (roundData, roundIndex) {
-    var roundDiv = document.createElement("div");
-    roundDiv.className = "bracket-round";
-    var roundTitle = document.createElement("h4");
-    roundTitle.textContent = bracketRoundLabel(containerId, roundIndex, totalRounds);
-    roundDiv.appendChild(roundTitle);
-
-    roundData.matches.forEach(function (m) {
-      matchCounter++;
-      var matchDiv = document.createElement("div");
-      matchDiv.className = "bracket-match";
-
-      // Render first-round byes (see SleeperAPI.buildBracketView) as a
-      // single-team bye card instead of a normal two-slot matchup.
-      if (m.isBye) {
-        matchDiv.classList.add("bye-match");
-        var byeSlot = m.slot1;
-        var byeSeedHtml = byeSlot.seed ? '<span class="seed">#' + byeSlot.seed + "</span>" : "";
-        var byeScoreHtml =
-          m.slot1Score !== null && m.slot1Score !== undefined
-            ? '<span class="score">' + m.slot1Score.toFixed(2) + "</span>"
-            : "";
-        var byeSlotDiv = document.createElement("div");
-        byeSlotDiv.className = "bracket-slot bye-slot";
-        byeSlotDiv.innerHTML =
-          "<span>" + byeSeedHtml + escapeHtml(bracketSlotLabel(byeSlot)) + "</span>" + byeScoreHtml;
-        matchDiv.appendChild(byeSlotDiv);
-
-        var byeTagDiv = document.createElement("div");
-        byeTagDiv.className = "bracket-slot bye-tag-row";
-        byeTagDiv.textContent = "BYE";
-        matchDiv.appendChild(byeTagDiv);
-
-        roundDiv.appendChild(matchDiv);
-        return;
-      }
-
-      // buildBracketView exposes the placement as `position` (from
-      // Sleeper's p field); fall back to other names just in case.
-      // Placement labels ("Championship", "3rd Place Game", etc.) only
-      // apply to the playoff/winners bracket - the consolation bracket
-      // skips this block entirely and keeps its plain "Round N" title.
-      if (isPlayoffBracket) {
+        // buildBracketView exposes the placement as `position` (from
+        // Sleeper's p field); fall back to other names just in case.
         var placement = Number(m.position || m.placement || m.p || 0);
         if (placement > 1) {
           var placementLabel = document.createElement("div");
           placementLabel.className = "bracket-placement-label";
           placementLabel.textContent = ordinal(placement) + " Place Game";
           matchDiv.appendChild(placementLabel);
-        } else if (placement === 1) {
+        } else if (placement === 1 && containerId === "playoff-bracket") {
           var championshipLabel = document.createElement("div");
           championshipLabel.className = "bracket-placement-label";
           championshipLabel.textContent = "Championship";
           matchDiv.appendChild(championshipLabel);
         }
-      }
 
-      [
-        { slot: m.slot1, score: m.slot1Score },
-        { slot: m.slot2, score: m.slot2Score },
-      ].forEach(function (entry) {
-        var slot = entry.slot;
-        var slotDiv = document.createElement("div");
-        var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
-        slotDiv.className =
-          "bracket-slot" + (isWinner ? " win" : "") + (!slot.resolved ? " unresolved" : "");
-        var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
-        var scoreHtml =
-          entry.score !== null && entry.score !== undefined
-            ? '<span class="score">' + entry.score.toFixed(2) + "</span>"
-            : "";
-        slotDiv.innerHTML =
-          "<span>" + seedHtml + escapeHtml(bracketSlotLabel(slot)) + "</span>" + scoreHtml;
-        matchDiv.appendChild(slotDiv);
+        [
+          { slot: m.slot1, score: m.slot1Score },
+          { slot: m.slot2, score: m.slot2Score },
+        ].forEach(function (entry) {
+          var slot = entry.slot;
+          var slotDiv = document.createElement("div");
+          var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
+          slotDiv.className =
+            "bracket-slot" + (isWinner ? " win" : "") + (!slot.resolved ? " unresolved" : "");
+          var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
+          var scoreHtml =
+            entry.score !== null && entry.score !== undefined
+              ? '<span class="score">' + entry.score.toFixed(2) + "</span>"
+              : "";
+          slotDiv.innerHTML = "<span>" + seedHtml + escapeHtml(bracketSlotLabel(slot)) + "</span>" + scoreHtml;
+          matchDiv.appendChild(slotDiv);
+        });
+
+        if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
+          var toggleId = containerId + "-rosters-" + matchCounter;
+          var toggleDiv = document.createElement("div");
+          toggleDiv.className = "bracket-match-toggle";
+          var toggleBtn = document.createElement("button");
+          toggleBtn.className = "btn btn-small";
+          toggleBtn.textContent = "Show rosters";
+          toggleBtn.dataset.target = toggleId;
+          toggleBtn.dataset.week = m.week;
+          toggleBtn.dataset.roster1 = m.slot1.rosterId || "";
+          toggleBtn.dataset.roster2 = m.slot2.rosterId || "";
+          toggleDiv.appendChild(toggleBtn);
+          matchDiv.appendChild(toggleDiv);
+
+          var rostersDiv = document.createElement("div");
+          rostersDiv.className = "bracket-rosters";
+          rostersDiv.id = toggleId;
+          matchDiv.appendChild(rostersDiv);
+        }
+
+        roundDiv.appendChild(matchDiv);
       });
 
-      if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
-        var toggleId = containerId + "-rosters-" + matchCounter;
-        var toggleDiv = document.createElement("div");
-        toggleDiv.className = "bracket-match-toggle";
-        var toggleBtn = document.createElement("button");
-        toggleBtn.className = "btn btn-small";
-        toggleBtn.textContent = "Show rosters";
-        toggleBtn.dataset.target = toggleId;
-        toggleBtn.dataset.week = m.week;
-        toggleBtn.dataset.roster1 = m.slot1.rosterId || "";
-        toggleBtn.dataset.roster2 = m.slot2.rosterId || "";
-        toggleDiv.appendChild(toggleBtn);
-        matchDiv.appendChild(toggleDiv);
-
-        var rostersDiv = document.createElement("div");
-        rostersDiv.className = "bracket-rosters";
-        rostersDiv.id = toggleId;
-        matchDiv.appendChild(rostersDiv);
-      }
-
-      roundDiv.appendChild(matchDiv);
+      container.appendChild(roundDiv);
     });
 
-    container.appendChild(roundDiv);
-  });
-
-  if (state.dataSource === "sleeper") {
-    container.querySelectorAll(".bracket-match-toggle button").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        var target = byId(btn.dataset.target);
-        if (!target) return;
-        var expanded = target.classList.contains("expanded");
-        if (expanded) {
-          target.classList.remove("expanded");
-          btn.textContent = "Show rosters";
-          return;
-        }
-        btn.textContent = "Loading…";
-        try {
-          if (!state.playersMap) {
-            state.playersMap = await SleeperAPI.getPlayersMap();
+    if (state.dataSource === "sleeper") {
+      container.querySelectorAll(".bracket-match-toggle button").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var target = byId(btn.dataset.target);
+          if (!target) return;
+          var expanded = target.classList.contains("expanded");
+          if (expanded) {
+            target.classList.remove("expanded");
+            btn.textContent = "Show rosters";
+            return;
           }
-          var week = Number(btn.dataset.week);
-          var weekMatchups = state.allWeeksMatchups[week] || [];
-          var r1 = Number(btn.dataset.roster1) || null;
-          var r2 = Number(btn.dataset.roster2) || null;
-          var side1 = weekMatchups.find(function (mu) {
-            return mu.roster_id === r1;
-          });
-          var side2 = weekMatchups.find(function (mu) {
-            return mu.roster_id === r2;
-          });
-          var html =
-            '<div class="matchup-roster-col"><h5>' +
-            escapeHtml((r1 && state.rosterMap[r1]) ? state.rosterMap[r1].teamName : "Team 1") +
-            "</h5>" +
-            rosterListHtml(side1) +
-            "</div>" +
-            '<div class="matchup-roster-col"><h5>' +
-            escapeHtml((r2 && state.rosterMap[r2]) ? state.rosterMap[r2].teamName : "Team 2") +
-            "</h5>" +
-            rosterListHtml(side2) +
-            "</div>";
-          target.innerHTML = html;
-          target.classList.add("expanded");
-          btn.textContent = "Hide rosters";
-        } catch (e) {
-          target.innerHTML = "<p>Roster data unavailable.</p>";
-          target.classList.add("expanded");
-          btn.textContent = "Hide rosters";
-        }
+
+          btn.textContent = "Loading…";
+          try {
+            if (!state.playersMap) {
+              state.playersMap = await SleeperAPI.getPlayersMap();
+            }
+            var week = Number(btn.dataset.week);
+            var weekMatchups = state.allWeeksMatchups[week] || [];
+            var r1 = Number(btn.dataset.roster1) || null;
+            var r2 = Number(btn.dataset.roster2) || null;
+
+            var side1 = weekMatchups.find(function (mu) {
+              return mu.roster_id === r1;
+            });
+            var side2 = weekMatchups.find(function (mu) {
+              return mu.roster_id === r2;
+            });
+
+            var html =
+              '<div class="matchup-roster-col"><h5>' +
+              escapeHtml(r1 && state.rosterMap[r1] ? state.rosterMap[r1].teamName : "Team 1") +
+              "</h5>" + rosterListHtml(side1) + "</div>" +
+              '<div class="matchup-roster-col"><h5>' +
+              escapeHtml(r2 && state.rosterMap[r2] ? state.rosterMap[r2].teamName : "Team 2") +
+              "</h5>" + rosterListHtml(side2) + "</div>";
+
+            target.innerHTML = html;
+            target.classList.add("expanded");
+            btn.textContent = "Hide rosters";
+          } catch (e) {
+            target.innerHTML = "<p>Roster data unavailable.</p>";
+            target.classList.add("expanded");
+            btn.textContent = "Hide rosters";
+          }
+        });
       });
-    });
+    }
   }
-}
 
   function rosterListHtml(teamSide) {
     if (!teamSide) return "<p>No data.</p>";
