@@ -15,6 +15,14 @@
     if (el) el.textContent = text;
   }
 
+  /** "TeamName (Owner)" - the shared convention used everywhere a team name is shown, so owners are always easy to spot. Falls back to just the team name if no distinct owner name is available. */
+  function teamWithOwner(teamName, ownerName) {
+    if (ownerName && ownerName !== teamName) {
+      return teamName + " (" + ownerName + ")";
+    }
+    return teamName;
+  }
+
   var state = {
     season: null,
     dataSource: null,
@@ -355,11 +363,13 @@
       var bWins = pair.teamB && pair.teamB.points > pair.teamA.points;
       var aRecord = pair.teamA.recordAfter ? " (" + pair.teamA.recordAfter + ")" : "";
       var bRecord = pair.teamB && pair.teamB.recordAfter ? " (" + pair.teamB.recordAfter + ")" : "";
+      var aLabel = teamWithOwner(pair.teamA.teamName, pair.teamA.ownerName || pair.teamA.displayName);
+      var bLabel = pair.teamB ? teamWithOwner(pair.teamB.teamName, pair.teamB.ownerName || pair.teamB.displayName) : "";
       var rowA =
         '<div class="matchup-row ' +
         (aWins ? "winner" : "") +
         '"><span>' +
-        escapeHtml(pair.teamA.teamName) +
+        escapeHtml(aLabel) +
         escapeHtml(aRecord) +
         "</span><span>" +
         pair.teamA.points.toFixed(2) +
@@ -368,7 +378,7 @@
         ? '<div class="matchup-row ' +
           (bWins ? "winner" : "") +
           '"><span>' +
-          escapeHtml(pair.teamB.teamName) +
+          escapeHtml(bLabel) +
           escapeHtml(bRecord) +
           "</span><span>" +
           pair.teamB.points.toFixed(2) +
@@ -423,7 +433,7 @@
     standings.forEach(function (team) {
       var opt = document.createElement("option");
       opt.value = team.rosterId;
-      opt.textContent = team.teamName;
+      opt.textContent = teamWithOwner(team.teamName, team.displayName);
       select.appendChild(opt);
     });
     select.onchange = renderTeamScheduleEspn;
@@ -446,11 +456,12 @@
       if (game.result === "W") tr.classList.add("result-w");
       if (game.result === "L") tr.classList.add("result-l");
       var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
+      var oppLabel = teamWithOwner(game.opponentName, game.opponentOwnerName);
       tr.innerHTML =
         "<td>" +
         weekLabel +
         "</td><td>" +
-        escapeHtml(game.opponentName) +
+        escapeHtml(oppLabel) +
         "</td><td>" +
         game.result +
         "</td><td>" +
@@ -664,11 +675,12 @@
           var isChamp = div.champion && div.champion.rosterId === team.rosterId;
           var isRunnerUp = div.runnerUp && div.runnerUp.rosterId === team.rosterId;
           var tag = isChamp ? " 🏆" : isRunnerUp ? " 🥈" : "";
+          var label = teamWithOwner(team.teamName, team.displayName);
           return (
             "<tr><td>" +
             (idx + 1) +
             "</td><td>" +
-            escapeHtml(team.teamName) +
+            escapeHtml(label) +
             tag +
             "</td><td>" +
             team.wins +
@@ -727,7 +739,9 @@
           slotDiv.className = "bracket-slot" + (isWinner ? " win" : "") + (!slot.resolved ? " unresolved" : "");
           var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
           var scoreHtml = entry.score !== null && entry.score !== undefined ? '<span class="score">' + entry.score.toFixed(2) + "</span>" : "";
-          slotDiv.innerHTML = "<span>" + seedHtml + escapeHtml(slot.teamName) + "</span>" + scoreHtml;
+          var ownerName = slot.displayName || slot.ownerName || (slot.rosterId && state.rosterMap[slot.rosterId] ? state.rosterMap[slot.rosterId].displayName : null);
+          var slotLabel = slot.teamName ? teamWithOwner(slot.teamName, ownerName) : slot.teamName;
+          slotDiv.innerHTML = "<span>" + seedHtml + escapeHtml(slotLabel) + "</span>" + scoreHtml;
           matchDiv.appendChild(slotDiv);
         });
         if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
@@ -778,13 +792,15 @@
             var side2 = weekMatchups.find(function (mu) {
               return mu.roster_id === r2;
             });
+            var label1 = r1 && state.rosterMap[r1] ? teamWithOwner(state.rosterMap[r1].teamName, state.rosterMap[r1].displayName) : "Team 1";
+            var label2 = r2 && state.rosterMap[r2] ? teamWithOwner(state.rosterMap[r2].teamName, state.rosterMap[r2].displayName) : "Team 2";
             var html =
               '<div class="matchup-roster-col"><h5>' +
-              escapeHtml(r1 && state.rosterMap[r1] ? state.rosterMap[r1].teamName : "Team 1") +
+              escapeHtml(label1) +
               "</h5>" +
               rosterListHtml(side1) +
               '</div><div class="matchup-roster-col"><h5>' +
-              escapeHtml(r2 && state.rosterMap[r2] ? state.rosterMap[r2].teamName : "Team 2") +
+              escapeHtml(label2) +
               "</h5>" +
               rosterListHtml(side2) +
               "</div>";
@@ -884,11 +900,13 @@
       var bWins = pair.teamB && pair.teamB.points > pair.teamA.points;
       var aRecord = recordsThisWeek[pair.teamA.rosterId] ? " (" + recordsThisWeek[pair.teamA.rosterId] + ")" : "";
       var bRecord = pair.teamB && recordsThisWeek[pair.teamB.rosterId] ? " (" + recordsThisWeek[pair.teamB.rosterId] + ")" : "";
+      var aLabel = teamWithOwner(pair.teamA.teamName, pair.teamA.displayName);
+      var bLabel = pair.teamB ? teamWithOwner(pair.teamB.teamName, pair.teamB.displayName) : "";
       var rowA =
         '<div class="matchup-row ' +
         (aWins ? "winner" : "") +
         '"><span>' +
-        escapeHtml(pair.teamA.teamName) +
+        escapeHtml(aLabel) +
         escapeHtml(aRecord) +
         "</span><span>" +
         pair.teamA.points.toFixed(2) +
@@ -897,7 +915,7 @@
         ? '<div class="matchup-row ' +
           (bWins ? "winner" : "") +
           '"><span>' +
-          escapeHtml(pair.teamB.teamName) +
+          escapeHtml(bLabel) +
           escapeHtml(bRecord) +
           "</span><span>" +
           pair.teamB.points.toFixed(2) +
@@ -911,11 +929,11 @@
         '<div class="matchup-rosters" id="' +
         toggleId +
         '"><div class="matchup-roster-col"><h5>' +
-        escapeHtml(pair.teamA.teamName) +
+        escapeHtml(aLabel) +
         "</h5>" +
         rosterAHtml +
         '</div><div class="matchup-roster-col"><h5>' +
-        escapeHtml(pair.teamB ? pair.teamB.teamName : "") +
+        escapeHtml(bLabel) +
         "</h5>" +
         rosterBHtml +
         "</div></div>";
@@ -940,7 +958,7 @@
     standings.forEach(function (team) {
       var opt = document.createElement("option");
       opt.value = String(team.rosterId);
-      opt.textContent = team.teamName + " (" + team.displayName + ")";
+      opt.textContent = teamWithOwner(team.teamName, team.displayName);
       select.appendChild(opt);
     });
     select.onchange = renderTeamSchedule;
@@ -972,11 +990,12 @@
       if (game.result === "W") tr.classList.add("result-w");
       if (game.result === "L") tr.classList.add("result-l");
       var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
+      var oppLabel = teamWithOwner(game.opponentName, game.opponentOwnerName);
       tr.innerHTML =
         "<td>" +
         weekLabel +
         "</td><td>" +
-        escapeHtml(game.opponentName) +
+        escapeHtml(oppLabel) +
         "</td><td>" +
         game.result +
         "</td><td>" +
@@ -1036,7 +1055,7 @@
     standings.forEach(function (team) {
       var opt = document.createElement("option");
       opt.value = String(team.rosterId);
-      opt.textContent = team.teamName + " (" + team.displayName + ")";
+      opt.textContent = teamWithOwner(team.teamName, team.displayName);
       select.appendChild(opt);
     });
     select.onchange = renderWeeklyRoster;
@@ -1071,7 +1090,12 @@
       var team = state.rosterMap[rosterId];
       if (totalEl) {
         totalEl.innerHTML =
-          escapeHtml(team ? team.teamName : "Team") + " — Week " + week + " total: <strong>" + rosterData.totalPoints.toFixed(2) + " pts</strong>";
+          escapeHtml(team ? teamWithOwner(team.teamName, team.displayName) : "Team") +
+          " — Week " +
+          week +
+          " total: <strong>" +
+          rosterData.totalPoints.toFixed(2) +
+          " pts</strong>";
       }
       tbody2.innerHTML = "";
       rosterData.players.forEach(function (p) {
@@ -1146,7 +1170,7 @@
     standings.forEach(function (team) {
       var opt = document.createElement("option");
       opt.value = String(team.rosterId);
-      opt.textContent = team.teamName + " (" + team.displayName + ")";
+      opt.textContent = teamWithOwner(team.teamName, team.displayName);
       select.appendChild(opt);
     });
     select.onchange = renderTransactions;
@@ -1311,7 +1335,9 @@
     }
     var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
     var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
-    var vsLine = "vs " + escapeHtml(entry.opponentName);
+    var holderLabel = teamWithOwner(entry.ownerName, entry.teamName);
+    var vsLabel = teamWithOwner(entry.opponentName, entry.opponentTeamName);
+    var vsLine = "vs " + escapeHtml(vsLabel);
     var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
     card.innerHTML =
       "<h4>" +
@@ -1319,7 +1345,7 @@
       '</h4><div class="record-value">' +
       valueText +
       '</div><div class="record-holder">' +
-      escapeHtml(entry.ownerName) +
+      escapeHtml(holderLabel) +
       '</div><div class="record-detail">' +
       scoreLine +
       " " +
