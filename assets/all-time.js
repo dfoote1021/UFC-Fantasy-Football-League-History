@@ -7,86 +7,50 @@
  * already use real names like "Dan"/"Spencer" as their owner column,
  * and owner-overrides.js maps Sleeper usernames to those same names).
  *
- * Three things this module produces:
+ * Four things this module produces:
  *   1. Career totals: one row per owner, W-L-T and points for/against
  *      split into REGULAR SEASON and PLAYOFFS separately (plus a
  *      combined total), championships, playoff appearances, seasons
- *      played - across every year of the league's history.
+ *      played, and total transactions - across every year of the
+ *      league's history.
  *   2. Head-to-head: for any two owners, every individual matchup
  *      they've ever played against each other, with regular-season
  *      and playoff results broken out separately.
  *   3. Owner vs. the field: for a single owner, their regular-season
- *      and playoff record against EVERY opponent they've ever played,
- *      one row per opponent, plus their overall combined record across
- *      all opponents.
+ *      and playoff record against EVERY opponent they've ever played.
+ *   4. League records: "fun stat" leaderboards (most/least points in a
+ *      week, largest/smallest margin of victory/defeat) - both a
+ *      league-wide MASTER leaderboard and a PER-MEMBER personal-best
+ *      view, each computed separately for regular season vs playoffs
+ *      (never blended together).
  *
- * Each game is classified into exactly one of three buckets:
+ * Each game is classified into exactly one of three buckets - see the
+ * detailed bracket-resolution comments above buildActivePlayoffPairs
+ * for the full history of bugs found/fixed in that classification
+ * logic (byes, t1_from/t2_from resolution, and the p:1-is-the-
+ * championship fix, all confirmed against Sleeper's official API docs):
  *   - "regular"     games during the normal season schedule.
- *   - "playoff"     games that are on a team's ACTIVE championship
- *                   path in the winners bracket - i.e. neither team in
- *                   the game has lost an earlier winners-bracket round
- *                   this postseason. This INCLUDES the championship
- *                   game itself.
- *   - "consolation" everything else during playoff weeks: the
- *                   separate loser's/toilet-bowl bracket, PLUS any
- *                   placement game OTHER than the championship (3rd
- *                   place, 5th place, etc.) inside the winners-bracket
- *                   data structure, PLUS any later-round winners-
- *                   bracket game for a team that already lost an
- *                   earlier round.
+ *   - "playoff"     games on a team's ACTIVE championship path in the
+ *                   winners bracket, including the championship game
+ *                   itself.
+ *   - "consolation" the separate loser's/toilet-bowl bracket, any
+ *                   non-championship placement game (3rd place, etc.),
+ *                   and any later-round winners-bracket game for a
+ *                   team already eliminated from the title path.
+ *                   Excluded from every total in every view.
  *
- * CONFIRMED AGAINST SLEEPER'S OFFICIAL API DOCS (docs.sleeper.com) -
- * three real bugs were found and fixed here in sequence:
- *
- * Bug 1 (fixed earlier): eligibility must be tracked as an
- * ELIMINATION block-list, not an "alive" allow-list, so that a team
- * with a bye - which never appears in the round it skips - isn't
- * wrongly excluded from its next real game. A roster is only excluded
- * once it actually LOSES a non-championship-path match.
- *
- * Bug 2 (fixed earlier): the pair-matching must NOT be tied to a
- * specific calendar week computed via `playoffStartWeek + round - 1`.
- * Bracket round numbers reflect bracket DEPTH, not elapsed calendar
- * weeks, and byes can cause a round to be entirely skipped for a given
- * pair of teams - e.g. two bye teams whose first-ever bracket
- * appearance is the championship itself. The fix builds one flat,
- * week-agnostic set of legitimate roster-ID pairs and matches real
- * games against it purely by roster-ID pair.
- *
- * Bug 3 (THE ACTUAL ROOT CAUSE of the "bye winner's next game shows as
- * consolation" symptom, fixed here): per Sleeper's own documented
- * bracket example, the CHAMPIONSHIP game itself is tagged with `p: 1`
- * in the raw bracket data:
- *   {r: 3, m: 6, t1_from: {w: 3}, t2_from: {w: 4}, w: null, l: null, p: 1}
- * The code was treating ANY truthy `p` field as "this is a placement/
- * consolation game, skip it" - which meant the championship game
- * itself was being silently excluded from the active-pairs set on
- * every single bracket, not just ones involving byes. The reason this
- * specifically manifested as "the game right after a bye-team's win"
- * is that in a standard 3-round, 6-team bracket, that next game IS the
- * championship. The fix only skips placement games where `p` is set
- * AND is not 1 (i.e. p:3, p:5, etc. are still excluded as true
- * placement/consolation games; p:1 - the championship - now correctly
- * counts as an active playoff pairing).
- *
- * Also handled: Sleeper's bracket does not always populate a match's
- * literal t1/t2 fields - for a slot filled by the WINNER (or LOSER,
- * for placement games) of an earlier match, only t1_from: {w: matchId}
- * or {l: matchId} is set, and the literal field is left empty. Every
- * resolution here (resolveBracketSlot) checks the literal field first
- * and falls back to following t1_from/t2_from to the referenced
- * match's actual winner or loser.
- *
- * For ESPN seasons, the per-row bracket type from espn-loader.js is
- * used if available; otherwise the loader falls back to the same
- * resolved-graph, elimination-tracking simulation against the winners
- * bracket built by EspnLoader.
+ * TRANSACTIONS: ESPN-era transaction counts come directly from
+ * espn-loader.js's per-team `totalMoves` field (sourced from the CSV
+ * you provided) - if a given ESPN season's CSV doesn't include that
+ * field for a team, it contributes 0 rather than breaking the total,
+ * and hasIncompleteTransactionData is set so the UI can flag it.
+ * Sleeper-era counts are pulled live via SleeperAPI.getTransactions
+ * for every played week of every Sleeper season and tallied per roster,
+ * then attributed to that roster's owner.
  *
  * This is intentionally a separate module from season.js/espn-loader.js
  * /sleeper-common.js - it READS data through those existing loaders
- * (EspnLoader.loadSeason, SleeperAPI.*) rather than duplicating any
- * parsing logic, so a fix made in one of those files automatically
- * flows through to the all-time aggregation too.
+ * rather than duplicating any parsing logic.
  *
  * Everything is wrapped in an IIFE and attached only to window.AllTimeStats.
  */
@@ -125,10 +89,7 @@
    * Resolves a bracket match's t1 or t2 participant. Tries the literal
    * field first; if that's missing, follows the corresponding
    * t1_from/t2_from reference to the match it points at (by matchId)
-   * and returns that match's winner (`w`) or loser (`l`) roster id,
-   * whichever the reference specifies. Returns null if the participant
-   * can't be resolved yet (e.g. the referenced match hasn't been
-   * played, or the reference itself is missing).
+   * and returns that match's winner (`w`) or loser (`l`) roster id.
    */
   function resolveBracketSlot(match, side, byMatchId) {
     var direct = match[side];
@@ -146,31 +107,11 @@
   }
 
   /**
-   * Walks a Sleeper-style winners bracket round by round to find the
-   * set of roster-id pairings that represent a real "still alive on
-   * the championship path" playoff game - including the championship
-   * game itself (p:1) - ANYWHERE in the bracket, deliberately NOT tied
-   * to a specific calendar week, and correctly resolving each match's
-   * participants even when they're only available via
-   * t1_from/t2_from rather than a literal t1/t2.
-   *
-   * Only NON-championship placement games (p set and not equal to 1 -
-   * e.g. 3rd place, 5th place) are excluded; their participants are
-   * explicitly the losers of an earlier round, never the championship
-   * path.
-   *
-   * Eligibility is tracked as an ELIMINATION block-list: a roster is
-   * excluded from any later round only once it actually LOSES a
-   * non-placement match. A team with a bye - whether for one round or
-   * for multiple rounds in a row - never appears in a match it didn't
-   * play, so it's never marked eliminated and remains correctly
-   * eligible for whichever round it next appears in, including the
-   * championship game if that's the very next bracket appearance for
-   * both finalists.
-   *
-   * Returns a flat object keyed by pairKey(t1, t2) - one entry per
-   * legitimate championship-path pairing across the WHOLE bracket, not
-   * partitioned by week.
+   * Walks a Sleeper-style winners bracket to find the set of roster-id
+   * pairings that represent a real "still alive on the championship
+   * path" playoff game - including the championship game itself (p:1) -
+   * NOT tied to a specific calendar week. See the module header for the
+   * full history of why this logic looks the way it does.
    */
   function buildActivePlayoffPairs(winnersBracket) {
     var activePairs = {};
@@ -204,7 +145,7 @@
 
         var t1 = resolveBracketSlot(m, "t1", byMatchId);
         var t2 = resolveBracketSlot(m, "t2", byMatchId);
-        if (!t1 || !t2) return; // not yet resolvable (referenced match unplayed) or a bye with no opponent
+        if (!t1 || !t2) return;
 
         var t1Eliminated = !!eliminatedRosterIds[t1];
         var t2Eliminated = !!eliminatedRosterIds[t2];
@@ -225,27 +166,14 @@
 
   /**
    * Loads and normalizes ONE ESPN season into the shape used by the
-   * aggregator: a list of per-team season summaries (championship /
-   * runner-up / playoff-appearance flags only - no W-L here, those are
-   * derived from games), plus a flat list of individual games (one
-   * entry per game, with both owners' identities, scores, and a
-   * gameType of "regular" | "playoff" | "consolation").
-   *
-   * Bracket-type detection order:
-   *   1. If the CSV row itself exposes an elimination-tracking field
-   *      (isEliminatedBeforeThisGame / bracketRoundStatus), trust it
-   *      directly.
-   *   2. Otherwise, cross-reference against EspnLoader's own
-   *      winnersBracket for that season using the same elimination-
-   *      tracking pair-set simulation used for Sleeper.
-   *   3. If neither is available, fall back to treating every
-   *      r.isPlayoff row as "playoff" (old behavior) so nothing breaks,
-   *      but this case is logged so it's visible during QA.
+   * aggregator, including per-team transaction counts sourced directly
+   * from espn-loader.js's `totalMoves` field (populated from your CSV).
    */
   function loadEspnSeasonForAllTime(year) {
     return window.EspnLoader.loadSeason(year).then(function (data) {
       var teamSummaries = Object.keys(data.rosterMap).map(function (teamKey) {
         var t = data.rosterMap[teamKey];
+        var hasMoveData = t.totalMoves !== undefined && t.totalMoves !== null;
         return {
           year: year,
           source: "espn",
@@ -255,6 +183,8 @@
           madePlayoffs: !!t.madePlayoffs,
           isChampion: !!t.isChampionFlag,
           isRunnerUp: !!t.isRunnerUpFlag,
+          transactions: hasMoveData ? t.totalMoves : 0,
+          hasIncompleteTransactionData: !hasMoveData,
         };
       });
 
@@ -289,7 +219,7 @@
                 "All-time: ESPN season " +
                   year +
                   " has no elimination-tracking field and no winners bracket to simulate; " +
-                  "treating all playoff-week games as 'playoff' (post-elimination games may be included)."
+                  "treating all playoff-week games as 'playoff'."
               );
               loggedFallbackWarning = true;
             }
@@ -318,13 +248,6 @@
     });
   }
 
-  /**
-   * Same resolved-graph, elimination-tracking pair-set simulation as
-   * buildActivePlayoffPairs (including the p:1-is-the-championship
-   * fix), but for EspnLoader's bracket shape (rounds of { round,
-   * matches: [{ slot1, slot2, winnerRosterId/winnerName }] }) and keyed
-   * by team NAME pairs since ESPN rows identify teams by name.
-   */
   function buildActivePlayoffPairsEspn(winnersBracket) {
     var activePairs = {};
     if (!winnersBracket) return activePairs;
@@ -334,14 +257,12 @@
     winnersBracket.forEach(function (roundData) {
       (roundData.matches || []).forEach(function (m) {
         var placementValue = m.placement || m.p;
-        var isNonChampionshipPlacement = !!(
-          m.isPlacementGame && placementValue && placementValue !== 1
-        ) || !!(placementValue && placementValue !== 1);
+        var isNonChampionshipPlacement = !!(placementValue && placementValue !== 1);
         if (isNonChampionshipPlacement) return;
 
         var nameA = m.slot1 && (m.slot1.teamName || m.slot1.ownerName);
         var nameB = m.slot2 && (m.slot2.teamName || m.slot2.ownerName);
-        if (!nameA || !nameB) return; // bye slot with no opponent yet
+        if (!nameA || !nameB) return;
 
         var aEliminated = !!eliminatedNames[nameA];
         var bEliminated = !!eliminatedNames[nameB];
@@ -369,17 +290,9 @@
   }
 
   /**
-   * Loads and normalizes ONE Sleeper season into the same shape as
-   * loadEspnSeasonForAllTime, resolving each roster's owner through
-   * SleeperAPI.buildRosterMap (which already applies owner-overrides.js).
-   * madePlayoffs is derived by checking whether the roster appears
-   * anywhere in that season's winners bracket. Each game is classified
-   * as "regular", "playoff" (a legitimate championship-path pairing,
-   * including the championship game itself, correctly resolved even
-   * when a bracket slot only ever appears via t1_from/t2_from rather
-   * than a literal t1/t2), or "consolation" (losers bracket, non-
-   * championship placement games, or any winners-bracket game for a
-   * team already eliminated from the title path).
+   * Loads and normalizes ONE Sleeper season, including per-roster
+   * transaction counts pulled live from SleeperAPI.getTransactions for
+   * every played week, tallied and attributed to each roster's owner.
    */
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
@@ -410,80 +323,99 @@
 
       var activePairs = buildActivePlayoffPairs(winnersBracket);
 
-      var teamSummaries = Object.keys(rosterMap).map(function (rid) {
-        var t = rosterMap[rid];
-        var isChamp = finalStandingsInfo.champion && finalStandingsInfo.champion.rosterId === t.rosterId;
-        var isRunnerUp = finalStandingsInfo.runnerUp && finalStandingsInfo.runnerUp.rosterId === t.rosterId;
-        return {
-          year: year,
-          source: "sleeper",
-          ownerKey: normalizeOwnerKey(t.displayName),
-          ownerName: t.displayName,
-          teamName: t.teamName,
-          madePlayoffs: !!playoffRosterIds[t.rosterId],
-          isChampion: !!isChamp,
-          isRunnerUp: !!isRunnerUp,
-        };
-      });
+      var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
+      var txnWeeks = [];
+      for (var w = 1; w <= maxWeek; w++) txnWeeks.push(w);
 
-      return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAX_SLEEPER_WEEK).then(function (allWeeksMatchups) {
-        var games = [];
-        var playedWeeks = SleeperAPI.getPlayedWeeks(allWeeksMatchups);
-
-        playedWeeks.forEach(function (week) {
-          var isPlayoffWeek = !!playoffStartWeek && week >= playoffStartWeek;
-          var weekMatchups = allWeeksMatchups[week] || [];
-          var grouped = {};
-          weekMatchups.forEach(function (m) {
-            if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
-            grouped[m.matchup_id].push(m);
-          });
-
-          Object.keys(grouped).forEach(function (matchupId) {
-            var pair = grouped[matchupId];
-            var a = pair[0];
-            var b = pair[1];
-            if (!a || !b) return; // skip byes - no head-to-head data
-
-            var teamA = rosterMap[a.roster_id];
-            var teamB = rosterMap[b.roster_id];
-            if (!teamA || !teamB) return;
-
-            var gameType = "regular";
-            if (isPlayoffWeek) {
-              var isActivePair = !!activePairs[pairKey(a.roster_id, b.roster_id)];
-              gameType = isActivePair ? "playoff" : "consolation";
-            }
-
-            games.push({
-              year: year,
-              source: "sleeper",
-              week: week,
-              gameType: gameType,
-              isPlayoff: gameType === "playoff",
-              ownerAKey: normalizeOwnerKey(teamA.displayName),
-              ownerAName: teamA.displayName,
-              ownerATeamName: teamA.teamName,
-              ownerAScore: a.points || 0,
-              ownerBKey: normalizeOwnerKey(teamB.displayName),
-              ownerBName: teamB.displayName,
-              ownerBTeamName: teamB.teamName,
-              ownerBScore: b.points || 0,
+      var txnChain = Promise.resolve();
+      var txnCountsByRoster = {};
+      txnWeeks.forEach(function (week) {
+        txnChain = txnChain
+          .then(function () {
+            return SleeperAPI.getTransactions(leagueId, week).catch(function () {
+              return [];
+            });
+          })
+          .then(function (txns) {
+            var counts = SleeperAPI.countTransactionsByRoster(txns || []);
+            Object.keys(counts).forEach(function (rid) {
+              txnCountsByRoster[rid] = (txnCountsByRoster[rid] || 0) + counts[rid];
             });
           });
+      });
+
+      return txnChain.then(function () {
+        var teamSummaries = Object.keys(rosterMap).map(function (rid) {
+          var t = rosterMap[rid];
+          var isChamp = finalStandingsInfo.champion && finalStandingsInfo.champion.rosterId === t.rosterId;
+          var isRunnerUp = finalStandingsInfo.runnerUp && finalStandingsInfo.runnerUp.rosterId === t.rosterId;
+          return {
+            year: year,
+            source: "sleeper",
+            ownerKey: normalizeOwnerKey(t.displayName),
+            ownerName: t.displayName,
+            teamName: t.teamName,
+            madePlayoffs: !!playoffRosterIds[t.rosterId],
+            isChampion: !!isChamp,
+            isRunnerUp: !!isRunnerUp,
+            transactions: txnCountsByRoster[rid] || 0,
+            hasIncompleteTransactionData: false,
+          };
         });
 
-        return { year: year, source: "sleeper", teamSummaries: teamSummaries, games: games };
+        return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAX_SLEEPER_WEEK).then(function (allWeeksMatchups) {
+          var games = [];
+          var playedWeeks = SleeperAPI.getPlayedWeeks(allWeeksMatchups);
+
+          playedWeeks.forEach(function (week) {
+            var isPlayoffWeek = !!playoffStartWeek && week >= playoffStartWeek;
+            var weekMatchups = allWeeksMatchups[week] || [];
+            var grouped = {};
+            weekMatchups.forEach(function (m) {
+              if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
+              grouped[m.matchup_id].push(m);
+            });
+
+            Object.keys(grouped).forEach(function (matchupId) {
+              var pair = grouped[matchupId];
+              var a = pair[0];
+              var b = pair[1];
+              if (!a || !b) return;
+
+              var teamA = rosterMap[a.roster_id];
+              var teamB = rosterMap[b.roster_id];
+              if (!teamA || !teamB) return;
+
+              var gameType = "regular";
+              if (isPlayoffWeek) {
+                var isActivePair = !!activePairs[pairKey(a.roster_id, b.roster_id)];
+                gameType = isActivePair ? "playoff" : "consolation";
+              }
+
+              games.push({
+                year: year,
+                source: "sleeper",
+                week: week,
+                gameType: gameType,
+                isPlayoff: gameType === "playoff",
+                ownerAKey: normalizeOwnerKey(teamA.displayName),
+                ownerAName: teamA.displayName,
+                ownerATeamName: teamA.teamName,
+                ownerAScore: a.points || 0,
+                ownerBKey: normalizeOwnerKey(teamB.displayName),
+                ownerBName: teamB.displayName,
+                ownerBTeamName: teamB.teamName,
+                ownerBScore: b.points || 0,
+              });
+            });
+          });
+
+          return { year: year, source: "sleeper", teamSummaries: teamSummaries, games: games };
+        });
       });
     });
   }
 
-  /**
-   * Loads every ESPN + Sleeper season once and caches the combined
-   * result for the rest of the page session (so switching between
-   * career totals, head-to-head, and owner-vs-field, or re-picking
-   * owners, doesn't re-fetch everything from scratch).
-   */
   function loadAllSeasons() {
     if (_allSeasonsCache) return _allSeasonsCache;
 
@@ -512,14 +444,8 @@
     return _allSeasonsCache;
   }
 
-  /**
-   * Walks every game across every season once and buckets each game's
-   * result (win/loss/tie + points) onto the correct owner AND the
-   * correct split (regular vs playoff). Consolation games are skipped
-   * entirely here - they don't count toward either total.
-   */
   function accumulateGameRecords(allSeasonsData) {
-    var byOwner = {}; // ownerKey -> { regular: {...}, playoff: {...} }
+    var byOwner = {};
 
     function ensure(ownerKey) {
       if (!byOwner[ownerKey]) {
@@ -538,7 +464,7 @@
 
     allSeasonsData.forEach(function (season) {
       season.games.forEach(function (g) {
-        if (g.gameType === "consolation") return; // excluded from both totals
+        if (g.gameType === "consolation") return;
 
         var splitKey = g.gameType === "playoff" ? "playoff" : "regular";
         var entryA = ensure(g.ownerAKey);
@@ -552,10 +478,11 @@
   }
 
   /**
-   * Aggregates every season's teamSummaries (for seasons/championships/
-   * playoff appearances) plus the game-derived regular/playoff records
-   * (for W-L-T and points) into one row per owner, covering their
-   * entire career across both ESPN and Sleeper eras.
+   * Aggregates every season's teamSummaries plus game-derived
+   * regular/playoff records into one row per owner, now including
+   * totalTransactions (summed across every season, both eras) and
+   * hasIncompleteTransactionData (true if any ESPN season contributing
+   * to this owner's total was missing move-count data in the CSV).
    */
   function buildCareerTotals(allSeasonsData) {
     var byOwner = {};
@@ -571,6 +498,8 @@
             championships: 0,
             runnerUps: 0,
             playoffAppearances: 0,
+            totalTransactions: 0,
+            hasIncompleteTransactionData: false,
             yearsList: [],
           };
         }
@@ -579,6 +508,8 @@
         if (t.isChampion) entry.championships += 1;
         if (t.isRunnerUp) entry.runnerUps += 1;
         if (t.madePlayoffs) entry.playoffAppearances += 1;
+        entry.totalTransactions += t.transactions || 0;
+        if (t.hasIncompleteTransactionData) entry.hasIncompleteTransactionData = true;
         entry.yearsList.push(t.year);
       });
     });
@@ -654,16 +585,6 @@
     return summary;
   }
 
-  /**
-   * Every individual game ever played between two specific owners,
-   * across all seasons, split into regular-season, playoff (active
-   * championship-path games only, including the championship itself),
-   * and consolation games, each with its own aggregate head-to-head
-   * summary. Consolation games are included in the full game log
-   * (tagged accordingly) but excluded from the regular and playoff
-   * summaries. ownerAQuery/ownerBQuery are matched case-insensitively
-   * against ownerKey.
-   */
   function buildHeadToHead(allSeasonsData, ownerAQuery, ownerBQuery) {
     var keyA = normalizeOwnerKey(ownerAQuery);
     var keyB = normalizeOwnerKey(ownerBQuery);
@@ -740,19 +661,10 @@
     };
   }
 
-  /**
-   * For a single owner, builds their regular-season and playoff record
-   * against EVERY opponent they've ever played (one row per opponent),
-   * plus their overall regular-season and playoff record combined
-   * across all opponents. Consolation games are excluded from both
-   * the per-opponent rows and the overall totals, same as everywhere
-   * else in this module. Opponent rows are sorted alphabetically by
-   * opponent name.
-   */
   function buildOwnerVsAll(allSeasonsData, ownerQuery) {
     var ownerKey = normalizeOwnerKey(ownerQuery);
 
-    var byOpponent = {}; // opponentKey -> { opponentName, regularGames: [], playoffGames: [] }
+    var byOpponent = {};
     var overallRegularGames = [];
     var overallPlayoffGames = [];
 
@@ -812,7 +724,6 @@
     };
   }
 
-  /** Distinct list of owner names seen across all seasons, for populating head-to-head and owner-vs-field dropdowns. */
   function getAllOwnerNames(allSeasonsData) {
     var seen = {};
     allSeasonsData.forEach(function (season) {
@@ -831,11 +742,163 @@
       });
   }
 
+  /**
+   * Builds a flat list of "game sides" - one entry per team per game -
+   * for a given split ("regular" or "playoff"), optionally filtered to
+   * a single owner. Consolation games are always excluded. Each side
+   * carries everything needed to display a record with full context:
+   * the owner, opponent, both scores, margin, year, week, and source.
+   */
+  function buildGameSides(allSeasonsData, split, ownerKeyFilter) {
+    var sides = [];
+
+    allSeasonsData.forEach(function (season) {
+      season.games.forEach(function (g) {
+        if (g.gameType !== split) return;
+
+        if (!ownerKeyFilter || g.ownerAKey === ownerKeyFilter) {
+          sides.push({
+            ownerKey: g.ownerAKey,
+            ownerName: g.ownerAName,
+            teamName: g.ownerATeamName,
+            myScore: g.ownerAScore,
+            opponentName: g.ownerBName,
+            opponentTeamName: g.ownerBTeamName,
+            oppScore: g.ownerBScore,
+            year: g.year,
+            week: g.week,
+            source: g.source,
+          });
+        }
+        if (!ownerKeyFilter || g.ownerBKey === ownerKeyFilter) {
+          sides.push({
+            ownerKey: g.ownerBKey,
+            ownerName: g.ownerBName,
+            teamName: g.ownerBTeamName,
+            myScore: g.ownerBScore,
+            opponentName: g.ownerAName,
+            opponentTeamName: g.ownerATeamName,
+            oppScore: g.ownerAScore,
+            year: g.year,
+            week: g.week,
+            source: g.source,
+          });
+        }
+      });
+    });
+
+    return sides;
+  }
+
+  function toRecordEntry(side) {
+    if (!side) return null;
+    return {
+      ownerName: side.ownerName,
+      teamName: side.teamName,
+      opponentName: side.opponentName,
+      opponentTeamName: side.opponentTeamName,
+      myScore: Math.round(side.myScore * 100) / 100,
+      oppScore: Math.round(side.oppScore * 100) / 100,
+      margin: Math.round(Math.abs(side.myScore - side.oppScore) * 100) / 100,
+      year: side.year,
+      week: side.week,
+      source: side.source,
+    };
+  }
+
+  /**
+   * Computes the six "fun stat" records from a flat list of game
+   * sides: most/least points scored in a single game, and largest/
+   * smallest margin of victory and defeat. Ties are broken by taking
+   * the earliest occurrence (sorted by year, then week).
+   */
+  function computeRecordsFromSides(sides) {
+    if (!sides || sides.length === 0) {
+      return {
+        mostPoints: null,
+        leastPoints: null,
+        largestMarginVictory: null,
+        smallestMarginVictory: null,
+        largestMarginDefeat: null,
+        smallestMarginDefeat: null,
+      };
+    }
+
+    var sorted = sides.slice().sort(function (a, b) {
+      if (a.year !== b.year) return a.year - b.year;
+      return (a.week || 0) - (b.week || 0);
+    });
+
+    var wins = sorted.filter(function (s) {
+      return s.myScore > s.oppScore;
+    });
+    var losses = sorted.filter(function (s) {
+      return s.myScore < s.oppScore;
+    });
+
+    function best(list, compareFn) {
+      if (list.length === 0) return null;
+      return list.reduce(function (a, b) {
+        return compareFn(b, a) > 0 ? b : a;
+      });
+    }
+
+    var mostPoints = best(sorted, function (a, b) {
+      return a.myScore - b.myScore;
+    });
+    var leastPoints = best(sorted, function (a, b) {
+      return b.myScore - a.myScore;
+    });
+    var largestMarginVictory = best(wins, function (a, b) {
+      return a.myScore - a.oppScore - (b.myScore - b.oppScore);
+    });
+    var smallestMarginVictory = best(wins, function (a, b) {
+      return b.myScore - b.oppScore - (a.myScore - a.oppScore);
+    });
+    var largestMarginDefeat = best(losses, function (a, b) {
+      return a.oppScore - a.myScore - (b.oppScore - b.myScore);
+    });
+    var smallestMarginDefeat = best(losses, function (a, b) {
+      return b.oppScore - b.myScore - (a.oppScore - a.myScore);
+    });
+
+    return {
+      mostPoints: toRecordEntry(mostPoints),
+      leastPoints: toRecordEntry(leastPoints),
+      largestMarginVictory: toRecordEntry(largestMarginVictory),
+      smallestMarginVictory: toRecordEntry(smallestMarginVictory),
+      largestMarginDefeat: toRecordEntry(largestMarginDefeat),
+      smallestMarginDefeat: toRecordEntry(smallestMarginDefeat),
+    };
+  }
+
+  /**
+   * League-wide MASTER records leaderboard for the given split
+   * ("regular" or "playoff") - one all-time-best result per stat,
+   * across every owner and every season.
+   */
+  function buildMasterRecords(allSeasonsData, split) {
+    var sides = buildGameSides(allSeasonsData, split, null);
+    return computeRecordsFromSides(sides);
+  }
+
+  /**
+   * PER-MEMBER records for a single owner and the given split - that
+   * owner's own personal best/worst for each of the six stats.
+   */
+  function buildMemberRecords(allSeasonsData, split, ownerQuery) {
+    var ownerKey = normalizeOwnerKey(ownerQuery);
+    var sides = buildGameSides(allSeasonsData, split, ownerKey);
+    return computeRecordsFromSides(sides);
+  }
+
   window.AllTimeStats = {
     loadAllSeasons: loadAllSeasons,
     buildCareerTotals: buildCareerTotals,
     buildHeadToHead: buildHeadToHead,
     buildOwnerVsAll: buildOwnerVsAll,
+    buildMasterRecords: buildMasterRecords,
+    buildMemberRecords: buildMemberRecords,
     getAllOwnerNames: getAllOwnerNames,
   };
 })();
