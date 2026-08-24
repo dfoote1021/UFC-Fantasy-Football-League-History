@@ -8,34 +8,18 @@
  * Also drives the "All-Time" view (career totals + head-to-head +
  * owner-vs-the-field + league records across every season), toggled via
  * the button next to the season dropdown - see showAllTimeView()/
- * hideAllTimeView() near the bottom of this file.
- *
- * The single-season "Records" tab (in #season-tabs, alongside Standings/
- * Matchups/etc.) shows the same six "fun stat" records - most/least
- * points in a week, largest/smallest margin of victory/defeat - but
- * scoped to just the currently-viewed season, with the same Master/
- * Per-Member and Regular Season/Playoffs toggles as the All-Time
- * Records tab. It's powered by all-time.js's buildSeasonMasterRecords/
- * buildSeasonMemberRecords, which reuse the EXACT SAME regular/playoff/
- * consolation game classification as the All-Time view.
- *
- * IMPORTANT: every DOM lookup for the Records feature (both the
- * per-season tab and the All-Time sub-tab) goes through the setHidden()/
- * setText() helpers defined right below byId(), which no-op safely if
- * an element isn't found instead of throwing. A previous version of
- * this file referenced season-records-* elements directly and
- * unconditionally inside loadSeason() (e.g. `byId(...).hidden = true`)
- * - if index.html and season.js were ever even briefly out of sync
- * during deploy, that threw immediately on every single page load
- * (since loadSeason() runs on every page load, before anything else
- * renders), producing a fully blank page instead of a partial/graceful
- * degradation. All DOM access for this feature is defensive now so a
- * markup mismatch can only break the Records feature itself, never the
- * rest of the site.
+ * hideAllTimeView() near the bottom of this file. Career totals,
+ * head-to-head, and vs-field all split regular-season from playoff
+ * (active-championship-path-only) results, and exclude consolation/
+ * toilet-bowl/placement/post-elimination games from every total - see
+ * all-time.js for how that three-way classification is computed
+ * per-game. The Records tab shows both a league-wide master leaderboard
+ * and per-member personal bests/worsts for six "fun stats", each
+ * computed separately for regular season vs playoffs (never blended).
  *
  * All point totals/scores throughout this file (standings, matchups,
- * rosters, brackets, and every All-Time/Records view) are displayed
- * with .toFixed(2) to match the league's actual scoring system.
+ * rosters, brackets, and every All-Time view) are displayed with
+ * .toFixed(2) to match the league's actual scoring system.
  *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
@@ -47,18 +31,6 @@
 
   function byId(id) {
     return document.getElementById(id);
-  }
-
-  /** Safely sets .hidden on an element by id; no-ops if the element doesn't exist. */
-  function setHidden(id, isHidden) {
-    var el = byId(id);
-    if (el) el.hidden = isHidden;
-  }
-
-  /** Safely sets .textContent on an element by id; no-ops if the element doesn't exist. */
-  function setText(id, text) {
-    var el = byId(id);
-    if (el) el.textContent = text;
   }
 
   var state = {
@@ -88,9 +60,6 @@
     careerSplit: "combined",
     recordsView: "master",
     recordsSplit: "regular",
-    seasonRecordsView: "master",
-    seasonRecordsSplit: "regular",
-    seasonRecordsLoadPromise: null,
   };
 
   function isEspnYear(season) {
@@ -108,7 +77,6 @@
 
   function populateSeasonSelect() {
     var select = byId("season-select");
-    if (!select) return;
     select.innerHTML = "";
 
     var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
@@ -138,10 +106,6 @@
         btn.classList.add("active");
         var panel = byId("tab-" + btn.dataset.tab);
         if (panel) panel.classList.add("active");
-
-        if (btn.dataset.tab === "records") {
-          openSeasonRecordsTab();
-        }
       });
     });
   }
@@ -155,8 +119,8 @@
         });
         btn.classList.add("active");
         var view = btn.dataset.view;
-        setHidden("matchups-week-view", view !== "week");
-        setHidden("matchups-schedule-view", view !== "schedule");
+        byId("matchups-week-view").hidden = view !== "week";
+        byId("matchups-schedule-view").hidden = view !== "schedule";
         if (view === "schedule") {
           renderTeamSchedule();
         }
@@ -169,8 +133,8 @@
     if (!select) return;
     select.addEventListener("change", function () {
       var mode = select.value;
-      setHidden("txn-week-wrap", mode !== "week");
-      setHidden("txn-member-wrap", mode !== "member");
+      byId("txn-week-wrap").hidden = mode !== "week";
+      byId("txn-member-wrap").hidden = mode !== "member";
       renderTransactions();
     });
   }
@@ -239,10 +203,7 @@
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
 
-    setText("page-title", season + " Season");
-    setHidden("season-records-content", true);
-    setHidden("season-records-loading", false);
-    setText("season-records-loading", "Loading season data…");
+    byId("page-title").textContent = season + " Season";
 
     if (isEspnYear(season)) {
       return loadEspnSeason(season);
@@ -260,7 +221,7 @@
     }
 
     var isLive = season === SleeperAPI.CURRENT_LIVE_SEASON;
-    setHidden("live-badge", !isLive);
+    byId("live-badge").hidden = !isLive;
 
     try {
       var league = await SleeperAPI.getLeague(state.leagueId);
@@ -285,7 +246,7 @@
         (league.settings && league.settings.playoff_week_start) || null;
 
       var isComplete = league.status === "complete";
-      setHidden("final-badge", !isComplete);
+      byId("final-badge").hidden = !isComplete;
 
       state.finalStandingsInfo = SleeperAPI.buildFinalStandings(
         state.rosterMap,
@@ -320,7 +281,8 @@
       await renderTransactions();
       renderLeagueInfoRaw();
 
-      setText("last-refreshed", "Updated " + new Date().toLocaleTimeString());
+      byId("last-refreshed").textContent =
+        "Updated " + new Date().toLocaleTimeString();
 
       if (isLive) {
         state.refreshTimer = setInterval(function () {
@@ -342,8 +304,8 @@
 
   async function loadEspnSeason(season) {
     state.dataSource = "espn";
-    setHidden("live-badge", true);
-    setHidden("final-badge", false);
+    byId("live-badge").hidden = true;
+    byId("final-badge").hidden = false;
 
     if (!window.EspnLoader) {
       showFatalError(
@@ -384,7 +346,8 @@
       renderTransactionsUnavailable();
       renderLeagueInfoRawEspn(season);
 
-      setText("last-refreshed", "Loaded from local ESPN data (" + season + ")");
+      byId("last-refreshed").textContent =
+        "Loaded from local ESPN data (" + season + ")";
     } catch (err) {
       console.error("Failed to load ESPN season " + season, err);
       showFatalError(
@@ -418,10 +381,8 @@
 
   function renderMatchupsEspn() {
     var weekSelect = byId("week-select");
-    if (!weekSelect) return;
     var week = Number(weekSelect.value) || state.currentWeek;
     var list = byId("matchups-list");
-    if (!list) return;
 
     var pairs = state.espnSeasonData.getMatchupsForWeek(week);
     if (!pairs || pairs.length === 0) {
@@ -631,7 +592,6 @@
   function renderChampionBanner() {
     var banner = byId("champion-banner");
     var textEl = byId("champion-text");
-    if (!banner || !textEl) return;
     var info = state.finalStandingsInfo;
 
     if (info && info.champion) {
@@ -657,7 +617,7 @@
     var info = state.finalStandingsInfo;
     var isComplete =
       state.dataSource === "espn" || (state.league && state.league.status === "complete");
-    if (heading) heading.textContent = isComplete ? "Final Standings" : "Standings";
+    heading.textContent = isComplete ? "Final Standings" : "Standings";
 
     var tbody = document.querySelector("#standings-table tbody");
     if (!tbody) return;
@@ -941,10 +901,8 @@
 
   async function renderMatchups() {
     var weekSelect = byId("week-select");
-    if (!weekSelect) return;
     var week = Number(weekSelect.value) || state.currentWeek;
     var list = byId("matchups-list");
-    if (!list) return;
     list.innerHTML = "<p>Loading…</p>";
 
     var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
@@ -1154,7 +1112,7 @@
     if (!rosterId) return;
 
     tbody2.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
-    if (totalEl) totalEl.textContent = "";
+    totalEl.textContent = "";
 
     try {
       if (!state.playersMap) {
@@ -1172,11 +1130,9 @@
       }
 
       var team = state.rosterMap[rosterId];
-      if (totalEl) {
-        totalEl.innerHTML =
-          escapeHtml(team ? team.teamName : "Team") + " — Week " + week +
-          " total: <strong>" + rosterData.totalPoints.toFixed(2) + " pts</strong>";
-      }
+      totalEl.innerHTML =
+        escapeHtml(team ? team.teamName : "Team") + " — Week " + week +
+        " total: <strong>" + rosterData.totalPoints.toFixed(2) + " pts</strong>";
 
       tbody2.innerHTML = "";
       rosterData.players.forEach(function (p) {
@@ -1252,10 +1208,8 @@
       return;
     }
 
-    var modeEl = byId("txn-filter-mode");
+    var mode = byId("txn-filter-mode").value;
     var list = byId("transactions-list");
-    if (!modeEl || !list) return;
-    var mode = modeEl.value;
     list.innerHTML = "<li>Loading…</li>";
 
     if (!state.playersMap) {
@@ -1268,16 +1222,14 @@
 
     var txns = [];
     if (mode === "week") {
-      var weekEl = byId("txn-week-select");
-      var week = (weekEl && Number(weekEl.value)) || state.currentWeek;
+      var week = Number(byId("txn-week-select").value) || state.currentWeek;
       try {
         txns = await SleeperAPI.getTransactions(state.leagueId, week);
       } catch (e) {
         txns = [];
       }
     } else {
-      var memberEl = byId("txn-member-select");
-      var rosterId = memberEl ? Number(memberEl.value) : null;
+      var rosterId = Number(byId("txn-member-select").value);
       await ensureAllTransactions();
       txns = (state.allTransactionsFlat || []).filter(function (t) {
         return (t.roster_ids || []).indexOf(rosterId) !== -1;
@@ -1366,16 +1318,16 @@
     btn.addEventListener("click", async function () {
       var statusEl = byId("freeze-status");
       if (state.dataSource === "espn") {
-        if (statusEl) statusEl.textContent = "Freeze/export is only available for Sleeper seasons.";
+        statusEl.textContent = "Freeze/export is only available for Sleeper seasons.";
         return;
       }
-      if (statusEl) statusEl.textContent = "Building snapshot… this may take a moment.";
+      statusEl.textContent = "Building snapshot… this may take a moment.";
       try {
         var snapshot = await SleeperAPI.buildSeasonSnapshot(state.leagueId);
         SleeperAPI.downloadJSON(snapshot, "league_season_" + state.season + "_snapshot.json");
-        if (statusEl) statusEl.textContent = "Snapshot downloaded at " + new Date().toLocaleTimeString() + ".";
+        statusEl.textContent = "Snapshot downloaded at " + new Date().toLocaleTimeString() + ".";
       } catch (e) {
-        if (statusEl) statusEl.textContent = "Snapshot failed. Please try again.";
+        statusEl.textContent = "Snapshot failed. Please try again.";
       }
     });
   }
@@ -1390,182 +1342,22 @@
       .replace(/'/g, "&#39;");
   }
 
-  var RECORD_DEFS = [
-    { key: "mostPoints", title: "Most Points in a Week", mode: "score" },
-    { key: "leastPoints", title: "Least Points in a Week", mode: "score" },
-    { key: "largestMarginVictory", title: "Largest Margin of Victory", mode: "margin" },
-    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", mode: "margin" },
-    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", mode: "margin" },
-    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", mode: "margin" },
-  ];
-
-  function renderRecordCard(def, entry) {
-    var card = document.createElement("div");
-    card.className = "record-card";
-
-    if (!entry) {
-      card.classList.add("no-data");
-      card.innerHTML = "<h4>" + escapeHtml(def.title) + "</h4><p>No games in this split yet.</p>";
-      return card;
-    }
-
-    var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
-    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
-    var vsLine = "vs " + escapeHtml(entry.opponentName);
-    var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
-
-    card.innerHTML =
-      "<h4>" + escapeHtml(def.title) + "</h4>" +
-      '<div class="record-value">' + valueText + "</div>" +
-      '<div class="record-holder">' + escapeHtml(entry.ownerName) + "</div>" +
-      '<div class="record-detail">' + scoreLine + " " + vsLine + "</div>" +
-      '<div class="record-detail">' + yearWeek + "</div>";
-
-    return card;
-  }
-
-  /* ============================================================
-   * Single-SEASON Records tab (in #season-tabs). All DOM access here
-   * is defensive (byId + null-check, or the setHidden/setText helpers)
-   * so a markup/script mismatch can only disable this one feature,
-   * never break the rest of the page - see the file header for why
-   * this matters.
-   * ============================================================ */
-
-  function setupSeasonRecordsControls() {
-    var viewButtons = document.querySelectorAll(".season-records-view-btn");
-    viewButtons.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        viewButtons.forEach(function (b) {
-          b.classList.remove("active");
-        });
-        btn.classList.add("active");
-        state.seasonRecordsView = btn.dataset.view;
-        setHidden("season-records-member-picker-wrap", state.seasonRecordsView !== "member");
-        renderSeasonRecords();
-      });
-    });
-
-    var splitButtons = document.querySelectorAll(".season-records-split-btn");
-    splitButtons.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        splitButtons.forEach(function (b) {
-          b.classList.remove("active");
-        });
-        btn.classList.add("active");
-        state.seasonRecordsSplit = btn.dataset.split;
-        renderSeasonRecords();
-      });
-    });
-  }
-
-  function openSeasonRecordsTab() {
-    if (!window.AllTimeStats) return;
-
-    setHidden("season-records-loading", false);
-    setHidden("season-records-content", true);
-
-    if (!state.seasonRecordsLoadPromise) {
-      state.seasonRecordsLoadPromise = window.AllTimeStats.loadAllSeasons().then(function (allSeasonsData) {
-        state.allTimeData = allSeasonsData;
-        return allSeasonsData;
-      });
-    }
-
-    state.seasonRecordsLoadPromise
-      .then(function () {
-        populateSeasonRecordsMemberSelect();
-        renderSeasonRecords();
-        setHidden("season-records-loading", true);
-        setHidden("season-records-content", false);
-      })
-      .catch(function (err) {
-        console.error("Failed to load season records data", err);
-        setText(
-          "season-records-loading",
-          "Could not load records data. Details: " + (err && err.message ? err.message : err)
-        );
-      });
-  }
-
-  function populateSeasonRecordsMemberSelect() {
-    var select = byId("season-records-member-select");
-    if (!select) return;
-
-    var seen = {};
-    var owners = [];
-    Object.keys(state.rosterMap).forEach(function (rid) {
-      var t = state.rosterMap[rid];
-      var key = String(t.displayName || t.ownerId || rid).trim().toLowerCase();
-      if (!seen[key]) {
-        seen[key] = true;
-        owners.push({ key: key, name: t.displayName || t.teamName });
-      }
-    });
-    owners.sort(function (a, b) {
-      return a.name.localeCompare(b.name);
-    });
-
-    select.innerHTML = "";
-    owners.forEach(function (o) {
-      var opt = document.createElement("option");
-      opt.value = o.key;
-      opt.textContent = o.name;
-      select.appendChild(opt);
-    });
-
-    if (owners.length > 0) select.value = owners[0].key;
-    select.onchange = renderSeasonRecords;
-  }
-
-  function renderSeasonRecords() {
-    var grid = byId("season-records-grid");
-    if (!grid || !state.allTimeData || !state.season || !window.AllTimeStats) return;
-
-    var records;
-    if (state.seasonRecordsView === "master") {
-      records = window.AllTimeStats.buildSeasonMasterRecords(
-        state.allTimeData,
-        state.season,
-        state.seasonRecordsSplit
-      );
-    } else {
-      var select = byId("season-records-member-select");
-      var ownerKey = select ? select.value : null;
-      if (!ownerKey) {
-        grid.innerHTML = "<p class=\"status-text\">Pick a member to see their personal records.</p>";
-        return;
-      }
-      records = window.AllTimeStats.buildSeasonMemberRecords(
-        state.allTimeData,
-        state.season,
-        state.seasonRecordsSplit,
-        ownerKey
-      );
-    }
-
-    grid.innerHTML = "";
-    RECORD_DEFS.forEach(function (def) {
-      grid.appendChild(renderRecordCard(def, records[def.key]));
-    });
-  }
-
   /* ============================================================
    * All-Time view: career totals + head-to-head + owner-vs-field +
    * league records across every season.
    * ============================================================ */
 
   function showAllTimeView() {
-    setHidden("season-tabs", true);
-    setHidden("season-main", true);
-    setHidden("alltime-main", false);
+    byId("season-tabs").hidden = true;
+    byId("season-main").hidden = true;
+    byId("alltime-main").hidden = false;
     loadAllTimeData();
   }
 
   function hideAllTimeView() {
-    setHidden("alltime-main", true);
-    setHidden("season-tabs", false);
-    setHidden("season-main", false);
+    byId("alltime-main").hidden = true;
+    byId("season-tabs").hidden = false;
+    byId("season-main").hidden = false;
   }
 
   function setupAllTimeButtons() {
@@ -1617,7 +1409,7 @@
         });
         btn.classList.add("active");
         state.recordsView = btn.dataset.view;
-        setHidden("records-member-picker-wrap", state.recordsView !== "member");
+        byId("records-member-picker-wrap").hidden = state.recordsView !== "member";
         renderRecords();
       });
     });
@@ -1636,23 +1428,18 @@
   }
 
   async function loadAllTimeData() {
-    if (!window.AllTimeStats) {
-      setText("alltime-loading", "All-time stats module (assets/all-time.js) did not load.");
-      return;
-    }
-
     if (state.allTimeData) {
       renderCareerTotals(state.allTimeData, state.careerSplit);
       populateH2hSelectors(state.allTimeData);
       populateVsFieldSelector(state.allTimeData);
       populateRecordsMemberSelector(state.allTimeData);
-      setHidden("alltime-loading", true);
-      setHidden("alltime-content", false);
+      byId("alltime-loading").hidden = true;
+      byId("alltime-content").hidden = false;
       return;
     }
 
-    setHidden("alltime-loading", false);
-    setHidden("alltime-content", true);
+    byId("alltime-loading").hidden = false;
+    byId("alltime-content").hidden = true;
 
     try {
       var allSeasonsData = await window.AllTimeStats.loadAllSeasons();
@@ -1661,14 +1448,12 @@
       populateH2hSelectors(allSeasonsData);
       populateVsFieldSelector(allSeasonsData);
       populateRecordsMemberSelector(allSeasonsData);
-      setHidden("alltime-loading", true);
-      setHidden("alltime-content", false);
+      byId("alltime-loading").hidden = true;
+      byId("alltime-content").hidden = false;
     } catch (err) {
       console.error("Failed to load all-time data", err);
-      setText(
-        "alltime-loading",
-        "Could not load all-time data. Details: " + (err && err.message ? err.message : err)
-      );
+      byId("alltime-loading").textContent =
+        "Could not load all-time data. Details: " + (err && err.message ? err.message : err);
     }
   }
 
@@ -1785,8 +1570,7 @@
 
     if (!keyA || !keyB || keyA === keyB) {
       ["h2h-summary-combined", "h2h-summary-regular", "h2h-summary-playoff"].forEach(function (id) {
-        var el = byId(id);
-        if (el) el.innerHTML = '<p class="status-text">Pick two different owners to compare.</p>';
+        byId(id).innerHTML = '<p class="status-text">Pick two different owners to compare.</p>';
       });
       tbody.innerHTML = "";
       return;
@@ -1798,15 +1582,11 @@
 
     if (result.matchups.length === 0) {
       ["h2h-summary-combined", "h2h-summary-regular", "h2h-summary-playoff"].forEach(function (id) {
-        var el = byId(id);
-        if (el) el.innerHTML = "";
+        byId(id).innerHTML = "";
       });
-      var combinedEl = byId("h2h-summary-combined");
-      if (combinedEl) {
-        combinedEl.innerHTML =
-          "<p class=\"status-text\">" + escapeHtml(nameA) + " and " + escapeHtml(nameB) +
-          " have never played each other.</p>";
-      }
+      byId("h2h-summary-combined").innerHTML =
+        "<p class=\"status-text\">" + escapeHtml(nameA) + " and " + escapeHtml(nameB) +
+        " have never played each other.</p>";
       tbody.innerHTML = "";
       return;
     }
@@ -1955,6 +1735,46 @@
     renderRecords();
   }
 
+  var RECORD_DEFS = [
+    { key: "mostPoints", title: "Most Points in a Week", showOpponent: true, mode: "score" },
+    { key: "leastPoints", title: "Least Points in a Week", showOpponent: true, mode: "score" },
+    { key: "largestMarginVictory", title: "Largest Margin of Victory", showOpponent: true, mode: "margin" },
+    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", showOpponent: true, mode: "margin" },
+    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", showOpponent: true, mode: "margin" },
+    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", showOpponent: true, mode: "margin" },
+  ];
+
+  function renderRecordCard(def, entry) {
+    var card = document.createElement("div");
+    card.className = "record-card";
+
+    if (!entry) {
+      card.classList.add("no-data");
+      card.innerHTML = "<h4>" + escapeHtml(def.title) + "</h4><p>No games in this split yet.</p>";
+      return card;
+    }
+
+    var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
+    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
+    var vsLine = "vs " + escapeHtml(entry.opponentName);
+    var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
+
+    card.innerHTML =
+      "<h4>" + escapeHtml(def.title) + "</h4>" +
+      '<div class="record-value">' + valueText + "</div>" +
+      '<div class="record-holder">' + escapeHtml(entry.ownerName) + "</div>" +
+      '<div class="record-detail">' + scoreLine + " " + vsLine + "</div>" +
+      '<div class="record-detail">' + yearWeek + "</div>";
+
+    return card;
+  }
+
+  /**
+   * Renders the Records tab for the currently selected view
+   * ("master" = league-wide leaderboard, "member" = one owner's
+   * personal bests/worsts) and split ("regular" or "playoff" - never
+   * blended together, per league preference).
+   */
   function renderRecords() {
     var grid = byId("records-grid");
     if (!grid || !state.allTimeData) return;
@@ -1996,7 +1816,6 @@
     setupAllTimeTabs();
     setupCareerToggle();
     setupRecordsControls();
-    setupSeasonRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
@@ -2004,24 +1823,18 @@
         ? urlSeason
         : SleeperAPI.CURRENT_LIVE_SEASON;
 
-    var seasonSelect = byId("season-select");
-    if (seasonSelect) {
-      seasonSelect.value = String(defaultSeason);
-      seasonSelect.addEventListener("change", function (e) {
-        var season = Number(e.target.value);
-        var url = new URL(window.location);
-        url.searchParams.set("season", season);
-        window.history.pushState({}, "", url);
-        loadSeason(season);
-      });
-    }
+    byId("season-select").value = String(defaultSeason);
+    byId("season-select").addEventListener("change", function (e) {
+      var season = Number(e.target.value);
+      var url = new URL(window.location);
+      url.searchParams.set("season", season);
+      window.history.pushState({}, "", url);
+      loadSeason(season);
+    });
 
-    var refreshBtn = byId("refresh-btn");
-    if (refreshBtn) {
-      refreshBtn.addEventListener("click", function () {
-        loadSeason(state.season);
-      });
-    }
+    byId("refresh-btn").addEventListener("click", function () {
+      loadSeason(state.season);
+    });
 
     await loadSeason(defaultSeason);
   }
