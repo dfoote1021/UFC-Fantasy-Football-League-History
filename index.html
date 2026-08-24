@@ -118,6 +118,17 @@
 
   <section id="tab-draft" class="tab-panel">
     <h2>Draft Board — Who Drafted Who</h2>
+    <div class="week-picker">
+      <label for="draft-team-filter">Team/Owner:</label>
+      <select id="draft-team-filter">
+        <option value="">All Teams</option>
+      </select>
+    </div>
+
+    <h3 class="playoff-heading">Breakdown</h3>
+    <div id="draft-breakdown" class="draft-breakdown"></div>
+
+    <h3 class="playoff-heading">Picks</h3>
     <div id="draft-board" class="draft-board"></div>
   </section>
 
@@ -191,6 +202,7 @@
       <button class="tab-btn" data-alltime-tab="h2h">Head-to-Head</button>
       <button class="tab-btn" data-alltime-tab="vsfield">Vs. The Field</button>
       <button class="tab-btn" data-alltime-tab="records">Records</button>
+      <button class="tab-btn" data-alltime-tab="draft">Draft</button>
     </nav>
 
     <section id="alltime-career" class="tab-panel active">
@@ -287,6 +299,26 @@
       </div>
 
       <div id="records-grid" class="records-grid"></div>
+    </section>
+
+    <section id="alltime-draft" class="tab-panel">
+      <div class="week-picker">
+        <label for="alltime-draft-owner-filter">Team/Owner:</label>
+        <select id="alltime-draft-owner-filter">
+          <option value="">All Owners</option>
+        </select>
+      </div>
+
+      <h3 class="playoff-heading">All-Time Breakdown</h3>
+      <div id="alltime-draft-breakdown" class="draft-breakdown"></div>
+
+      <h3 class="playoff-heading">All Picks</h3>
+      <table id="alltime-draft-table" class="data-table">
+        <thead>
+          <tr><th>Year</th><th>Pick</th><th>Round</th><th>Player</th><th>Pos</th><th>NFL Team</th><th>Drafted By</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
   </div>
 </main>
