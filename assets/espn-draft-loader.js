@@ -8,8 +8,8 @@
  *
  * Expected columns (case-insensitive; header aliases below cover common
  * ESPN export variations):
- *   Season, Overall Pick, Round, Round Pick, Team, Owner, Player ID,
- *   Player Name, Keeper
+ * Season, Overall Pick, Round, Round Pick, Team, Owner, Player ID,
+ * Player Name, Position, NFL Team, Keeper
  *
  * `Team` is the real fun team display name for that pick's season (e.g.
  * "Gotham City Rogues"), and `Owner` is that team's owner name/username
@@ -18,6 +18,12 @@
  * now carries both values explicitly. The draft board displays them as
  * "Team Name (Owner)", matching the display convention used elsewhere on
  * the site (e.g. matchup records).
+ *
+ * `Position` and `NFL Team` are optional - if a given row's CSV doesn't
+ * have a value in either column, getField() simply returns an empty
+ * string, and season.js/all-time.js already treat an empty/missing
+ * position or NFL team as "no data" (shown as "-" in the UI) rather
+ * than breaking.
  *
  * Everything is wrapped in an IIFE and attached only to window.EspnDraftLoader.
  */
@@ -36,7 +42,9 @@
     owner: ["owner", "team_owner", "team owner"],
     player_id: ["player_id", "player id", "playerid"],
     player_name: ["player_name", "player name", "player"],
-    keeper: ["keeper", "is_keeper"],
+    position: ["position", "pos"],
+    nfl_team: ["nfl_team", "nfl team", "pro_team", "pro team", "nflteam"],
+    keeper: ["keeper", "is_keeper"]
   };
 
   var _draftCache = {};
@@ -78,10 +86,12 @@
         }
       }
     }
+
     if (field.length > 0 || row.length > 0) {
       row.push(field);
       rows.push(row);
     }
+
     return rows.filter(function (r) {
       return r.length > 1 || (r.length === 1 && r[0] !== "");
     });
@@ -151,7 +161,9 @@
   /**
    * All parsed+normalized draft-pick rows for one season, sorted by
    * overall pick number ascending. `team` and `owner` are read directly
-   * from the sheet - no cross-file join required.
+   * from the sheet - no cross-file join required. `position` and
+   * `nflTeam` are read the same way, and simply come back as an empty
+   * string if that row's CSV doesn't have a value in that column.
    */
   function getDraftRows(year) {
     return fetchRawDraftRows().then(function (allRows) {
@@ -169,7 +181,9 @@
             owner: getField(r, "owner"),
             playerId: getField(r, "player_id"),
             playerName: getField(r, "player_name"),
-            isKeeper: toBool(getField(r, "keeper")),
+            position: getField(r, "position"),
+            nflTeam: getField(r, "nfl_team"),
+            isKeeper: toBool(getField(r, "keeper"))
           };
         })
         .sort(function (a, b) {
@@ -230,7 +244,7 @@
         totalRounds: board.length,
         getTeamHistory: function (teamName) {
           return getTeamDraftHistory(rows, teamName);
-        },
+        }
       };
     });
   }
@@ -239,6 +253,6 @@
     loadDraft: loadDraft,
     getDraftRows: getDraftRows,
     buildDraftBoard: buildDraftBoard,
-    getTeamDraftHistory: getTeamDraftHistory,
+    getTeamDraftHistory: getTeamDraftHistory
   };
 })();
