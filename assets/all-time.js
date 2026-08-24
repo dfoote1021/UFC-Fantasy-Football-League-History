@@ -5,14 +5,23 @@
  * OWNER display name.
  *
  * Produces: career totals (with regular/playoff split + transactions),
- * head-to-head, owner-vs-field, league-wide records, and single-season
- * records (reused by season.js's per-season Records tab).
+ * head-to-head, owner-vs-field, league-wide records, single-season
+ * records, and now all-time DRAFT history (every pick from every
+ * season, filterable by owner, with position/NFL-team breakdowns).
  *
  * Game classification: "regular", "playoff" (active championship path,
  * including the championship game itself - p:1 in Sleeper's bracket
  * data means championship, NOT a placement game to skip), or
  * "consolation" (losers bracket, non-championship placement games,
  * or any winners-bracket game for an already-eliminated team).
+ *
+ * DRAFT DATA CAVEAT: each normalized pick record includes `position`
+ * and `nflTeam` fields read defensively from whatever the underlying
+ * loader (SleeperAPI.buildDraftBoard for Sleeper years,
+ * EspnDraftLoader.loadDraft for ESPN years) actually provides. If a
+ * given pick is missing that metadata, the field is left as null and
+ * the UI shows "-" rather than breaking; breakdown counts simply
+ * exclude picks with unknown position/team from that specific count.
  *
  * Attached only to window.AllTimeStats.
  */
@@ -124,6 +133,50 @@
     return activePairs;
   }
 
+  /**
+   * Normalizes ONE Sleeper draft pick (as returned by
+   * SleeperAPI.buildDraftBoard) into the shape used by the all-time
+   * draft views. Reads position/NFL team defensively across a few
+   * possible field names since the exact shape SleeperAPI exposes
+   * wasn't verified against this module's source.
+   */
+  function normalizeSleeperPick(pick, year, ownerKeyFn) {
+    return {
+      year: year,
+      source: "sleeper",
+      ownerKey: ownerKeyFn(pick.ownerName || pick.teamName),
+      ownerName: pick.ownerName || pick.teamName,
+      teamName: pick.teamName,
+      playerName: pick.playerName,
+      position: pick.position || pick.pos || pick.playerPosition || null,
+      nflTeam: pick.nflTeam || pick.playerTeam || pick.proTeam || pick.team || null,
+      round: pick.round,
+      pickNo: pick.pickNo,
+      isKeeper: !!pick.isKeeper
+    };
+  }
+
+  /**
+   * Normalizes ONE ESPN draft pick (as returned by
+   * EspnDraftLoader.loadDraft) into the shape used by the all-time
+   * draft views. Same defensive field reading as the Sleeper version.
+   */
+  function normalizeEspnPick(pick, year, ownerKeyFn) {
+    return {
+      year: year,
+      source: "espn",
+      ownerKey: ownerKeyFn(pick.owner || pick.team),
+      ownerName: pick.owner || pick.team,
+      teamName: pick.team,
+      playerName: pick.playerName,
+      position: pick.position || pick.pos || pick.playerPosition || null,
+      nflTeam: pick.nflTeam || pick.playerTeam || pick.proTeam || null,
+      round: pick.round,
+      pickNo: pick.overallPick,
+      isKeeper: !!pick.isKeeper
+    };
+  }
+
   function loadEspnSeasonForAllTime(year) {
     return window.EspnLoader.loadSeason(year).then(function (data) {
       var teamSummaries = Object.keys(data.rosterMap).map(function (teamKey) {
@@ -187,7 +240,22 @@
           ownerBScore: r.opponentScore
         });
       });
-      return { year: year, source: "espn", teamSummaries: teamSummaries, games: games };
+
+      var draftPromise = window.EspnDraftLoader
+        ? window.EspnDraftLoader.loadDraft(year)
+            .then(function (draftData) {
+              return (draftData.picks || []).map(function (p) {
+                return normalizeEspnPick(p, year, normalizeOwnerKey);
+              });
+            })
+            .catch(function () {
+              return [];
+            })
+        : Promise.resolve([]);
+
+      return draftPromise.then(function (draftPicks) {
+        return { year: year, source: "espn", teamSummaries: teamSummaries, games: games, draftPicks: draftPicks };
+      });
     });
   }
 
@@ -234,7 +302,23 @@
             });
           });
       });
-      return txnChain.then(function () {
+
+      var draftPromise = SleeperAPI.getDraft(leagueId)
+        .then(function (draft) {
+          if (!draft) return [];
+          return SleeperAPI.getDraftPicks(draft.draft_id).then(function (picks) {
+            var boardData = SleeperAPI.buildDraftBoard(picks, rosterMap);
+            return boardData.map(function (p) {
+              return normalizeSleeperPick(p, year, normalizeOwnerKey);
+            });
+          });
+        })
+        .catch(function () {
+          return [];
+        });
+
+      return Promise.all([txnChain, draftPromise]).then(function (results2) {
+        var draftPicks = results2[1];
         var teamSummaries = Object.keys(rosterMap).map(function (rid) {
           var t = rosterMap[rid];
           var isChamp = finalStandingsInfo.champion && finalStandingsInfo.champion.rosterId === t.rosterId;
@@ -252,6 +336,7 @@
             hasIncompleteTransactionData: false
           };
         });
+
         return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAX_SLEEPER_WEEK).then(function (allWeeksMatchups) {
           var games = [];
           var playedWeeks = SleeperAPI.getPlayedWeeks(allWeeksMatchups);
@@ -293,7 +378,7 @@
               });
             });
           });
-          return { year: year, source: "sleeper", teamSummaries: teamSummaries, games: games };
+          return { year: year, source: "sleeper", teamSummaries: teamSummaries, games: games, draftPicks: draftPicks };
         });
       });
     });
@@ -720,6 +805,82 @@
     return computeRecordsFromSides(sides);
   }
 
+  /**
+   * Flat list of every draft pick across every season, sorted by year
+   * then overall pick number, optionally filtered to one owner.
+   */
+  function buildAllTimeDraftPicks(allSeasonsData, ownerQuery) {
+    var ownerKey = ownerQuery ? normalizeOwnerKey(ownerQuery) : null;
+    var picks = [];
+    allSeasonsData.forEach(function (season) {
+      (season.draftPicks || []).forEach(function (p) {
+        if (ownerKey && p.ownerKey !== ownerKey) return;
+        picks.push(p);
+      });
+    });
+    picks.sort(function (a, b) {
+      if (a.year !== b.year) return a.year - b.year;
+      return (a.pickNo || 0) - (b.pickNo || 0);
+    });
+    return picks;
+  }
+
+  /** Same as buildAllTimeDraftPicks but scoped to a single season's picks only. */
+  function getSeasonDraftPicks(allSeasonsData, year, ownerQuery) {
+    var yearNum = Number(year);
+    var ownerKey = ownerQuery ? normalizeOwnerKey(ownerQuery) : null;
+    var picks = [];
+    allSeasonsData.forEach(function (season) {
+      if (season.year !== yearNum) return;
+      (season.draftPicks || []).forEach(function (p) {
+        if (ownerKey && p.ownerKey !== ownerKey) return;
+        picks.push(p);
+      });
+    });
+    picks.sort(function (a, b) {
+      return (a.pickNo || 0) - (b.pickNo || 0);
+    });
+    return picks;
+  }
+
+  /**
+   * Counts picks by position and by NFL team from a flat pick list.
+   * Picks missing that specific field are excluded from that count
+   * (not shown as "unknown") rather than silently miscounted.
+   */
+  function buildDraftBreakdown(picks) {
+    var byPosition = {};
+    var byNflTeam = {};
+    picks.forEach(function (p) {
+      if (p.position) {
+        byPosition[p.position] = (byPosition[p.position] || 0) + 1;
+      }
+      if (p.nflTeam) {
+        byNflTeam[p.nflTeam] = (byNflTeam[p.nflTeam] || 0) + 1;
+      }
+    });
+    function toSortedList(map) {
+      return Object.keys(map)
+        .map(function (k) {
+          return { key: k, count: map[k] };
+        })
+        .sort(function (a, b) {
+          return b.count - a.count;
+        });
+    }
+    return {
+      byPosition: toSortedList(byPosition),
+      byNflTeam: toSortedList(byNflTeam),
+      totalPicks: picks.length,
+      picksWithPosition: picks.filter(function (p) {
+        return !!p.position;
+      }).length,
+      picksWithNflTeam: picks.filter(function (p) {
+        return !!p.nflTeam;
+      }).length
+    };
+  }
+
   window.AllTimeStats = {
     loadAllSeasons: loadAllSeasons,
     buildCareerTotals: buildCareerTotals,
@@ -729,6 +890,9 @@
     buildMemberRecords: buildMemberRecords,
     buildSeasonMasterRecords: buildSeasonMasterRecords,
     buildSeasonMemberRecords: buildSeasonMemberRecords,
+    buildAllTimeDraftPicks: buildAllTimeDraftPicks,
+    getSeasonDraftPicks: getSeasonDraftPicks,
+    buildDraftBreakdown: buildDraftBreakdown,
     getAllOwnerNames: getAllOwnerNames
   };
 })();
