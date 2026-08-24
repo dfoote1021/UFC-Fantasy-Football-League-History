@@ -27,7 +27,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 16px 32px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
@@ -93,7 +93,7 @@ select {
   gap: 12px;
   background: linear-gradient(90deg, #3a2f0f, #1f1a0a);
   border-bottom: 1px solid var(--gold);
-  padding: 12px 24px;
+  padding: 12px 32px;
   font-size: 1rem;
   font-weight: 600;
   color: var(--gold);
@@ -103,7 +103,7 @@ select {
 .tabs {
   display: flex;
   gap: 4px;
-  padding: 10px 24px 0;
+  padding: 10px 32px 0;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -121,7 +121,7 @@ select {
 .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
 .tab-btn:hover { color: var(--text); }
 
-main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+main { padding: 24px 32px; max-width: 1760px; margin: 0 auto; }
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -307,6 +307,9 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 8px;
 }
+@media (max-width: 1500px) {
+  .draft-board { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
 @media (max-width: 1100px) {
   .draft-board { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
@@ -322,6 +325,40 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 }
 .draft-pick .pick-num { color: var(--text-dim); font-size: 0.68rem; }
 .draft-pick .draft-owner { color: var(--accent); font-size: 0.7rem; margin-top: 4px; }
+.draft-pick .draft-meta { color: var(--text-dim); font-size: 0.68rem; margin-top: 3px; }
+
+.draft-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.draft-breakdown-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.draft-breakdown-card h4 {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.draft-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.draft-breakdown-row span:last-child { color: var(--accent); font-weight: 600; }
+.draft-breakdown-note {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  margin-top: 8px;
+}
 
 .transactions-list { list-style: none; padding: 0; }
 .transactions-list li {
