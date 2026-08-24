@@ -749,7 +749,9 @@
         var matchDiv = document.createElement("div");
         matchDiv.className = "bracket-match";
 
-        var placement = Number(m.placement || m.p || 0);
+        // buildBracketView exposes the placement as `position` (from
+        // Sleeper's p field); fall back to other names just in case.
+        var placement = Number(m.position || m.placement || m.p || 0);
         if (placement > 1) {
           var placementLabel = document.createElement("div");
           placementLabel.className = "bracket-placement-label";
@@ -758,7 +760,7 @@
         } else if (placement === 1 && containerId === "playoff-bracket") {
           var championshipLabel = document.createElement("div");
           championshipLabel.className = "bracket-placement-label";
-          championshipLabel.textContent = "Championship Game";
+          championshipLabel.textContent = "Championship";
           matchDiv.appendChild(championshipLabel);
         }
 
@@ -947,15 +949,26 @@
 
     var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
 
-    // Track which rosters are in a true two-team matchup. Rosters present in
-    // the raw weekly response but NOT in a two-team matchup are bye weeks;
-    // those get their own BYE card below. Byes are display-only and never
-    // count as games, wins/losses, PF/PA, records, or All-Time stats.
+    // Determine which rosters are in a GENUINE two-team matchup: group the
+    // raw weekly response by matchup_id (ignoring null ids) and keep only
+    // groups with exactly two members. Sleeper gives every roster a row
+    // each week, including teams on a bye — those get matchup_id === null
+    // (or a single-member group). Everyone not in a genuine two-team
+    // matchup is a bye and gets its own BYE card below. Byes are
+    // display-only: they never count as games, wins/losses, PF/PA, records,
+    // or All-Time stats.
+    var groups = {};
+    (matchups || []).forEach(function (m) {
+      if (m.matchup_id === null || m.matchup_id === undefined) return;
+      if (!groups[m.matchup_id]) groups[m.matchup_id] = [];
+      groups[m.matchup_id].push(m);
+    });
     var pairedRosterIds = {};
-    pairs.forEach(function (pair) {
-      if (pair.teamA && pair.teamB) {
-        if (pair.teamA.rosterId) pairedRosterIds[pair.teamA.rosterId] = true;
-        if (pair.teamB.rosterId) pairedRosterIds[pair.teamB.rosterId] = true;
+    Object.keys(groups).forEach(function (key) {
+      var rows = groups[key];
+      if (rows.length === 2) {
+        if (rows[0].roster_id) pairedRosterIds[rows[0].roster_id] = true;
+        if (rows[1].roster_id) pairedRosterIds[rows[1].roster_id] = true;
       }
     });
 
@@ -972,9 +985,12 @@
     }
 
     pairs.forEach(function (pair, idx) {
-      // One-team pairs are byes; skip them here so each renders once, as a
-      // dedicated BYE card, in the bye block below (no duplicates).
-      if (!pair.teamB) return;
+      // Skip byes here so they render once, as a dedicated BYE card, in the
+      // bye block below (no duplicates). A pair is a bye if it has no second
+      // team OR its matchup_id is null — Sleeper marks bye rosters with
+      // matchup_id === null, and pairMatchups would otherwise pair the first
+      // two null-id rows together incorrectly.
+      if (!pair.teamB || pair.matchupId === null || pair.matchupId === undefined) return;
 
       var card = document.createElement("div");
       card.className = "matchup-card";
@@ -1446,20 +1462,10 @@
     return place + suffix;
   }
 
-  // Human-readable bracket round title. Uses the round's position (not its
-  // raw number) so non-contiguous round values still label correctly.
+  // Bracket round title. Reverted to plain "Round N" per request; each
+  // match within a round is distinguished by its placement label instead
+  // (Championship, 3rd Place Game, 5th Place Game, etc.).
   function bracketRoundLabel(containerId, roundIndex, totalRounds) {
-    var roundsFromEnd = totalRounds - roundIndex - 1;
-    var isWinners = containerId === "playoff-bracket";
-    if (roundsFromEnd === 0) {
-      return isWinners ? "Championship" : "Final Placement Round";
-    }
-    if (roundsFromEnd === 1) {
-      return isWinners ? "Semifinals" : "Consolation Semifinals";
-    }
-    if (roundsFromEnd === 2) {
-      return isWinners ? "Quarterfinals" : "Consolation Quarterfinals";
-    }
     return "Round " + (roundIndex + 1);
   }
 
