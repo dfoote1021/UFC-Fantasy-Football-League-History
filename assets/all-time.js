@@ -13,11 +13,9 @@
  * data means championship, NOT a placement game to skip), or
  * "consolation" (losers bracket, non-championship placement games,
  * or any winners-bracket game for an already-eliminated team).
- * Verified against Sleeper's official API docs.
  *
  * Attached only to window.AllTimeStats.
  */
-
 (function () {
   "use strict";
 
@@ -34,13 +32,7 @@
   }
 
   function newSplitRecord() {
-    return {
-      wins: 0,
-      losses: 0,
-      ties: 0,
-      pointsFor: 0,
-      pointsAgainst: 0,
-    };
+    return { wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 };
   }
 
   function isNonChampionshipPlacementGame(m) {
@@ -50,14 +42,11 @@
   function resolveBracketSlot(match, side, byMatchId) {
     var direct = match[side];
     if (direct) return direct;
-
     var fromRef = match[side + "_from"];
     if (!fromRef) return null;
-
     var refMatchId = fromRef.w !== undefined ? fromRef.w : fromRef.l;
     var refMatch = byMatchId[refMatchId];
     if (!refMatch) return null;
-
     if (fromRef.w !== undefined) return refMatch.w || null;
     return refMatch.l || null;
   }
@@ -65,43 +54,33 @@
   function buildActivePlayoffPairs(winnersBracket) {
     var activePairs = {};
     if (!winnersBracket || winnersBracket.length === 0) return activePairs;
-
     var byMatchId = {};
     winnersBracket.forEach(function (m) {
       byMatchId[m.m] = m;
     });
-
     var byRound = {};
     winnersBracket.forEach(function (m) {
       var r = m.r || 1;
       if (!byRound[r]) byRound[r] = [];
       byRound[r].push(m);
     });
-
     var rounds = Object.keys(byRound)
       .map(Number)
       .sort(function (a, b) {
         return a - b;
       });
-
     var eliminatedRosterIds = {};
-
     rounds.forEach(function (round) {
       var matches = byRound[round] || [];
-
       matches.forEach(function (m) {
         if (isNonChampionshipPlacementGame(m)) return;
-
         var t1 = resolveBracketSlot(m, "t1", byMatchId);
         var t2 = resolveBracketSlot(m, "t2", byMatchId);
         if (!t1 || !t2) return;
-
         var t1Eliminated = !!eliminatedRosterIds[t1];
         var t2Eliminated = !!eliminatedRosterIds[t2];
-
         if (!t1Eliminated && !t2Eliminated) {
           activePairs[pairKey(t1, t2)] = true;
-
           if (m.w) {
             var loser = m.w === t1 ? t2 : t1;
             eliminatedRosterIds[loser] = true;
@@ -109,32 +88,25 @@
         }
       });
     });
-
     return activePairs;
   }
 
   function buildActivePlayoffPairsEspn(winnersBracket) {
     var activePairs = {};
     if (!winnersBracket) return activePairs;
-
     var eliminatedNames = {};
-
     winnersBracket.forEach(function (roundData) {
       (roundData.matches || []).forEach(function (m) {
         var placementValue = m.placement || m.p;
         var isNonChampionshipPlacement = !!(placementValue && placementValue !== 1);
         if (isNonChampionshipPlacement) return;
-
         var nameA = m.slot1 && (m.slot1.teamName || m.slot1.ownerName);
         var nameB = m.slot2 && (m.slot2.teamName || m.slot2.ownerName);
         if (!nameA || !nameB) return;
-
         var aEliminated = !!eliminatedNames[nameA];
         var bEliminated = !!eliminatedNames[nameB];
-
         if (!aEliminated && !bEliminated) {
           activePairs[pairKey(nameA, nameB)] = true;
-
           var winnerName =
             m.winnerName ||
             (m.winnerRosterId && m.slot1 && m.slot1.rosterId === m.winnerRosterId
@@ -142,7 +114,6 @@
               : m.winnerRosterId
               ? nameB
               : null);
-
           if (winnerName) {
             var loserName = winnerName === nameA ? nameB : nameA;
             eliminatedNames[loserName] = true;
@@ -150,7 +121,6 @@
         }
       });
     });
-
     return activePairs;
   }
 
@@ -169,28 +139,23 @@
           isChampion: !!t.isChampionFlag,
           isRunnerUp: !!t.isRunnerUpFlag,
           transactions: hasMoveData ? t.totalMoves : 0,
-          hasIncompleteTransactionData: !hasMoveData,
+          hasIncompleteTransactionData: !hasMoveData
         };
       });
-
       var hasExplicitEliminationField = (data.rows || []).some(function (r) {
         return r.isEliminatedBeforeThisGame !== undefined || r.bracketRoundStatus !== undefined;
       });
-
       var activeNamePairs = null;
       if (!hasExplicitEliminationField && data.winnersBracket) {
         activeNamePairs = buildActivePlayoffPairsEspn(data.winnersBracket);
       }
-
       var loggedFallbackWarning = false;
-
       var games = [];
       (data.rows || []).forEach(function (r) {
         if (r.opponent === "BYE" || !r.opponent) return;
         var teamOwner = normalizeOwnerKey(r.teamOwner);
         var oppOwner = normalizeOwnerKey(r.opponentOwner);
         if (!teamOwner || !oppOwner) return;
-
         var gameType = "regular";
         if (r.isPlayoff) {
           if (hasExplicitEliminationField) {
@@ -200,15 +165,12 @@
             gameType = isActivePair ? "playoff" : "consolation";
           } else {
             if (!loggedFallbackWarning) {
-              console.warn(
-                "All-time: ESPN season " + year + " has no bracket data to classify playoffs; treating all playoff-week games as 'playoff'."
-              );
+              console.warn("All-time: ESPN season " + year + " has no bracket data to classify playoffs.");
               loggedFallbackWarning = true;
             }
             gameType = "playoff";
           }
         }
-
         games.push({
           year: year,
           source: "espn",
@@ -222,10 +184,9 @@
           ownerBKey: oppOwner,
           ownerBName: r.opponentOwner,
           ownerBTeamName: r.opponent,
-          ownerBScore: r.opponentScore,
+          ownerBScore: r.opponentScore
         });
       });
-
       return { year: year, source: "espn", teamSummaries: teamSummaries, games: games };
     });
   }
@@ -233,36 +194,30 @@
   function loadSleeperSeasonForAllTime(year) {
     var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
     if (!leagueId) return Promise.resolve(null);
-
     return Promise.all([
       SleeperAPI.getLeague(leagueId),
       SleeperAPI.getUsers(leagueId),
       SleeperAPI.getRosters(leagueId),
       SleeperAPI.getWinnersBracket(leagueId).catch(function () {
         return [];
-      }),
+      })
     ]).then(function (results) {
       var league = results[0];
       var users = results[1];
       var rosters = results[2];
       var winnersBracket = results[3];
-
       var rosterMap = SleeperAPI.buildRosterMap(users, rosters);
       var finalStandingsInfo = SleeperAPI.buildFinalStandings(rosterMap, winnersBracket);
       var playoffStartWeek = (league.settings && league.settings.playoff_week_start) || null;
-
       var playoffRosterIds = {};
       (winnersBracket || []).forEach(function (m) {
         if (m.t1) playoffRosterIds[m.t1] = true;
         if (m.t2) playoffRosterIds[m.t2] = true;
       });
-
       var activePairs = buildActivePlayoffPairs(winnersBracket);
-
       var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
       var txnWeeks = [];
       for (var w = 1; w <= maxWeek; w++) txnWeeks.push(w);
-
       var txnChain = Promise.resolve();
       var txnCountsByRoster = {};
       txnWeeks.forEach(function (week) {
@@ -279,7 +234,6 @@
             });
           });
       });
-
       return txnChain.then(function () {
         var teamSummaries = Object.keys(rosterMap).map(function (rid) {
           var t = rosterMap[rid];
@@ -295,14 +249,12 @@
             isChampion: !!isChamp,
             isRunnerUp: !!isRunnerUp,
             transactions: txnCountsByRoster[rid] || 0,
-            hasIncompleteTransactionData: false,
+            hasIncompleteTransactionData: false
           };
         });
-
         return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAX_SLEEPER_WEEK).then(function (allWeeksMatchups) {
           var games = [];
           var playedWeeks = SleeperAPI.getPlayedWeeks(allWeeksMatchups);
-
           playedWeeks.forEach(function (week) {
             var isPlayoffWeek = !!playoffStartWeek && week >= playoffStartWeek;
             var weekMatchups = allWeeksMatchups[week] || [];
@@ -311,23 +263,19 @@
               if (!grouped[m.matchup_id]) grouped[m.matchup_id] = [];
               grouped[m.matchup_id].push(m);
             });
-
             Object.keys(grouped).forEach(function (matchupId) {
               var pair = grouped[matchupId];
               var a = pair[0];
               var b = pair[1];
               if (!a || !b) return;
-
               var teamA = rosterMap[a.roster_id];
               var teamB = rosterMap[b.roster_id];
               if (!teamA || !teamB) return;
-
               var gameType = "regular";
               if (isPlayoffWeek) {
                 var isActivePair = !!activePairs[pairKey(a.roster_id, b.roster_id)];
                 gameType = isActivePair ? "playoff" : "consolation";
               }
-
               games.push({
                 year: year,
                 source: "sleeper",
@@ -341,11 +289,10 @@
                 ownerBKey: normalizeOwnerKey(teamB.displayName),
                 ownerBName: teamB.displayName,
                 ownerBTeamName: teamB.teamName,
-                ownerBScore: b.points || 0,
+                ownerBScore: b.points || 0
               });
             });
           });
-
           return { year: year, source: "sleeper", teamSummaries: teamSummaries, games: games };
         });
       });
@@ -354,10 +301,8 @@
 
   function loadAllSeasons() {
     if (_allSeasonsCache) return _allSeasonsCache;
-
     var espnYears = (window.EspnLoader && window.EspnLoader.ESPN_SEASONS) || [];
     var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
-
     var espnPromises = espnYears.map(function (year) {
       return loadEspnSeasonForAllTime(year).catch(function (err) {
         console.error("All-time: failed to load ESPN season " + year, err);
@@ -370,26 +315,22 @@
         return null;
       });
     });
-
     _allSeasonsCache = Promise.all(espnPromises.concat(sleeperPromises)).then(function (results) {
       return results.filter(function (r) {
         return r !== null;
       });
     });
-
     return _allSeasonsCache;
   }
 
   function accumulateGameRecords(allSeasonsData) {
     var byOwner = {};
-
     function ensure(ownerKey) {
       if (!byOwner[ownerKey]) {
         byOwner[ownerKey] = { regular: newSplitRecord(), playoff: newSplitRecord() };
       }
       return byOwner[ownerKey];
     }
-
     function applyResult(record, myScore, oppScore) {
       record.pointsFor += myScore;
       record.pointsAgainst += oppScore;
@@ -397,11 +338,9 @@
       else if (myScore < oppScore) record.losses += 1;
       else record.ties += 1;
     }
-
     allSeasonsData.forEach(function (season) {
       season.games.forEach(function (g) {
         if (g.gameType === "consolation") return;
-
         var splitKey = g.gameType === "playoff" ? "playoff" : "regular";
         var entryA = ensure(g.ownerAKey);
         var entryB = ensure(g.ownerBKey);
@@ -409,7 +348,6 @@
         applyResult(entryB[splitKey], g.ownerBScore, g.ownerAScore);
       });
     });
-
     return byOwner;
   }
 
@@ -419,7 +357,7 @@
       losses: rec.losses,
       ties: rec.ties,
       pointsFor: Math.round(rec.pointsFor * 100) / 100,
-      pointsAgainst: Math.round(rec.pointsAgainst * 100) / 100,
+      pointsAgainst: Math.round(rec.pointsAgainst * 100) / 100
     };
   }
 
@@ -431,7 +369,6 @@
   function buildCareerTotals(allSeasonsData) {
     var byOwner = {};
     var gameRecords = accumulateGameRecords(allSeasonsData);
-
     allSeasonsData.forEach(function (season) {
       season.teamSummaries.forEach(function (t) {
         if (!byOwner[t.ownerKey]) {
@@ -444,7 +381,7 @@
             playoffAppearances: 0,
             totalTransactions: 0,
             hasIncompleteTransactionData: false,
-            yearsList: [],
+            yearsList: []
           };
         }
         var entry = byOwner[t.ownerKey];
@@ -457,27 +394,22 @@
         entry.yearsList.push(t.year);
       });
     });
-
     return Object.keys(byOwner)
       .map(function (k) {
         var e = byOwner[k];
         var rec = gameRecords[k] || { regular: newSplitRecord(), playoff: newSplitRecord() };
-
         e.regular = roundSplit(rec.regular);
         e.playoff = roundSplit(rec.playoff);
-
         e.combined = {
           wins: e.regular.wins + e.playoff.wins,
           losses: e.regular.losses + e.playoff.losses,
           ties: e.regular.ties + e.playoff.ties,
           pointsFor: Math.round((e.regular.pointsFor + e.playoff.pointsFor) * 100) / 100,
-          pointsAgainst: Math.round((e.regular.pointsAgainst + e.playoff.pointsAgainst) * 100) / 100,
+          pointsAgainst: Math.round((e.regular.pointsAgainst + e.playoff.pointsAgainst) * 100) / 100
         };
-
         e.regular.winPct = winPct(e.regular);
         e.playoff.winPct = winPct(e.playoff);
         e.combined.winPct = winPct(e.combined);
-
         e.yearsList.sort(function (a, b) {
           return a - b;
         });
@@ -491,14 +423,7 @@
   }
 
   function summarizeGames(list) {
-    var summary = {
-      totalGames: list.length,
-      wins: 0,
-      losses: 0,
-      ties: 0,
-      pointsFor: 0,
-      pointsAgainst: 0,
-    };
+    var summary = { totalGames: list.length, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 };
     list.forEach(function (m) {
       summary.pointsFor += m.myScore;
       summary.pointsAgainst += m.oppScore;
@@ -517,15 +442,11 @@
   function buildHeadToHead(allSeasonsData, ownerAQuery, ownerBQuery) {
     var keyA = normalizeOwnerKey(ownerAQuery);
     var keyB = normalizeOwnerKey(ownerBQuery);
-
     var matchups = [];
     allSeasonsData.forEach(function (season) {
       season.games.forEach(function (g) {
-        var isMatch =
-          (g.ownerAKey === keyA && g.ownerBKey === keyB) ||
-          (g.ownerAKey === keyB && g.ownerBKey === keyA);
+        var isMatch = (g.ownerAKey === keyA && g.ownerBKey === keyB) || (g.ownerAKey === keyB && g.ownerBKey === keyA);
         if (!isMatch) return;
-
         var aIsOwnerA = g.ownerAKey === keyA;
         matchups.push({
           year: g.year,
@@ -538,25 +459,16 @@
           ownerAScore: aIsOwnerA ? g.ownerAScore : g.ownerBScore,
           ownerBName: aIsOwnerA ? g.ownerBName : g.ownerAName,
           ownerBTeamName: aIsOwnerA ? g.ownerBTeamName : g.ownerATeamName,
-          ownerBScore: aIsOwnerA ? g.ownerBScore : g.ownerAScore,
+          ownerBScore: aIsOwnerA ? g.ownerBScore : g.ownerAScore
         });
       });
     });
-
     matchups.sort(function (a, b) {
       if (a.year !== b.year) return a.year - b.year;
       return (a.week || 0) - (b.week || 0);
     });
-
     function summarize(list) {
-      var summary = {
-        totalGames: list.length,
-        ownerAWins: 0,
-        ownerBWins: 0,
-        ties: 0,
-        ownerATotalPoints: 0,
-        ownerBTotalPoints: 0,
-      };
+      var summary = { totalGames: list.length, ownerAWins: 0, ownerBWins: 0, ties: 0, ownerATotalPoints: 0, ownerBTotalPoints: 0 };
       list.forEach(function (m) {
         summary.ownerATotalPoints += m.ownerAScore || 0;
         summary.ownerBTotalPoints += m.ownerBScore || 0;
@@ -568,7 +480,6 @@
       summary.ownerAvgB = summary.totalGames > 0 ? summary.ownerBTotalPoints / summary.totalGames : 0;
       return summary;
     }
-
     var regularMatchups = matchups.filter(function (m) {
       return m.gameType === "regular";
     });
@@ -578,7 +489,6 @@
     var consolationMatchups = matchups.filter(function (m) {
       return m.gameType === "consolation";
     });
-
     return {
       matchups: matchups,
       regularMatchups: regularMatchups,
@@ -586,39 +496,28 @@
       consolationMatchups: consolationMatchups,
       summary: summarize(regularMatchups.concat(playoffMatchups)),
       regularSummary: summarize(regularMatchups),
-      playoffSummary: summarize(playoffMatchups),
+      playoffSummary: summarize(playoffMatchups)
     };
   }
 
   function buildOwnerVsAll(allSeasonsData, ownerQuery) {
     var ownerKey = normalizeOwnerKey(ownerQuery);
-
     var byOpponent = {};
     var overallRegularGames = [];
     var overallPlayoffGames = [];
-
     allSeasonsData.forEach(function (season) {
       season.games.forEach(function (g) {
         if (g.gameType === "consolation") return;
         if (g.ownerAKey !== ownerKey && g.ownerBKey !== ownerKey) return;
-
         var iAmA = g.ownerAKey === ownerKey;
         var opponentKey = iAmA ? g.ownerBKey : g.ownerAKey;
         var opponentName = iAmA ? g.ownerBName : g.ownerAName;
         var myScore = iAmA ? g.ownerAScore : g.ownerBScore;
         var oppScore = iAmA ? g.ownerBScore : g.ownerAScore;
-
         if (!byOpponent[opponentKey]) {
-          byOpponent[opponentKey] = {
-            opponentKey: opponentKey,
-            opponentName: opponentName,
-            regularGames: [],
-            playoffGames: [],
-          };
+          byOpponent[opponentKey] = { opponentKey: opponentKey, opponentName: opponentName, regularGames: [], playoffGames: [] };
         }
-
         var gameRecord = { year: g.year, week: g.week, myScore: myScore, oppScore: oppScore };
-
         if (g.gameType === "playoff") {
           byOpponent[opponentKey].playoffGames.push(gameRecord);
           overallPlayoffGames.push(gameRecord);
@@ -628,7 +527,6 @@
         }
       });
     });
-
     var rows = Object.keys(byOpponent)
       .map(function (k) {
         var entry = byOpponent[k];
@@ -636,7 +534,7 @@
           opponentKey: entry.opponentKey,
           opponentName: entry.opponentName,
           regularSummary: summarizeGames(entry.regularGames),
-          playoffSummary: summarizeGames(entry.playoffGames),
+          playoffSummary: summarizeGames(entry.playoffGames)
         };
       })
       .filter(function (row) {
@@ -645,11 +543,10 @@
       .sort(function (a, b) {
         return a.opponentName.localeCompare(b.opponentName);
       });
-
     return {
       overallRegular: summarizeGames(overallRegularGames),
       overallPlayoff: summarizeGames(overallPlayoffGames),
-      byOpponent: rows,
+      byOpponent: rows
     };
   }
 
@@ -673,10 +570,8 @@
 
   function buildGameSidesFromGames(games, split, ownerKeyFilter) {
     var sides = [];
-
     games.forEach(function (g) {
       if (g.gameType !== split) return;
-
       if (!ownerKeyFilter || g.ownerAKey === ownerKeyFilter) {
         sides.push({
           ownerKey: g.ownerAKey,
@@ -688,7 +583,7 @@
           oppScore: g.ownerBScore,
           year: g.year,
           week: g.week,
-          source: g.source,
+          source: g.source
         });
       }
       if (!ownerKeyFilter || g.ownerBKey === ownerKeyFilter) {
@@ -702,11 +597,10 @@
           oppScore: g.ownerAScore,
           year: g.year,
           week: g.week,
-          source: g.source,
+          source: g.source
         });
       }
     });
-
     return sides;
   }
 
@@ -730,7 +624,7 @@
       margin: Math.round(Math.abs(side.myScore - side.oppScore) * 100) / 100,
       year: side.year,
       week: side.week,
-      source: side.source,
+      source: side.source
     };
   }
 
@@ -742,29 +636,25 @@
         largestMarginVictory: null,
         smallestMarginVictory: null,
         largestMarginDefeat: null,
-        smallestMarginDefeat: null,
+        smallestMarginDefeat: null
       };
     }
-
     var sorted = sides.slice().sort(function (a, b) {
       if (a.year !== b.year) return a.year - b.year;
       return (a.week || 0) - (b.week || 0);
     });
-
     var wins = sorted.filter(function (s) {
       return s.myScore > s.oppScore;
     });
     var losses = sorted.filter(function (s) {
       return s.myScore < s.oppScore;
     });
-
     function best(list, compareFn) {
       if (list.length === 0) return null;
       return list.reduce(function (a, b) {
         return compareFn(b, a) > 0 ? b : a;
       });
     }
-
     var mostPoints = best(sorted, function (a, b) {
       return a.myScore - b.myScore;
     });
@@ -783,14 +673,13 @@
     var smallestMarginDefeat = best(losses, function (a, b) {
       return b.oppScore - b.myScore - (a.oppScore - a.myScore);
     });
-
     return {
       mostPoints: toRecordEntry(mostPoints),
       leastPoints: toRecordEntry(leastPoints),
       largestMarginVictory: toRecordEntry(largestMarginVictory),
       smallestMarginVictory: toRecordEntry(smallestMarginVictory),
       largestMarginDefeat: toRecordEntry(largestMarginDefeat),
-      smallestMarginDefeat: toRecordEntry(smallestMarginDefeat),
+      smallestMarginDefeat: toRecordEntry(smallestMarginDefeat)
     };
   }
 
@@ -840,6 +729,6 @@
     buildMemberRecords: buildMemberRecords,
     buildSeasonMasterRecords: buildSeasonMasterRecords,
     buildSeasonMemberRecords: buildSeasonMemberRecords,
-    getAllOwnerNames: getAllOwnerNames,
+    getAllOwnerNames: getAllOwnerNames
   };
 })();
