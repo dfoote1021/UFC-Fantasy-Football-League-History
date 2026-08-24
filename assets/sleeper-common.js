@@ -744,7 +744,7 @@
             slot1Score: byeWeekNumber
               ? findScore(byeWeekNumber, rosterId)
               : null,
-            slot2: null,
+            slot2: {   rosterId: null,   teamName: "BYE",   seed: null,   resolved: false, },,
             slot2Score: null,
             winnerRosterId: rosterId,
             loserRosterId: null,
