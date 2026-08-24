@@ -8,18 +8,26 @@
  * Also drives the "All-Time" view (career totals + head-to-head +
  * owner-vs-the-field + league records across every season), toggled via
  * the button next to the season dropdown - see showAllTimeView()/
- * hideAllTimeView() near the bottom of this file. Career totals,
- * head-to-head, and vs-field all split regular-season from playoff
- * (active-championship-path-only) results, and exclude consolation/
- * toilet-bowl/placement/post-elimination games from every total - see
- * all-time.js for how that three-way classification is computed
- * per-game. The Records tab shows both a league-wide master leaderboard
- * and per-member personal bests/worsts for six "fun stats", each
- * computed separately for regular season vs playoffs (never blended).
+ * hideAllTimeView() near the bottom of this file.
+ *
+ * The single-season "Records" tab (in #season-tabs, alongside Standings/
+ * Matchups/etc.) shows the same six "fun stat" records - most/least
+ * points in a week, largest/smallest margin of victory/defeat - but
+ * scoped to just the currently-viewed season, with the same Master/
+ * Per-Member and Regular Season/Playoffs toggles as the All-Time
+ * Records tab. It's powered by all-time.js's buildSeasonMasterRecords/
+ * buildSeasonMemberRecords, which reuse the EXACT SAME regular/playoff/
+ * consolation game classification as the All-Time view (both pull from
+ * the same AllTimeStats.loadAllSeasons() cache), so a season's own
+ * records tab can never disagree with what that season contributes to
+ * the all-time leaderboards. Opening this tab triggers a one-time
+ * background load of every season's data (needed to reuse that shared
+ * classification logic), cached in state.allTimeData exactly like the
+ * All-Time view - so opening All-Time afterward doesn't reload it.
  *
  * All point totals/scores throughout this file (standings, matchups,
- * rosters, brackets, and every All-Time view) are displayed with
- * .toFixed(2) to match the league's actual scoring system.
+ * rosters, brackets, and every All-Time/Records view) are displayed
+ * with .toFixed(2) to match the league's actual scoring system.
  *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
@@ -60,6 +68,9 @@
     careerSplit: "combined",
     recordsView: "master",
     recordsSplit: "regular",
+    seasonRecordsView: "master",
+    seasonRecordsSplit: "regular",
+    seasonRecordsLoadPromise: null,
   };
 
   function isEspnYear(season) {
@@ -106,6 +117,10 @@
         btn.classList.add("active");
         var panel = byId("tab-" + btn.dataset.tab);
         if (panel) panel.classList.add("active");
+
+        if (btn.dataset.tab === "records") {
+          openSeasonRecordsTab();
+        }
       });
     });
   }
@@ -204,6 +219,9 @@
     state.sleeperPlayedWeeks = null;
 
     byId("page-title").textContent = season + " Season";
+    byId("season-records-content").hidden = true;
+    byId("season-records-loading").hidden = false;
+    byId("season-records-loading").textContent = "Loading season data…";
 
     if (isEspnYear(season)) {
       return loadEspnSeason(season);
@@ -1342,6 +1360,170 @@
       .replace(/'/g, "&#39;");
   }
 
+  var RECORD_DEFS = [
+    { key: "mostPoints", title: "Most Points in a Week", mode: "score" },
+    { key: "leastPoints", title: "Least Points in a Week", mode: "score" },
+    { key: "largestMarginVictory", title: "Largest Margin of Victory", mode: "margin" },
+    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", mode: "margin" },
+    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", mode: "margin" },
+    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", mode: "margin" },
+  ];
+
+  function renderRecordCard(def, entry) {
+    var card = document.createElement("div");
+    card.className = "record-card";
+
+    if (!entry) {
+      card.classList.add("no-data");
+      card.innerHTML = "<h4>" + escapeHtml(def.title) + "</h4><p>No games in this split yet.</p>";
+      return card;
+    }
+
+    var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
+    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
+    var vsLine = "vs " + escapeHtml(entry.opponentName);
+    var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
+
+    card.innerHTML =
+      "<h4>" + escapeHtml(def.title) + "</h4>" +
+      '<div class="record-value">' + valueText + "</div>" +
+      '<div class="record-holder">' + escapeHtml(entry.ownerName) + "</div>" +
+      '<div class="record-detail">' + scoreLine + " " + vsLine + "</div>" +
+      '<div class="record-detail">' + yearWeek + "</div>";
+
+    return card;
+  }
+
+  /* ============================================================
+   * Single-SEASON Records tab (in #season-tabs). Reuses all-time.js's
+   * buildSeasonMasterRecords/buildSeasonMemberRecords, which pull from
+   * the same cached AllTimeStats.loadAllSeasons() data used by the
+   * All-Time view - so a season's own records can never disagree with
+   * what that season contributes to the all-time leaderboards.
+   * ============================================================ */
+
+  function setupSeasonRecordsControls() {
+    var viewButtons = document.querySelectorAll(".season-records-view-btn");
+    viewButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        viewButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.seasonRecordsView = btn.dataset.view;
+        byId("season-records-member-picker-wrap").hidden = state.seasonRecordsView !== "member";
+        renderSeasonRecords();
+      });
+    });
+
+    var splitButtons = document.querySelectorAll(".season-records-split-btn");
+    splitButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        splitButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.seasonRecordsSplit = btn.dataset.split;
+        renderSeasonRecords();
+      });
+    });
+  }
+
+  /**
+   * Called when the season's "Records" tab is opened. Lazily triggers
+   * a one-time load of every season's cross-referenced game data
+   * (needed to reuse the shared classification logic), then populates
+   * the per-season member dropdown from THIS season's own roster (not
+   * the cross-season owner list, since a season's records page should
+   * only ever list that year's actual participants) and renders.
+   */
+  function openSeasonRecordsTab() {
+    byId("season-records-loading").hidden = false;
+    byId("season-records-content").hidden = true;
+
+    if (!state.seasonRecordsLoadPromise) {
+      state.seasonRecordsLoadPromise = window.AllTimeStats.loadAllSeasons().then(function (allSeasonsData) {
+        state.allTimeData = allSeasonsData;
+        return allSeasonsData;
+      });
+    }
+
+    state.seasonRecordsLoadPromise
+      .then(function () {
+        populateSeasonRecordsMemberSelect();
+        renderSeasonRecords();
+        byId("season-records-loading").hidden = true;
+        byId("season-records-content").hidden = false;
+      })
+      .catch(function (err) {
+        console.error("Failed to load season records data", err);
+        byId("season-records-loading").textContent =
+          "Could not load records data. Details: " + (err && err.message ? err.message : err);
+      });
+  }
+
+  function populateSeasonRecordsMemberSelect() {
+    var select = byId("season-records-member-select");
+    if (!select) return;
+
+    var seen = {};
+    var owners = [];
+    Object.keys(state.rosterMap).forEach(function (rid) {
+      var t = state.rosterMap[rid];
+      var key = String(t.displayName || t.ownerId || rid).trim().toLowerCase();
+      if (!seen[key]) {
+        seen[key] = true;
+        owners.push({ key: key, name: t.displayName || t.teamName });
+      }
+    });
+    owners.sort(function (a, b) {
+      return a.name.localeCompare(b.name);
+    });
+
+    select.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+
+    if (owners.length > 0) select.value = owners[0].key;
+    select.onchange = renderSeasonRecords;
+  }
+
+  function renderSeasonRecords() {
+    var grid = byId("season-records-grid");
+    if (!grid || !state.allTimeData || !state.season) return;
+
+    var records;
+    if (state.seasonRecordsView === "master") {
+      records = window.AllTimeStats.buildSeasonMasterRecords(
+        state.allTimeData,
+        state.season,
+        state.seasonRecordsSplit
+      );
+    } else {
+      var select = byId("season-records-member-select");
+      var ownerKey = select ? select.value : null;
+      if (!ownerKey) {
+        grid.innerHTML = "<p class=\"status-text\">Pick a member to see their personal records.</p>";
+        return;
+      }
+      records = window.AllTimeStats.buildSeasonMemberRecords(
+        state.allTimeData,
+        state.season,
+        state.seasonRecordsSplit,
+        ownerKey
+      );
+    }
+
+    grid.innerHTML = "";
+    RECORD_DEFS.forEach(function (def) {
+      grid.appendChild(renderRecordCard(def, records[def.key]));
+    });
+  }
+
   /* ============================================================
    * All-Time view: career totals + head-to-head + owner-vs-field +
    * league records across every season.
@@ -1735,46 +1917,6 @@
     renderRecords();
   }
 
-  var RECORD_DEFS = [
-    { key: "mostPoints", title: "Most Points in a Week", showOpponent: true, mode: "score" },
-    { key: "leastPoints", title: "Least Points in a Week", showOpponent: true, mode: "score" },
-    { key: "largestMarginVictory", title: "Largest Margin of Victory", showOpponent: true, mode: "margin" },
-    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", showOpponent: true, mode: "margin" },
-    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", showOpponent: true, mode: "margin" },
-    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", showOpponent: true, mode: "margin" },
-  ];
-
-  function renderRecordCard(def, entry) {
-    var card = document.createElement("div");
-    card.className = "record-card";
-
-    if (!entry) {
-      card.classList.add("no-data");
-      card.innerHTML = "<h4>" + escapeHtml(def.title) + "</h4><p>No games in this split yet.</p>";
-      return card;
-    }
-
-    var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
-    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
-    var vsLine = "vs " + escapeHtml(entry.opponentName);
-    var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
-
-    card.innerHTML =
-      "<h4>" + escapeHtml(def.title) + "</h4>" +
-      '<div class="record-value">' + valueText + "</div>" +
-      '<div class="record-holder">' + escapeHtml(entry.ownerName) + "</div>" +
-      '<div class="record-detail">' + scoreLine + " " + vsLine + "</div>" +
-      '<div class="record-detail">' + yearWeek + "</div>";
-
-    return card;
-  }
-
-  /**
-   * Renders the Records tab for the currently selected view
-   * ("master" = league-wide leaderboard, "member" = one owner's
-   * personal bests/worsts) and split ("regular" or "playoff" - never
-   * blended together, per league preference).
-   */
   function renderRecords() {
     var grid = byId("records-grid");
     if (!grid || !state.allTimeData) return;
@@ -1816,6 +1958,7 @@
     setupAllTimeTabs();
     setupCareerToggle();
     setupRecordsControls();
+    setupSeasonRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
