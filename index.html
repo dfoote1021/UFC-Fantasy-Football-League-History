@@ -271,3 +271,35 @@
     </section>
 
     <section id="alltime-records" class="tab-panel">
+      <div class="records-controls">
+        <div class="records-view-toggle">
+          <button class="btn records-view-btn active" data-view="master">League Master Records</button>
+          <button class="btn records-view-btn" data-view="member">Per-Member Records</button>
+        </div>
+        <div class="records-split-toggle">
+          <button class="btn records-split-btn active" data-split="regular">Regular Season</button>
+          <button class="btn records-split-btn" data-split="playoff">Playoffs</button>
+        </div>
+        <span id="records-member-picker-wrap" hidden>
+          <label for="records-member-select">Member:</label>
+          <select id="records-member-select"></select>
+        </span>
+      </div>
+
+      <div id="records-grid" class="records-grid"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>Data provided by the public Sleeper API. This site is read-only and does not modify any league.</p>
+</footer>
+
+<script src="assets/owner-overrides.js"></script>
+<script src="assets/sleeper-common.js"></script>
+<script src="assets/espn-loader.js"></script>
+<script src="assets/espn-draft-loader.js"></script>
+<script src="assets/all-time.js"></script>
+<script src="assets/season.js"></script>
+</body>
+</html>
