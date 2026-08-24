@@ -1,8 +1,10 @@
 /*
  * sleeper-common.js
- *
  * Full replacement file for the UFC Fantasy Football League History site.
- * Includes automatic first-round bye detection for every Sleeper season.
+ *
+ * Includes a safe first-round bye compatibility fix. The existing season.js
+ * renderer expects both bracket slots to be objects, so synthetic bye entries
+ * include a normal slot2 object instead of null.
  */
 
 (function () {
@@ -76,10 +78,10 @@
     return sleeperGet("/state/nfl");
   }
 
-  var playersMapPromise = null;
+  var _playersMapPromise = null;
 
   function getPlayersMap() {
-    if (playersMapPromise) return playersMapPromise;
+    if (_playersMapPromise) return _playersMapPromise;
 
     var cacheKey = "sleeper_players_cache_v1";
     var cacheTimeKey = "sleeper_players_cache_time_v1";
@@ -89,22 +91,22 @@
     if (cachedTime && Date.now() - Number(cachedTime) < oneDayMs) {
       var cached = localStorage.getItem(cacheKey);
       if (cached) {
-        playersMapPromise = Promise.resolve(JSON.parse(cached));
-        return playersMapPromise;
+        _playersMapPromise = Promise.resolve(JSON.parse(cached));
+        return _playersMapPromise;
       }
     }
 
-    playersMapPromise = sleeperGet("/players/nfl").then(function (players) {
+    _playersMapPromise = sleeperGet("/players/nfl").then(function (players) {
       try {
         localStorage.setItem(cacheKey, JSON.stringify(players));
         localStorage.setItem(cacheTimeKey, String(Date.now()));
       } catch (e) {
-        /* Local storage can be full; player data still works in memory. */
+        /* Safe to ignore: player data remains available in memory. */
       }
       return players;
     });
 
-    return playersMapPromise;
+    return _playersMapPromise;
   }
 
   function resolveDisplayName(user) {
@@ -601,15 +603,6 @@
     };
   }
 
-  /*
-   * Builds display-ready playoff data.
-   *
-   * Sleeper does not explicitly identify a first-round bye in its bracket
-   * response. A team receiving a bye is absent from the first round and
-   * first appears in a later round opposite a winner/loser reference.
-   * This function detects those missing first-round teams and injects an
-   * isBye match so every playoff team appears in the opening bracket round.
-   */
   function buildBracketView(
     bracket,
     rosterMap,
@@ -744,7 +737,12 @@
             slot1Score: byeWeekNumber
               ? findScore(byeWeekNumber, rosterId)
               : null,
-            slot2: {   rosterId: null,   teamName: "BYE",   seed: null,   resolved: false, },,
+            slot2: {
+              rosterId: null,
+              teamName: "BYE",
+              seed: null,
+              resolved: false,
+            },
             slot2Score: null,
             winnerRosterId: rosterId,
             loserRosterId: null,
