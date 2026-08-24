@@ -6,25 +6,24 @@
  * auto-refreshes; ESPN years are static historical data loaded from CSV.
  *
  * Also drives the "All-Time" view (career totals + head-to-head +
- * owner-vs-the-field across every season), toggled via the button next
- * to the season dropdown - see showAllTimeView()/hideAllTimeView() near
- * the bottom of this file. All three All-Time sub-views split
- * regular-season from playoff (winners-bracket-only, active-championship-
- * path-only) results, and exclude consolation/toilet-bowl/placement/
- * post-elimination games from every total - see all-time.js for how that
- * three-way classification (regular / playoff / consolation) is computed
- * per-game. Consolation games still show in the head-to-head game log,
- * tagged accordingly, just not counted in any summary.
+ * owner-vs-the-field + league records across every season), toggled via
+ * the button next to the season dropdown - see showAllTimeView()/
+ * hideAllTimeView() near the bottom of this file. Career totals,
+ * head-to-head, and vs-field all split regular-season from playoff
+ * (active-championship-path-only) results, and exclude consolation/
+ * toilet-bowl/placement/post-elimination games from every total - see
+ * all-time.js for how that three-way classification is computed
+ * per-game. The Records tab shows both a league-wide master leaderboard
+ * and per-member personal bests/worsts for six "fun stats", each
+ * computed separately for regular season vs playoffs (never blended).
  *
  * All point totals/scores throughout this file (standings, matchups,
  * rosters, brackets, and every All-Time view) are displayed with
- * .toFixed(2) to match the league's actual scoring system, which uses
- * two decimal places.
+ * .toFixed(2) to match the league's actual scoring system.
  *
  * NOTE: this league never uses week 18 for any Sleeper season - see
  * SleeperAPI.MAX_SLEEPER_WEEK in sleeper-common.js for the hard cutoff
- * applied at the data-fetching layer. This file's week loops (e.g. the
- * transactions dropdown) mirror that same cap.
+ * applied at the data-fetching layer.
  */
 
 (function () {
@@ -59,6 +58,8 @@
     sleeperPlayedWeeks: null,
     allTimeData: null,
     careerSplit: "combined",
+    recordsView: "master",
+    recordsSplit: "regular",
   };
 
   function isEspnYear(season) {
@@ -261,10 +262,6 @@
         state.allWeeksMatchups,
         state.playoffStartWeek
       );
-      // Clamp currentWeek to the latest week that's actually been played
-      // (and never above SleeperAPI.MAX_SLEEPER_WEEK, since this league
-      // never uses week 18+), so the default selection never lands on an
-      // unplayed or out-of-scope week.
       if (state.sleeperPlayedWeeks.length > 0) {
         var latestPlayedWeek = state.sleeperPlayedWeeks[state.sleeperPlayedWeeks.length - 1];
         if (state.currentWeek > latestPlayedWeek) {
@@ -1346,14 +1343,8 @@
   }
 
   /* ============================================================
-   * All-Time view: career totals + head-to-head + owner-vs-field
-   * across every season. Toggled via #alltime-btn / #back-to-season-btn.
-   * Data is loaded once per page session via AllTimeStats.loadAllSeasons()
-   * and cached in state.allTimeData. All three sub-views split
-   * regular-season results from playoff (active-championship-path-only)
-   * results, and consolation/toilet-bowl/placement/post-elimination
-   * games are excluded from every total - see all-time.js for how that
-   * three-way classification is computed per-game.
+   * All-Time view: career totals + head-to-head + owner-vs-field +
+   * league records across every season.
    * ============================================================ */
 
   function showAllTimeView() {
@@ -1409,11 +1400,39 @@
     });
   }
 
+  function setupRecordsControls() {
+    var viewButtons = document.querySelectorAll(".records-view-btn");
+    viewButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        viewButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.recordsView = btn.dataset.view;
+        byId("records-member-picker-wrap").hidden = state.recordsView !== "member";
+        renderRecords();
+      });
+    });
+
+    var splitButtons = document.querySelectorAll(".records-split-btn");
+    splitButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        splitButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.recordsSplit = btn.dataset.split;
+        renderRecords();
+      });
+    });
+  }
+
   async function loadAllTimeData() {
     if (state.allTimeData) {
       renderCareerTotals(state.allTimeData, state.careerSplit);
       populateH2hSelectors(state.allTimeData);
       populateVsFieldSelector(state.allTimeData);
+      populateRecordsMemberSelector(state.allTimeData);
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
       return;
@@ -1428,6 +1447,7 @@
       renderCareerTotals(allSeasonsData, state.careerSplit);
       populateH2hSelectors(allSeasonsData);
       populateVsFieldSelector(allSeasonsData);
+      populateRecordsMemberSelector(allSeasonsData);
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
     } catch (err) {
@@ -1437,16 +1457,6 @@
     }
   }
 
-  /**
-   * Renders the career totals table for the given split ("combined",
-   * "regular", or "playoff"). "Playoff" here means active-championship-
-   * path winners-bracket games only - consolation/placement/post-
-   * elimination games are excluded from all three splits (see
-   * all-time.js accumulateGameRecords). Sort order (championships first
-   * for combined, then win% within that split, then wins) is recomputed
-   * per split so e.g. switching to "Playoffs Only" ranks owners by
-   * playoff record rather than career record.
-   */
   function renderCareerTotals(allSeasonsData, split) {
     var tbody = document.querySelector("#career-totals-table tbody");
     if (!tbody) return;
@@ -1468,6 +1478,8 @@
 
     tbody.innerHTML = "";
 
+    var anyIncomplete = false;
+
     sorted.forEach(function (owner, idx) {
       var rec = owner[split] || owner.combined;
       var tr = document.createElement("tr");
@@ -1476,6 +1488,9 @@
       }
       var champHtml = owner.championships > 0 ? "🏆 x" + owner.championships : "-";
       var runnerUpHtml = owner.runnerUps > 0 ? "🥈 x" + owner.runnerUps : "-";
+      var txnHtml = owner.totalTransactions + (owner.hasIncompleteTransactionData ? "*" : "");
+      if (owner.hasIncompleteTransactionData) anyIncomplete = true;
+
       tr.innerHTML =
         "<td>" + (idx + 1) + "</td>" +
         "<td>" + escapeHtml(owner.ownerName) + "</td>" +
@@ -1487,9 +1502,13 @@
         "<td>" + rec.pointsFor.toFixed(2) + "</td>" +
         "<td>" + rec.pointsAgainst.toFixed(2) + "</td>" +
         "<td>" + champHtml + "</td>" +
-        "<td>" + runnerUpHtml + "</td>";
+        "<td>" + runnerUpHtml + "</td>" +
+        "<td>" + txnHtml + "</td>";
       tbody.appendChild(tr);
     });
+
+    var noteEl = byId("career-txn-note");
+    if (noteEl) noteEl.hidden = !anyIncomplete;
   }
 
   function populateH2hSelectors(allSeasonsData) {
@@ -1540,13 +1559,6 @@
       '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
   }
 
-  /**
-   * Renders the head-to-head view: three summary blocks (combined =
-   * regular + playoff only, regular-only, playoff-only) plus the full
-   * game log. Consolation games are included in the game log (tagged
-   * "Consolation") for transparency but never factored into any of
-   * the three summary blocks above it.
-   */
   function renderHeadToHead() {
     var selectA = byId("h2h-owner-a");
     var selectB = byId("h2h-owner-b");
@@ -1655,15 +1667,6 @@
       '</div><div class="h2h-stat-label">Avg PA</div></div>';
   }
 
-  /**
-   * Renders the "Vs. The Field" view for the currently selected owner:
-   * their overall regular-season and playoff record combined across
-   * every opponent, plus a table with one row per opponent showing
-   * that opponent-specific regular-season and playoff record. Rows
-   * where the owner has zero games of either type against a given
-   * opponent still show 0s in that split's columns rather than being
-   * hidden, so the table always lists everyone they've ever played.
-   */
   function renderOwnerVsField() {
     var select = byId("vsfield-owner-select");
     var tbody = document.querySelector("#vsfield-table tbody");
@@ -1712,6 +1715,89 @@
     });
   }
 
+  function populateRecordsMemberSelector(allSeasonsData) {
+    var select = byId("records-member-select");
+    if (!select) return;
+
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    select.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+
+    if (owners.length > 0) select.value = owners[0].key;
+
+    select.onchange = renderRecords;
+
+    renderRecords();
+  }
+
+  var RECORD_DEFS = [
+    { key: "mostPoints", title: "Most Points in a Week", showOpponent: true, mode: "score" },
+    { key: "leastPoints", title: "Least Points in a Week", showOpponent: true, mode: "score" },
+    { key: "largestMarginVictory", title: "Largest Margin of Victory", showOpponent: true, mode: "margin" },
+    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", showOpponent: true, mode: "margin" },
+    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", showOpponent: true, mode: "margin" },
+    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", showOpponent: true, mode: "margin" },
+  ];
+
+  function renderRecordCard(def, entry) {
+    var card = document.createElement("div");
+    card.className = "record-card";
+
+    if (!entry) {
+      card.classList.add("no-data");
+      card.innerHTML = "<h4>" + escapeHtml(def.title) + "</h4><p>No games in this split yet.</p>";
+      return card;
+    }
+
+    var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
+    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
+    var vsLine = "vs " + escapeHtml(entry.opponentName);
+    var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
+
+    card.innerHTML =
+      "<h4>" + escapeHtml(def.title) + "</h4>" +
+      '<div class="record-value">' + valueText + "</div>" +
+      '<div class="record-holder">' + escapeHtml(entry.ownerName) + "</div>" +
+      '<div class="record-detail">' + scoreLine + " " + vsLine + "</div>" +
+      '<div class="record-detail">' + yearWeek + "</div>";
+
+    return card;
+  }
+
+  /**
+   * Renders the Records tab for the currently selected view
+   * ("master" = league-wide leaderboard, "member" = one owner's
+   * personal bests/worsts) and split ("regular" or "playoff" - never
+   * blended together, per league preference).
+   */
+  function renderRecords() {
+    var grid = byId("records-grid");
+    if (!grid || !state.allTimeData) return;
+
+    var records;
+    if (state.recordsView === "master") {
+      records = window.AllTimeStats.buildMasterRecords(state.allTimeData, state.recordsSplit);
+    } else {
+      var select = byId("records-member-select");
+      var ownerKey = select ? select.value : null;
+      if (!ownerKey) {
+        grid.innerHTML = "<p class=\"status-text\">Pick a member to see their personal records.</p>";
+        return;
+      }
+      records = window.AllTimeStats.buildMemberRecords(state.allTimeData, state.recordsSplit, ownerKey);
+    }
+
+    grid.innerHTML = "";
+    RECORD_DEFS.forEach(function (def) {
+      grid.appendChild(renderRecordCard(def, records[def.key]));
+    });
+  }
+
   async function init() {
     if (!window.SleeperAPI) {
       showFatalError(
@@ -1729,6 +1815,7 @@
     setupAllTimeButtons();
     setupAllTimeTabs();
     setupCareerToggle();
+    setupRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
