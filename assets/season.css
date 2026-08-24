@@ -454,7 +454,7 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 #vsfield-table tr.vsfield-winning-record td:nth-child(2) { color: var(--win); }
 #vsfield-table tr.vsfield-losing-record td:nth-child(2) { color: var(--live); }
 
-/* ---- Records ---- */
+/* ---- Records (shared by All-Time and per-season Records tabs) ---- */
 
 .records-controls {
   display: flex;
