@@ -72,9 +72,9 @@ year,team,division,division_standing,owner,wins,losses,ties,points_for,points_ag
 2017,The J.O.B. Squad,West,5,Tom,4,9,0,1612.1,1734.9,12,FALSE,28,FALSE,FALSE
 2017,Team Foote Longs,West,6,Wes,4,9,0,1488,1631.4,11,FALSE,14,FALSE,FALSE
 2018,Team To Be Named Later,East,1,James,11,2,0,1863.5,1658,1,TRUE,47,TRUE,FALSE
-2018,Reverend Payne,East,2,Rob,10,3,0,1790.8,1596.4,3,TRUE,12,FALSE,TRUE
+2018,Reverend Payne,East,2,Rob,10,3,0,1790.8,1596.4,3,TRUE,12,FALSE,FALSE
 2018,Gotham City Rogues,East,3,Dan,9,4,0,1892.4,1566.6,4,TRUE,14,FALSE,FALSE
-2018,The Comeback of Johnny Man-Zeer,West,1,Gavin,8,5,0,1918.4,1824.2,2,TRUE,28,FALSE,FALSE
+2018,The Comeback of Johnny Man-Zeer,West,1,Gavin,8,5,0,1918.4,1824.2,2,TRUE,28,FALSE,TRUE
 2018,Spock's 1995 Toyota Camry,East,4,TSizz,8,5,0,1904.7,1785.3,5,TRUE,12,FALSE,FALSE
 2018,Trust The Process,West,2,Tom,7,6,0,1808.4,1718.9,6,TRUE,31,FALSE,FALSE
 2018,SanchezIs MyKeeper,West,3,Spear,6,6,1,1817.2,1788.5,9,FALSE,29,FALSE,FALSE
