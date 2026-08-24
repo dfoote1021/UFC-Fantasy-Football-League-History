@@ -33,6 +33,7 @@
   <button class="tab-btn" data-tab="rosters">Weekly Rosters</button>
   <button class="tab-btn" data-tab="draft">Draft</button>
   <button class="tab-btn" data-tab="transactions">Transactions</button>
+  <button class="tab-btn" data-tab="records">Records</button>
   <button class="tab-btn" data-tab="commish">Commissioner</button>
 </nav>
 
@@ -138,6 +139,30 @@
       </span>
     </div>
     <ul id="transactions-list" class="transactions-list"></ul>
+  </section>
+
+  <section id="tab-records" class="tab-panel">
+    <h2>Season Records</h2>
+    <div id="season-records-loading" class="status-text">Loading season data…</div>
+
+    <div id="season-records-content" hidden>
+      <div class="records-controls">
+        <div class="records-view-toggle">
+          <button class="btn season-records-view-btn active" data-view="master">Season Master Records</button>
+          <button class="btn season-records-view-btn" data-view="member">Per-Member Records</button>
+        </div>
+        <div class="records-split-toggle">
+          <button class="btn season-records-split-btn active" data-split="regular">Regular Season</button>
+          <button class="btn season-records-split-btn" data-split="playoff">Playoffs</button>
+        </div>
+        <span id="season-records-member-picker-wrap" hidden>
+          <label for="season-records-member-select">Member:</label>
+          <select id="season-records-member-select"></select>
+        </span>
+      </div>
+
+      <div id="season-records-grid" class="records-grid"></div>
+    </div>
   </section>
 
   <section id="tab-commish" class="tab-panel">
@@ -246,35 +271,4 @@
     </section>
 
     <section id="alltime-records" class="tab-panel">
-      <div class="records-controls">
-        <div class="records-view-toggle">
-          <button class="btn records-view-btn active" data-view="master">League Master Records</button>
-          <button class="btn records-view-btn" data-view="member">Per-Member Records</button>
-        </div>
-        <div class="records-split-toggle">
-          <button class="btn records-split-btn active" data-split="regular">Regular Season</button>
-          <button class="btn records-split-btn" data-split="playoff">Playoffs</button>
-        </div>
-        <span id="records-member-picker-wrap" hidden>
-          <label for="records-member-select">Member:</label>
-          <select id="records-member-select"></select>
-        </span>
-      </div>
-
-      <div id="records-grid" class="records-grid"></div>
-    </section>
-  </div>
-</main>
-
-<footer class="site-footer">
-  <p>Data provided by the public Sleeper API. This site is read-only and does not modify any league.</p>
-</footer>
-
-<script src="assets/owner-overrides.js"></script>
-<script src="assets/sleeper-common.js"></script>
-<script src="assets/espn-loader.js"></script>
-<script src="assets/espn-draft-loader.js"></script>
-<script src="assets/all-time.js"></script>
-<script src="assets/season.js"></script>
-</body>
-</html>
+    
