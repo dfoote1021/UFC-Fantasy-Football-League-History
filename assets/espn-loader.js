@@ -30,13 +30,13 @@
  * espn-standings.csv via the owner match.
  *
  * Matchups CSV columns: year,week,team,team_owner,team_score,opponent,
- *   opponent_owner,opponent_score,result,is_playoff,bracket_type,
- *   playoff_round,team_seed,opponent_seed
+ * opponent_owner,opponent_score,result,is_playoff,bracket_type,
+ * playoff_round,team_seed,opponent_seed
  *
- *   `result` is informational only (WIN/LOSS, HOME/AWAY, etc. - wording
- *   varies by sheet). The actual winner/loser/tie is always computed by
- *   comparing team_score vs opponent_score directly. BYE is detected when
- *   `opponent` is literally the string "BYE".
+ * `result` is informational only (WIN/LOSS, HOME/AWAY, etc. - wording
+ * varies by sheet). The actual winner/loser/tie is always computed by
+ * comparing team_score vs opponent_score directly. BYE is detected when
+ * `opponent` is literally the string "BYE".
  *
  * Standings CSV columns (case-insensitive; common header aliases such as
  * "season" for "year" and "final_standing" for "final_rank" are accepted
@@ -45,10 +45,17 @@
  *   losses, ties, points_for, points_against, final_rank (or
  *   final_standing), made_playoffs, total_moves, champion, runner_up
  *
- *   total_moves is optional - a plain integer count of that team's total
- *   adds/drops/trades for the season. Leave blank for any team/year
- *   without that data; it will show as unavailable on the site rather
- *   than a fabricated zero.
+ * total_moves is optional - a plain integer count of that team's total
+ * adds/drops/trades for the season. Leave blank for any team/year
+ * without that data; it will show as unavailable on the site rather
+ * than a fabricated zero.
+ *
+ * BRACKET SLOT OWNER NAMES: buildBracketView() attaches an `ownerName`
+ * to every bracket slot (using the same team/owner map every other tab
+ * already relies on) so ESPN playoff and consolation bracket boxes show
+ * "Team Name (Owner)" exactly like Sleeper years do, instead of just the
+ * bare team name. No new CSV columns are required for this - it's built
+ * entirely from team_owner / opponent_owner, which already existed.
  *
  * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
@@ -106,10 +113,12 @@
         }
       }
     }
+
     if (field.length > 0 || row.length > 0) {
       row.push(field);
       rows.push(row);
     }
+
     return rows.filter(function (r) {
       return r.length > 1 || (r.length === 1 && r[0] !== "");
     });
@@ -143,6 +152,7 @@
       var idx = lowerKeys.indexOf(lowerCandidate);
       if (idx !== -1) return row[keys[idx]];
     }
+
     return "";
   }
 
@@ -381,6 +391,7 @@
           else if (r.result === "L") teamSide.losses += 1;
           else if (r.result === "T") teamSide.ties += 1;
         }
+
         if (oppSide && r.opponent !== "BYE") {
           if (r.opponentScore !== null) oppSide.fpts += r.opponentScore;
           if (r.teamScore !== null) oppSide.fptsAgainst += r.teamScore;
@@ -643,6 +654,13 @@
     });
   }
 
+  /**
+   * Builds display-ready playoff/consolation bracket rounds for an ESPN
+   * season. Each bracket slot includes `ownerName` (looked up from the
+   * same team/owner map every other tab already uses) so ESPN bracket
+   * boxes show "Team Name (Owner)" just like Sleeper years do, instead
+   * of just the bare team name. No new CSV columns required.
+   */
   function buildBracketView(rows, bracketType) {
     var playoffRows = rows.filter(function (r) {
       return r.isPlayoff && r.bracketType === bracketType;
@@ -650,6 +668,7 @@
 
     if (playoffRows.length === 0) return [];
 
+    var teamOwnerMap = getTeamsForSeason(rows);
     var roundsMap = {};
 
     playoffRows.forEach(function (r) {
@@ -659,14 +678,16 @@
       var slot1 = {
         rosterId: r.team,
         teamName: r.team,
+        ownerName: teamOwnerMap[r.team] || null,
         seed: r.teamSeed,
         resolved: true,
       };
       var slot2 = isBye
-        ? { rosterId: null, teamName: "BYE", seed: null, resolved: false }
+        ? { rosterId: null, teamName: "BYE", ownerName: null, seed: null, resolved: false }
         : {
             rosterId: r.opponent,
             teamName: r.opponent,
+            ownerName: teamOwnerMap[r.opponent] || null,
             seed: r.opponentSeed,
             resolved: true,
           };
