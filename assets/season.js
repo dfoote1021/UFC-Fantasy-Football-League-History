@@ -15,7 +15,7 @@
     if (el) el.textContent = text;
   }
 
-  /** "TeamName (Owner)" - the shared convention used everywhere a team name is shown, so owners are always easy to spot. Falls back to just the team name if no distinct owner name is available. */
+  /** "TeamName (Owner)" - shared convention used everywhere a team name is shown. */
   function teamWithOwner(teamName, ownerName) {
     if (ownerName && ownerName !== teamName) {
       return teamName + " (" + ownerName + ")";
@@ -52,7 +52,10 @@
     recordsSplit: "regular",
     seasonRecordsView: "master",
     seasonRecordsSplit: "regular",
-    seasonRecordsLoadPromise: null
+    seasonRecordsLoadPromise: null,
+    draftBoardData: null,
+    draftTeamFilter: "",
+    allTimeDraftOwnerFilter: ""
   };
 
   function isEspnYear(season) {
@@ -193,6 +196,8 @@
     state.espnDraftData = null;
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
+    state.draftBoardData = null;
+    state.draftTeamFilter = "";
     setText("page-title", season + " Season");
     setHidden("season-records-content", true);
     setHidden("season-records-loading", false);
@@ -475,6 +480,77 @@
     });
   }
 
+  /** Reads position/NFL team defensively across a few possible field names on a draft pick object. */
+  function pickPosition(pick) {
+    return pick.position || pick.pos || pick.playerPosition || null;
+  }
+  function pickNflTeam(pick) {
+    return pick.nflTeam || pick.playerTeam || pick.proTeam || pick.team || null;
+  }
+
+  function buildDraftBreakdownLocal(picks) {
+    var byPosition = {};
+    var byNflTeam = {};
+    picks.forEach(function (p) {
+      var pos = pickPosition(p);
+      var nfl = pickNflTeam(p);
+      if (pos) byPosition[pos] = (byPosition[pos] || 0) + 1;
+      if (nfl) byNflTeam[nfl] = (byNflTeam[nfl] || 0) + 1;
+    });
+    function toSortedList(map) {
+      return Object.keys(map)
+        .map(function (k) {
+          return { key: k, count: map[k] };
+        })
+        .sort(function (a, b) {
+          return b.count - a.count;
+        });
+    }
+    return {
+      byPosition: toSortedList(byPosition),
+      byNflTeam: toSortedList(byNflTeam),
+      totalPicks: picks.length,
+      picksWithPosition: picks.filter(function (p) {
+        return !!pickPosition(p);
+      }).length,
+      picksWithNflTeam: picks.filter(function (p) {
+        return !!pickNflTeam(p);
+      }).length
+    };
+  }
+
+  function renderBreakdownHtml(containerId, breakdown) {
+    var container = byId(containerId);
+    if (!container) return;
+    var posRows = breakdown.byPosition
+      .map(function (r) {
+        return '<div class="draft-breakdown-row"><span>' + escapeHtml(r.key) + "</span><span>" + r.count + "</span></div>";
+      })
+      .join("");
+    var teamRows = breakdown.byNflTeam
+      .map(function (r) {
+        return '<div class="draft-breakdown-row"><span>' + escapeHtml(r.key) + "</span><span>" + r.count + "</span></div>";
+      })
+      .join("");
+    var note = "";
+    if (breakdown.totalPicks > 0 && breakdown.picksWithPosition < breakdown.totalPicks) {
+      note =
+        '<div class="draft-breakdown-note">' +
+        (breakdown.totalPicks - breakdown.picksWithPosition) +
+        " of " +
+        breakdown.totalPicks +
+        " picks are missing position/team data and are excluded from these counts.</div>";
+    }
+    container.innerHTML =
+      '<div class="draft-breakdown-card"><h4>By Position</h4>' +
+      (posRows || '<p class="status-text">No position data available.</p>') +
+      "</div>" +
+      '<div class="draft-breakdown-card"><h4>By NFL Team</h4>' +
+      (teamRows || '<p class="status-text">No NFL team data available.</p>') +
+      "</div>" +
+      note;
+  }
+
   async function renderDraftEspn(season) {
     var board = byId("draft-board");
     if (!board) return;
@@ -486,35 +562,54 @@
     try {
       var draftData = await window.EspnDraftLoader.loadDraft(season);
       state.espnDraftData = draftData;
-      if (!draftData.picks || draftData.picks.length === 0) {
-        board.innerHTML = "<p>No draft data found for " + season + ".</p>";
-        return;
-      }
-      board.innerHTML = "";
-      draftData.picks.forEach(function (pick) {
-        var div = document.createElement("div");
-        div.className = "draft-pick";
-        var teamLabel = pick.owner ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")" : escapeHtml(pick.team);
-        var keeperTag = pick.isKeeper ? '<div class="draft-owner" style="color:#ffd25c;">KEEPER</div>' : "";
-        div.innerHTML =
-          '<div class="pick-num">Pick ' +
-          pick.overallPick +
-          " (R" +
-          pick.round +
-          "." +
-          pick.roundPick +
-          ")</div><div>" +
-          escapeHtml(pick.playerName) +
-          '</div><div class="draft-owner">' +
-          teamLabel +
-          "</div>" +
-          keeperTag;
-        board.appendChild(div);
+      state.draftBoardData = (draftData.picks || []).map(function (p) {
+        return {
+          playerName: p.playerName,
+          position: pickPosition(p),
+          nflTeam: pickNflTeam(p),
+          overallPick: p.overallPick,
+          round: p.round,
+          roundPick: p.roundPick,
+          team: p.team,
+          owner: p.owner,
+          isKeeper: p.isKeeper
+        };
       });
+      populateDraftTeamFilterEspn();
+      renderDraftBoardFiltered();
     } catch (e) {
       console.error(e);
       board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
     }
+  }
+
+  function populateDraftTeamFilterEspn() {
+    var select = byId("draft-team-filter");
+    if (!select) return;
+    var seen = {};
+    var options = [];
+    (state.draftBoardData || []).forEach(function (p) {
+      var key = p.owner || p.team;
+      if (key && !seen[key]) {
+        seen[key] = true;
+        options.push({ key: key, label: teamWithOwner(p.team, p.owner) });
+      }
+    });
+    options.sort(function (a, b) {
+      return a.label.localeCompare(b.label);
+    });
+    select.innerHTML = '<option value="">All Teams</option>';
+    options.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.label;
+      select.appendChild(opt);
+    });
+    select.value = state.draftTeamFilter || "";
+    select.onchange = function () {
+      state.draftTeamFilter = select.value;
+      renderDraftBoardFiltered();
+    };
   }
 
   function renderTransactionsUnavailable() {
@@ -1133,32 +1228,116 @@
       var draft = await SleeperAPI.getDraft(state.leagueId);
       if (!draft) {
         board.innerHTML = "<p>No draft found for this season.</p>";
+        state.draftBoardData = [];
+        renderBreakdownHtml("draft-breakdown", buildDraftBreakdownLocal([]));
         return;
       }
       var picks = await SleeperAPI.getDraftPicks(draft.draft_id);
       var boardData = SleeperAPI.buildDraftBoard(picks, state.rosterMap);
-      board.innerHTML = "";
-      boardData.forEach(function (pick) {
-        var div = document.createElement("div");
-        div.className = "draft-pick";
-        var teamLabel =
-          pick.ownerName && pick.ownerName !== pick.teamName
-            ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
-            : escapeHtml(pick.teamName);
-        div.innerHTML =
-          '<div class="pick-num">Pick ' +
-          pick.pickNo +
-          " (R" +
-          pick.round +
-          ")</div><div>" +
-          escapeHtml(pick.playerName) +
-          '</div><div class="draft-owner">' +
-          teamLabel +
-          "</div>";
-        board.appendChild(div);
+      state.draftBoardData = boardData.map(function (p) {
+        return {
+          playerName: p.playerName,
+          position: pickPosition(p),
+          nflTeam: pickNflTeam(p),
+          pickNo: p.pickNo,
+          round: p.round,
+          teamName: p.teamName,
+          ownerName: p.ownerName
+        };
       });
+      populateDraftTeamFilterSleeper();
+      renderDraftBoardFiltered();
     } catch (e) {
       board.innerHTML = "<p>Draft data unavailable.</p>";
+    }
+  }
+
+  function populateDraftTeamFilterSleeper() {
+    var select = byId("draft-team-filter");
+    if (!select) return;
+    var seen = {};
+    var options = [];
+    (state.draftBoardData || []).forEach(function (p) {
+      var key = p.ownerName || p.teamName;
+      if (key && !seen[key]) {
+        seen[key] = true;
+        options.push({ key: key, label: teamWithOwner(p.teamName, p.ownerName) });
+      }
+    });
+    options.sort(function (a, b) {
+      return a.label.localeCompare(b.label);
+    });
+    select.innerHTML = '<option value="">All Teams</option>';
+    options.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.label;
+      select.appendChild(opt);
+    });
+    select.value = state.draftTeamFilter || "";
+    select.onchange = function () {
+      state.draftTeamFilter = select.value;
+      renderDraftBoardFiltered();
+    };
+  }
+
+  /**
+   * Renders the per-season draft board + breakdown for whichever
+   * owner/team filter is currently selected. Works for both Sleeper
+   * (ownerName/teamName) and ESPN (owner/team) pick shapes, which is
+   * why the owner/team lookups below check both sets of field names.
+   */
+  function renderDraftBoardFiltered() {
+    var board = byId("draft-board");
+    if (!board || !state.draftBoardData) return;
+    var filterKey = state.draftTeamFilter;
+    var filtered = state.draftBoardData.filter(function (p) {
+      if (!filterKey) return true;
+      var key = p.ownerName || p.owner || p.teamName || p.team;
+      return key === filterKey;
+    });
+
+    renderBreakdownHtml("draft-breakdown", buildDraftBreakdownLocal(filtered));
+
+    if (filtered.length === 0) {
+      board.innerHTML = "<p>No picks match this filter.</p>";
+      return;
+    }
+
+    board.innerHTML = "";
+    filtered.forEach(function (pick) {
+      var div = document.createElement("div");
+      div.className = "draft-pick";
+      var ownerName = pick.ownerName || pick.owner;
+      var teamName = pick.teamName || pick.team;
+      var teamLabel = teamWithOwner(teamName, ownerName);
+      var pickNumLabel = pick.pickNo !== undefined ? "Pick " + pick.pickNo + " (R" + pick.round + ")" : "Pick " + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")";
+      var metaParts = [];
+      if (pick.position) metaParts.push(pick.position);
+      if (pick.nflTeam) metaParts.push(pick.nflTeam);
+      var metaHtml = metaParts.length ? '<div class="draft-meta">' + escapeHtml(metaParts.join(" · ")) + "</div>" : "";
+      var keeperTag = pick.isKeeper ? '<div class="draft-owner" style="color:#ffd25c;">KEEPER</div>' : "";
+      div.innerHTML =
+        '<div class="pick-num">' +
+        pickNumLabel +
+        "</div><div>" +
+        escapeHtml(pick.playerName) +
+        "</div>" +
+        metaHtml +
+        '<div class="draft-owner">' +
+        escapeHtml(teamLabel) +
+        "</div>" +
+        keeperTag;
+      board.appendChild(div);
+    });
+  }
+
+  function renderTransactionsUnavailable() {
+    var list = byId("transactions-list");
+    if (list) {
+      list.innerHTML =
+        "<li>Detailed per-move transaction history is not available for ESPN seasons. " +
+        "Total transaction counts, if available, show on the Teams tab for each team.</li>";
     }
   }
 
@@ -1532,6 +1711,15 @@
     });
   }
 
+  function setupAllTimeDraftFilter() {
+    var select = byId("alltime-draft-owner-filter");
+    if (!select) return;
+    select.addEventListener("change", function () {
+      state.allTimeDraftOwnerFilter = select.value;
+      renderAllTimeDraft();
+    });
+  }
+
   async function loadAllTimeData() {
     if (!window.AllTimeStats) {
       setText("alltime-loading", "All-time stats module (assets/all-time.js) did not load.");
@@ -1542,6 +1730,7 @@
       populateH2hSelectors(state.allTimeData);
       populateVsFieldSelector(state.allTimeData);
       populateRecordsMemberSelector(state.allTimeData);
+      populateAllTimeDraftFilter(state.allTimeData);
       setHidden("alltime-loading", true);
       setHidden("alltime-content", false);
       return;
@@ -1555,12 +1744,66 @@
       populateH2hSelectors(allSeasonsData);
       populateVsFieldSelector(allSeasonsData);
       populateRecordsMemberSelector(allSeasonsData);
+      populateAllTimeDraftFilter(allSeasonsData);
       setHidden("alltime-loading", true);
       setHidden("alltime-content", false);
     } catch (err) {
       console.error("Failed to load all-time data", err);
       setText("alltime-loading", "Could not load all-time data. Details: " + (err && err.message ? err.message : err));
     }
+  }
+
+  function populateAllTimeDraftFilter(allSeasonsData) {
+    var select = byId("alltime-draft-owner-filter");
+    if (!select) return;
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    select.innerHTML = '<option value="">All Owners</option>';
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+    select.value = state.allTimeDraftOwnerFilter || "";
+    renderAllTimeDraft();
+  }
+
+  function renderAllTimeDraft() {
+    var tbody = document.querySelector("#alltime-draft-table tbody");
+    if (!tbody || !state.allTimeData) return;
+    var picks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, state.allTimeDraftOwnerFilter || null);
+    var breakdown = window.AllTimeStats.buildDraftBreakdown(picks);
+    renderBreakdownHtml("alltime-draft-breakdown", breakdown);
+
+    tbody.innerHTML = "";
+    if (picks.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7">No draft picks found for this filter.</td></tr>';
+      return;
+    }
+    picks.forEach(function (p) {
+      var tr = document.createElement("tr");
+      var draftedByLabel = teamWithOwner(p.teamName, p.ownerName);
+      tr.innerHTML =
+        "<td>" +
+        p.year +
+        " (" +
+        p.source.toUpperCase() +
+        ")</td><td>" +
+        (p.pickNo !== undefined && p.pickNo !== null ? p.pickNo : "-") +
+        "</td><td>" +
+        (p.round !== undefined && p.round !== null ? p.round : "-") +
+        "</td><td>" +
+        escapeHtml(p.playerName) +
+        "</td><td>" +
+        escapeHtml(p.position || "-") +
+        "</td><td>" +
+        escapeHtml(p.nflTeam || "-") +
+        "</td><td>" +
+        escapeHtml(draftedByLabel) +
+        (p.isKeeper ? " (Keeper)" : "") +
+        "</td>";
+      tbody.appendChild(tr);
+    });
   }
 
   function renderCareerTotals(allSeasonsData, split) {
@@ -1886,6 +2129,7 @@
     setupCareerToggle();
     setupRecordsControls();
     setupSeasonRecordsControls();
+    setupAllTimeDraftFilter();
     var urlSeason = getSeasonFromURL();
     var defaultSeason = urlSeason && (SleeperAPI.SLEEPER_SEASONS[urlSeason] || isEspnYear(urlSeason)) ? urlSeason : SleeperAPI.CURRENT_LIVE_SEASON;
     var seasonSelect = byId("season-select");
