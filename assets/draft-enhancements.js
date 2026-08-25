@@ -3,7 +3,7 @@
  *
  * Adds two presentation/data enhancements without modifying season.js:
  * 1. Gold KEEPER labels to Sleeper draft picks listed in keeper-overrides.js.
- * 2. NFL team-color badges beside draft-player metadata and team-colored
+ * 2. NFL team-color badges beside draft-player metadata and two-color
  *    cards in the "By NFL Team" draft breakdown.
  *
  * Required scripts, in this order, immediately before season.js in index.html:
@@ -39,7 +39,7 @@
     if (window.NflTeamColors && typeof window.NflTeamColors.get === "function") {
       return window.NflTeamColors.get(team);
     }
-    return { primary: "#48505c", contrast: "#ffffff" };
+    return { primary: "#48505c", secondary: "#717b8a", contrast: "#ffffff" };
   }
 
   function addNflBadge(meta) {
@@ -55,7 +55,10 @@
     var badge = document.createElement("span");
     badge.className = "nfl-team-badge";
     badge.textContent = nflTeam;
-    badge.style.backgroundColor = colors.primary;
+    badge.style.background =
+      "linear-gradient(135deg, " + colors.primary + " 0%, " +
+      colors.primary + " 62%, " + colors.secondary + " 62%, " +
+      colors.secondary + " 100%)";
     badge.style.color = colors.contrast;
 
     meta.textContent = parts.length > 1 ? parts.slice(0, -1).join(" - ") + " " : "";
@@ -117,9 +120,10 @@
       if (!/^[A-Z]{2,3}$/.test(nflTeam) || nflTeam === "UNKNOWN") return;
 
       var colors = getTeamColors(nflTeam);
-      card.style.borderColor = colors.primary;
-      card.style.boxShadow = "inset 0 3px 0 " + colors.primary;
-      label.style.color = colors.primary;
+      card.classList.add("nfl-breakdown-card");
+      card.style.setProperty("--nfl-primary", colors.primary);
+      card.style.setProperty("--nfl-secondary", colors.secondary);
+      card.style.setProperty("--nfl-contrast", colors.contrast);
       card.dataset.nflColorApplied = "true";
     });
   }
