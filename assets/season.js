@@ -67,6 +67,7 @@
     sleeperPlayedWeeks: null,
     allTimeData: null,
     careerSplit: "combined",
+    careerSort: "championships",
     recordsView: "master",
     recordsSplit: "regular",
     loadToken: 0,
@@ -1840,7 +1841,18 @@
       });
     });
   }
+  function setupCareerSort() {
+  var select = byId("career-sort-select");
+  if (!select) return;
 
+  select.onchange = function () {
+    state.careerSort = select.value;
+
+    if (state.allTimeData) {
+      renderCareerTotals(state.allTimeData, state.careerSplit);
+    }
+  };
+}
   function setupRecordsControls() {
     var viewButtons = document.querySelectorAll(".records-view-btn");
     viewButtons.forEach(function (btn) {
@@ -1905,17 +1917,75 @@
     var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
 
     var sorted = totals.slice().sort(function (a, b) {
-      if (split === "combined" || split === "regular" || split === "playoff") {
-        var recA = a[split];
-        var recB = b[split];
-        if (split === "combined" && b.championships !== a.championships) {
-          return b.championships - a.championships;
-        }
-        if (recB.winPct !== recA.winPct) return recB.winPct - recA.winPct;
-        return recB.wins - recA.wins;
-      }
-      return 0;
-    });
+  var recA = a[split];
+  var recB = b[split];
+  var sortBy = state.careerSort || "championships";
+
+  if (sortBy === "championships") {
+    if (b.championships !== a.championships) {
+      return b.championships - a.championships;
+    }
+    if (recB.winPct !== recA.winPct) {
+      return recB.winPct - recA.winPct;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "pf") {
+    if (recB.pointsFor !== recA.pointsFor) {
+      return recB.pointsFor - recA.pointsFor;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "pa") {
+    if (recA.pointsAgainst !== recB.pointsAgainst) {
+      return recA.pointsAgainst - recB.pointsAgainst;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "wins") {
+    if (recB.wins !== recA.wins) {
+      return recB.wins - recA.wins;
+    }
+    return recB.winPct - recA.winPct;
+  }
+
+  if (sortBy === "winPct") {
+    if (recB.winPct !== recA.winPct) {
+      return recB.winPct - recA.winPct;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "seasons") {
+    if (b.seasons !== a.seasons) {
+      return b.seasons - a.seasons;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "runnerUps") {
+    if (b.runnerUps !== a.runnerUps) {
+      return b.runnerUps - a.runnerUps;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "transactions") {
+    if (b.totalTransactions !== a.totalTransactions) {
+      return b.totalTransactions - a.totalTransactions;
+    }
+    return recB.wins - recA.wins;
+  }
+
+  if (sortBy === "name") {
+    return a.ownerName.localeCompare(b.ownerName);
+  }
+
+  return 0;
+});
 
     tbody.innerHTML = "";
 
@@ -2256,6 +2326,7 @@
     setupAllTimeButtons();
     setupAllTimeTabs();
     setupCareerToggle();
+    setupCareerSort();
     setupRecordsControls();
 
     var urlSeason = getSeasonFromURL();
