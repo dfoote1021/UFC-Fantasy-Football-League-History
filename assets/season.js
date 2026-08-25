@@ -1548,7 +1548,9 @@ function populateSeasonSelect() {
   }
 
 function setupAllTimeButtons() {
+  var openBtn = byId("alltime-btn");
   var backBtn = byId("back-to-season-btn");
+  if (openBtn) openBtn.addEventListener("click", showAllTimeView);
   if (backBtn) {
     backBtn.addEventListener("click", function () {
       hideAllTimeView();
