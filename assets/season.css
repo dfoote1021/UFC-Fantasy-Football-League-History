@@ -596,35 +596,3 @@ main {   width: min(100%, 1680px);   max-width: none;   margin: 0 auto;   paddin
     padding: 16px;
   }
 }
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 8px;
-}
-
-.table-scroll .data-table {
-  min-width: 820px;
-}
-
-@media (max-width: 700px) {
-  .table-scroll {
-    margin: 0 -16px;
-    width: calc(100% + 32px);
-    padding: 0 16px 8px;
-  }
-
-  .table-scroll::after {
-    content: "Swipe sideways to view all standings columns";
-    display: block;
-    margin-top: 8px;
-    color: var(--text-dim);
-    font-size: 0.72rem;
-    text-align: center;
-  }
-
-  .table-scroll .data-table th,
-  .table-scroll .data-table td {
-    white-space: nowrap;
-  }
-}
