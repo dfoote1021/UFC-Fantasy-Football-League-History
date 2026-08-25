@@ -41,25 +41,12 @@ body {
   font-size: 0.9rem;
 }
 
-.season-picker select {
+select {
   background: var(--panel-alt);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 10px;
-}
-
-.season-picker select#season-select {
-  font-size: 1rem;
-  padding: 8px 14px;
-  min-width: 160px;
-  font-weight: 600;
-}
-
-.badge.season-badge {
-  background: var(--panel-alt);
-  color: var(--text);
-  border: 1px solid var(--border);
 }
 
 .btn {
@@ -70,7 +57,6 @@ body {
   padding: 6px 14px;
   cursor: pointer;
 }
-
 .btn:hover { border-color: var(--accent); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-small { padding: 3px 10px; font-size: 0.75rem; }
@@ -81,7 +67,6 @@ body {
   border-color: #3a6fd8;
   font-weight: 600;
 }
-
 .btn-alltime:hover { opacity: 0.9; }
 
 .badge {
@@ -91,7 +76,6 @@ body {
   font-weight: 700;
   letter-spacing: 0.05em;
 }
-
 .live-badge { background: var(--live); color: #fff; animation: pulse 2s infinite; }
 .final-badge { background: var(--gold); color: #1a1a1a; }
 
@@ -114,7 +98,6 @@ body {
   font-weight: 600;
   color: var(--gold);
 }
-
 .champion-trophy { font-size: 1.4rem; }
 
 .tabs {
@@ -135,7 +118,6 @@ body {
   border-bottom: 2px solid transparent;
   font-size: 0.95rem;
 }
-
 .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
 .tab-btn:hover { color: var(--text); }
 
@@ -151,13 +133,11 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   border-radius: 8px;
   overflow: hidden;
 }
-
 .data-table th, .data-table td {
   padding: 10px 12px;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
-
 .data-table th { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
 .data-table tr:hover td { background: var(--panel-alt); }
 .data-table tr.champion-row td { color: var(--gold); font-weight: 700; }
@@ -171,7 +151,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   border-radius: 4px;
   font-weight: 700;
 }
-
 .result-tag.champ { background: var(--gold); color: #1a1a1a; }
 .result-tag.runner-up { background: #555; color: #fff; }
 
@@ -182,14 +161,12 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
 }
-
 .division-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px;
 }
-
 .division-card h4 { margin: 0 0 10px; font-size: 0.95rem; color: var(--accent); }
 .division-card table { width: 100%; font-size: 0.85rem; }
 .division-card td, .division-card th { padding: 6px 8px; }
@@ -199,16 +176,13 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
-
 .bracket-round {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
 }
-
 .bracket-round h4 { margin: 0 0 10px; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
-
 .bracket-match {
   padding: 8px;
   border-radius: 6px;
@@ -216,33 +190,27 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   margin-bottom: 8px;
   font-size: 0.85rem;
 }
-
 .bracket-slot {
   display: flex;
   justify-content: space-between;
   padding: 2px 0;
 }
-
 .bracket-slot .seed { color: var(--text-dim); font-size: 0.75rem; margin-right: 6px; }
 .bracket-slot .score { font-weight: 700; }
 .bracket-slot.win { color: var(--win); font-weight: 700; }
 .bracket-slot.unresolved { color: var(--text-dim); font-style: italic; }
-
 .bracket-match-toggle {
   margin-top: 6px;
   font-size: 0.7rem;
 }
-
 .bracket-rosters {
   display: none;
   margin-top: 8px;
   gap: 10px;
   grid-template-columns: 1fr 1fr;
 }
-
 .bracket-rosters.expanded { display: grid; }
 .bracket-rosters ul { list-style: none; margin: 4px 0 0; padding: 0; }
-
 .bracket-rosters li {
   font-size: 0.72rem;
   padding: 2px 0;
@@ -250,7 +218,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
 }
-
 .bracket-rosters li.bench-player { color: var(--text-dim); }
 
 .week-picker { margin-bottom: 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
@@ -270,38 +237,30 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   border-radius: 10px;
   padding: 14px;
 }
-
 .matchup-row {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
   align-items: center;
 }
-
 .matchup-row.winner { color: var(--win); font-weight: 600; }
-
 .matchup-toggle {
   margin-top: 8px;
   font-size: 0.8rem;
 }
-
 .matchup-rosters {
   display: none;
   margin-top: 10px;
   gap: 12px;
   grid-template-columns: 1fr 1fr;
 }
-
 .matchup-rosters.expanded { display: grid; }
-
 .matchup-roster-col h5 {
   margin: 0 0 6px;
   font-size: 0.8rem;
   color: var(--text-dim);
 }
-
 .matchup-roster-col ul { list-style: none; margin: 0; padding: 0; }
-
 .matchup-roster-col li {
   font-size: 0.78rem;
   padding: 3px 0;
@@ -309,7 +268,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   display: flex;
   justify-content: space-between;
 }
-
 .matchup-roster-col li.bench-player { color: var(--text-dim); }
 
 .teams-grid {
@@ -317,16 +275,13 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
-
 .team-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px;
 }
-
 .team-card img { width: 40px; height: 40px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
-
 .team-card .team-stats-row {
   display: flex;
   justify-content: space-between;
@@ -335,17 +290,14 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   padding: 3px 0;
   border-bottom: 1px solid var(--border);
 }
-
 .team-card .team-stats-row span:last-child { color: var(--text); font-weight: 600; }
 
 .roster-controls { margin-bottom: 8px; }
-
 .roster-total {
   margin-bottom: 12px;
   font-size: 0.95rem;
   color: var(--text-dim);
 }
-
 .roster-total strong { color: var(--text); }
 #roster-table tr.starter-row td { color: var(--text); }
 #roster-table tr.bench-row td { color: var(--text-dim); }
@@ -355,15 +307,12 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 8px;
 }
-
 @media (max-width: 1100px) {
   .draft-board { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
-
 @media (max-width: 700px) {
   .draft-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-
 .draft-pick {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -371,61 +320,10 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   padding: 8px;
   font-size: 0.75rem;
 }
-
 .draft-pick .pick-num { color: var(--text-dim); font-size: 0.68rem; }
 .draft-pick .draft-owner { color: var(--accent); font-size: 0.7rem; margin-top: 4px; }
 
-.draft-pick .draft-meta {
-  color: var(--text-dim);
-  font-size: 0.7rem;
-  margin-top: 2px;
-}
-
-/* Draft breakdown ("By Position" / "By NFL Team") - same visual
-   language as .h2h-stat-card elsewhere on the site: bordered box,
-   big bold value, small dim label underneath, in a responsive grid. */
-.breakdown-heading {
-  margin: 16px 0 10px;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.breakdown-heading:first-child {
-  margin-top: 0;
-}
-
-.breakdown-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 10px;
-}
-
-.breakdown-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 8px;
-  text-align: center;
-}
-
-.breakdown-card-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.breakdown-card-label {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  margin-top: 4px;
-  letter-spacing: 0.03em;
-}
-
 .transactions-list { list-style: none; padding: 0; }
-
 .transactions-list li {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -434,13 +332,11 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   margin-bottom: 8px;
   font-size: 0.9rem;
 }
-
 .txn-header {
   display: flex;
   justify-content: space-between;
   font-weight: 600;
 }
-
 .txn-type-tag {
   font-size: 0.7rem;
   padding: 2px 8px;
@@ -449,13 +345,11 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   color: var(--accent);
   text-transform: uppercase;
 }
-
 .txn-detail-row {
   font-size: 0.82rem;
   color: var(--text-dim);
   margin-top: 4px;
 }
-
 .txn-detail-row .add-tag { color: var(--win); }
 .txn-detail-row .drop-tag { color: var(--live); }
 
@@ -485,7 +379,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   align-items: center;
   margin-bottom: 20px;
 }
-
 .alltime-header h2 { margin: 0; }
 
 .alltime-tabs { padding: 0; margin-bottom: 20px; background: transparent; border-bottom: 1px solid var(--border); }
@@ -502,7 +395,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
-
 .h2h-vs { color: var(--text-dim); font-weight: 700; }
 
 .h2h-split-heading {
@@ -513,7 +405,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 .h2h-split-heading:first-of-type { margin-top: 0; }
 
 .h2h-summary {
@@ -522,7 +413,6 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   gap: 12px;
   margin-bottom: 8px;
 }
-
 .h2h-stat-card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -530,13 +420,11 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   padding: 14px;
   text-align: center;
 }
-
 .h2h-stat-card .h2h-stat-value {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent);
 }
-
 .h2h-stat-card .h2h-stat-label {
   font-size: 0.78rem;
   color: var(--text-dim);
@@ -563,31 +451,10 @@ main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   border-color: var(--border);
   background: var(--panel-alt);
 }
-
 .matchup-card.bye-card .bye-row {
   color: var(--text-dim);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   justify-content: center;
-}
-
-/* Playoff bracket first-round byes (see buildBracketView in
-   sleeper-common.js for how these are detected and injected) */
-.bracket-match.bye-match {
-  border: 1px dashed var(--border);
-  background: var(--panel-alt);
-}
-
-.bracket-slot.bye-slot {
-  font-weight: 600;
-}
-
-.bracket-slot.bye-tag-row {
-  color: var(--text-dim);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  justify-content: center;
-  padding-top: 4px;
 }
