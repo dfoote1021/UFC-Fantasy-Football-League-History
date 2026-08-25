@@ -2,7 +2,8 @@
  * Presentation rules used by draft-enhancements.js.
  */
 
-/* Compact colored NFL abbreviation next to the player's position. */
+/* Compact NFL abbreviation next to the player's position. Each badge gets
+   a two-color diagonal background from nfl-team-colors.js. */
 .nfl-team-badge {
   display: inline-block;
   margin-left: 5px;
@@ -32,4 +33,36 @@
 
 .keeper-pick {
   border-color: rgba(255, 210, 92, 0.55);
+}
+
+/* Two-color NFL-team cards in the By NFL Team breakdown.
+   The top stripe is a true split of the team's primary and secondary
+   colors. The card stays dark and readable like the rest of the site. */
+.breakdown-card.nfl-breakdown-card {
+  border-color: var(--nfl-primary);
+  box-shadow: inset 0 4px 0 transparent;
+  background:
+    linear-gradient(90deg, var(--nfl-primary) 0%, var(--nfl-primary) 50%,
+      var(--nfl-secondary) 50%, var(--nfl-secondary) 100%) top / 100% 4px no-repeat,
+    linear-gradient(135deg, color-mix(in srgb, var(--nfl-primary) 14%, var(--panel)),
+      var(--panel) 58%);
+}
+
+.breakdown-card.nfl-breakdown-card .breakdown-card-value {
+  color: var(--nfl-contrast);
+}
+
+.breakdown-card.nfl-breakdown-card .breakdown-card-label {
+  color: var(--nfl-secondary);
+  font-weight: 800;
+}
+
+/* Fallback for browsers that do not support color-mix(). */
+@supports not (background: color-mix(in srgb, #000 50%, #fff)) {
+  .breakdown-card.nfl-breakdown-card {
+    background:
+      linear-gradient(90deg, var(--nfl-primary) 0%, var(--nfl-primary) 50%,
+        var(--nfl-secondary) 50%, var(--nfl-secondary) 100%) top / 100% 4px no-repeat,
+      var(--panel);
+  }
 }
