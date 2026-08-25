@@ -75,23 +75,28 @@
     return s ? Number(s) : null;
   }
 
-  function populateSeasonSelect() {
-    var select = byId("season-select");
-    select.innerHTML = "";
+function populateSeasonSelect() {
+  var select = byId("season-select");
+  select.innerHTML = "";
 
-    var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
-    var espnYears = window.EspnLoader ? window.EspnLoader.ESPN_SEASONS.slice() : [];
-    var allYears = sleeperYears.concat(espnYears).sort(function (a, b) {
-      return b - a;
-    });
+  var allTimeOpt = document.createElement("option");
+  allTimeOpt.value = "alltime";
+  allTimeOpt.textContent = "All-Time";
+  select.appendChild(allTimeOpt);
 
-    allYears.forEach(function (year) {
-      var opt = document.createElement("option");
-      opt.value = year;
-      opt.textContent = year + (isEspnYear(year) ? " (ESPN)" : "");
-      select.appendChild(opt);
-    });
-  }
+  var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
+  var espnYears = window.EspnLoader ? window.EspnLoader.ESPN_SEASONS.slice() : [];
+  var allYears = sleeperYears.concat(espnYears).sort(function (a, b) {
+    return b - a;
+  });
+
+  allYears.forEach(function (year) {
+    var opt = document.createElement("option");
+    opt.value = year;
+    opt.textContent = year + (isEspnYear(year) ? " (ESPN)" : "");
+    select.appendChild(opt);
+  });
+}
 
   function setupTabs() {
     var tabBtns = document.querySelectorAll("#season-tabs .tab-btn");
@@ -203,7 +208,8 @@
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
 
-    byId("page-title").textContent = season + " Season";
+    var badge = byId("season-badge"); 
+    if (badge) badge.textContent = season;
 
     if (isEspnYear(season)) {
       return loadEspnSeason(season);
@@ -1541,12 +1547,18 @@
     byId("season-main").hidden = false;
   }
 
-  function setupAllTimeButtons() {
-    var openBtn = byId("alltime-btn");
-    var backBtn = byId("back-to-season-btn");
-    if (openBtn) openBtn.addEventListener("click", showAllTimeView);
-    if (backBtn) backBtn.addEventListener("click", hideAllTimeView);
+function setupAllTimeButtons() {
+  var backBtn = byId("back-to-season-btn");
+  if (backBtn) {
+    backBtn.addEventListener("click", function () {
+      hideAllTimeView();
+      var select = byId("season-select");
+      if (select && state.season !== null) {
+        select.value = String(state.season);
+      }
+    });
   }
+}
 
   function setupAllTimeTabs() {
     var tabBtns = document.querySelectorAll(".alltime-tabs .tab-btn");
@@ -2005,13 +2017,20 @@
         : SleeperAPI.CURRENT_LIVE_SEASON;
 
     byId("season-select").value = String(defaultSeason);
-    byId("season-select").addEventListener("change", function (e) {
-      var season = Number(e.target.value);
-      var url = new URL(window.location);
-      url.searchParams.set("season", season);
-      window.history.pushState({}, "", url);
-      loadSeason(season);
-    });
+  byId("season-select").addEventListener("change", function (e) {
+  var value = e.target.value;
+
+  if (value === "alltime") {
+    showAllTimeView();
+    return;
+  }
+
+  var season = Number(value);
+  var url = new URL(window.location);
+  url.searchParams.set("season", season);
+  window.history.pushState({}, "", url);
+  loadSeason(season);
+});
 
     byId("refresh-btn").addEventListener("click", function () {
       loadSeason(state.season);
