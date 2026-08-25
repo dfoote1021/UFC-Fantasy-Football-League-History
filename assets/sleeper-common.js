@@ -937,12 +937,18 @@
 
   allTransactions.forEach(function (txn) {
     var isCompleted = txn.status === "complete";
+
     var isPlayerMove =
       txn.type === "waiver" ||
       txn.type === "free_agent" ||
       txn.type === "trade";
 
-    if (!isCompleted || !isPlayerMove || !txn.roster_ids) {
+    var isCommissionerMove =
+      txn.type === "commissioner" ||
+      txn.type === "commissioner_update" ||
+      txn.creator === null;
+
+    if (!isCompleted || !isPlayerMove || isCommissionerMove || !txn.roster_ids) {
       return;
     }
 
