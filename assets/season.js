@@ -7,15 +7,26 @@
  *
  * Also drives the "All-Time" view (career totals + head-to-head +
  * owner-vs-the-field + league records across every season), toggled via
- * the button next to the season dropdown - see showAllTimeView()/
+ * the "All-Time" option in the season dropdown - see showAllTimeView()/
  * hideAllTimeView() near the bottom of this file. Career totals,
  * head-to-head, and vs-field all split regular-season from playoff
  * (active-championship-path-only) results, and exclude consolation/
  * toilet-bowl/placement/post-elimination games from every total - see
  * all-time.js for how that three-way classification is computed
- * per-game. The Records tab shows both a league-wide master leaderboard
- * and per-member personal bests/worsts for six "fun stats", each
- * computed separately for regular season vs playoffs (never blended).
+ * per-game.
+ *
+ * The per-SEASON Records tab and the All-Time Records tab both reuse
+ * all-time.js's record-building functions (buildSeasonMasterRecords/
+ * buildSeasonMemberRecords for the season tab; buildMasterRecords/
+ * buildMemberRecords for the All-Time tab) - each computed separately
+ * for regular season vs playoffs (never blended).
+ *
+ * The per-SEASON Draft tab supports filtering by team/owner and shows a
+ * By Position / By NFL Team breakdown - rendered as small stat cards
+ * (same visual language as .h2h-stat-card elsewhere on the site: a
+ * bordered box with a big bold count and a small label) for whichever
+ * picks are currently visible - see populateDraftTeamFilter/
+ * renderDraftBoardFiltered/buildDraftBreakdown/renderDraftBreakdownHtml.
  *
  * All point totals/scores throughout this file (standings, matchups,
  * rosters, brackets, and every All-Time view) are displayed with
@@ -60,6 +71,13 @@
     careerSplit: "combined",
     recordsView: "master",
     recordsSplit: "regular",
+    seasonDraftBoardData: null,
+  };
+
+  var seasonRecordsState = {
+    view: "master",
+    split: "regular",
+    allSeasonsData: null,
   };
 
   function isEspnYear(season) {
@@ -75,28 +93,28 @@
     return s ? Number(s) : null;
   }
 
-function populateSeasonSelect() {
-  var select = byId("season-select");
-  select.innerHTML = "";
+  function populateSeasonSelect() {
+    var select = byId("season-select");
+    select.innerHTML = "";
 
-  var allTimeOpt = document.createElement("option");
-  allTimeOpt.value = "alltime";
-  allTimeOpt.textContent = "All-Time";
-  select.appendChild(allTimeOpt);
+    var allTimeOpt = document.createElement("option");
+    allTimeOpt.value = "alltime";
+    allTimeOpt.textContent = "All-Time";
+    select.appendChild(allTimeOpt);
 
-  var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
-  var espnYears = window.EspnLoader ? window.EspnLoader.ESPN_SEASONS.slice() : [];
-  var allYears = sleeperYears.concat(espnYears).sort(function (a, b) {
-    return b - a;
-  });
+    var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
+    var espnYears = window.EspnLoader ? window.EspnLoader.ESPN_SEASONS.slice() : [];
+    var allYears = sleeperYears.concat(espnYears).sort(function (a, b) {
+      return b - a;
+    });
 
-  allYears.forEach(function (year) {
-    var opt = document.createElement("option");
-    opt.value = year;
-    opt.textContent = year + (isEspnYear(year) ? " (ESPN)" : "");
-    select.appendChild(opt);
-  });
-}
+    allYears.forEach(function (year) {
+      var opt = document.createElement("option");
+      opt.value = year;
+      opt.textContent = year + (isEspnYear(year) ? " (ESPN)" : "");
+      select.appendChild(opt);
+    });
+  }
 
   function setupTabs() {
     var tabBtns = document.querySelectorAll("#season-tabs .tab-btn");
@@ -207,8 +225,9 @@ function populateSeasonSelect() {
     state.espnDraftData = null;
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
+    state.seasonDraftBoardData = null;
 
-    var badge = byId("season-badge"); 
+    var badge = byId("season-badge");
     if (badge) badge.textContent = season;
 
     if (isEspnYear(season)) {
@@ -285,6 +304,7 @@ function populateSeasonSelect() {
       await renderDraft();
       await populateTxnMemberSelect();
       await renderTransactions();
+      await loadSeasonRecords();
       renderLeagueInfoRaw();
 
       byId("last-refreshed").textContent =
@@ -350,6 +370,7 @@ function populateSeasonSelect() {
       renderTeamScheduleEspn();
       await renderDraftEspn(season);
       renderTransactionsUnavailable();
+      await loadSeasonRecords();
       renderLeagueInfoRawEspn(season);
 
       byId("last-refreshed").textContent =
@@ -490,47 +511,48 @@ function populateSeasonSelect() {
   }
 
   async function renderDraftEspn(season) {
-  var board = byId("draft-board");
-  if (!board) return;
-  if (!window.EspnDraftLoader) {
-    board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
-    return;
-  }
-  board.innerHTML = "<p>Loading draft board&hellip;</p>";
-  try {
-    var draftData = await window.EspnDraftLoader.loadDraft(season);
-    state.espnDraftData = draftData;
-    if (!draftData.picks || draftData.picks.length === 0) {
-      board.innerHTML = "<p>No draft data found for " + season + ".</p>";
+    var board = byId("draft-board");
+    if (!board) return;
+    if (!window.EspnDraftLoader) {
+      board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
       return;
     }
-    board.innerHTML = "";
-    draftData.picks.forEach(function (pick) {
-      var div = document.createElement("div");
-      div.className = "draft-pick";
-      var teamLabel = pick.owner
-        ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
-        : escapeHtml(pick.team);
-      var metaLine =
-        (pick.position ? escapeHtml(pick.position) : "") +
-        (pick.position && pick.nflTeam ? " - " : "") +
-        (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-        : "";
-      div.innerHTML =
-        '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")</div>" +
-        "<div>" + escapeHtml(pick.playerName) + "</div>" +
-        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-        '<div class="draft-owner">' + teamLabel + "</div>" +
-        keeperTag;
-      board.appendChild(div);
-    });
-  } catch (e) {
-    console.error(e);
-    board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
+    board.innerHTML = "<p>Loading draft board&hellip;</p>";
+    try {
+      var draftData = await window.EspnDraftLoader.loadDraft(season);
+      state.espnDraftData = draftData;
+      if (!draftData.picks || draftData.picks.length === 0) {
+        board.innerHTML = "<p>No draft data found for " + season + ".</p>";
+        return;
+      }
+      board.innerHTML = "";
+      draftData.picks.forEach(function (pick) {
+        var div = document.createElement("div");
+        div.className = "draft-pick";
+        var teamLabel = pick.owner
+          ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
+          : escapeHtml(pick.team);
+        var metaLine =
+          (pick.position ? escapeHtml(pick.position) : "") +
+          (pick.position && pick.nflTeam ? " - " : "") +
+          (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
+        var keeperTag = pick.isKeeper
+          ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+          : "";
+        div.innerHTML =
+          '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")</div>" +
+          "<div>" + escapeHtml(pick.playerName) + "</div>" +
+          (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
+          '<div class="draft-owner">' + teamLabel + "</div>" +
+          keeperTag;
+        board.appendChild(div);
+      });
+    } catch (e) {
+      console.error(e);
+      board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
+    }
   }
-}
+
   function renderTransactionsUnavailable() {
     var list = byId("transactions-list");
     if (list) {
@@ -555,24 +577,137 @@ function populateSeasonSelect() {
       2
     );
   }
-async function renderDraft() {
-  if (state.dataSource === "espn") {
-    await renderDraftEspn(state.season);
-    return;
-  }
-  var board = byId("draft-board");
-  if (!board) return;
-  board.innerHTML = "<p>Loading&hellip;</p>";
-  try {
-    var draft = await SleeperAPI.getDraft(state.leagueId);
-    if (!draft) {
-      board.innerHTML = "<p>No draft found for this season.</p>";
+
+  async function renderDraft() {
+    if (state.dataSource === "espn") {
+      await renderDraftEspn(state.season);
       return;
     }
-    var picks = await SleeperAPI.getDraftPicks(draft.draft_id);
-    var boardData = SleeperAPI.buildDraftBoard(picks, state.rosterMap);
-    board.innerHTML = "";
+    var board = byId("draft-board");
+    if (!board) return;
+    board.innerHTML = "<p>Loading&hellip;</p>";
+    try {
+      var draft = await SleeperAPI.getDraft(state.leagueId);
+      if (!draft) {
+        board.innerHTML = "<p>No draft found for this season.</p>";
+        return;
+      }
+      var picks = await SleeperAPI.getDraftPicks(draft.draft_id);
+      state.seasonDraftBoardData = SleeperAPI.buildDraftBoard(picks, state.rosterMap);
+      populateDraftTeamFilter(state.seasonDraftBoardData);
+      renderDraftBoardFiltered();
+    } catch (e) {
+      board.innerHTML = "<p>Draft data unavailable.</p>";
+    }
+  }
+
+  function populateDraftTeamFilter(boardData) {
+    var select = byId("draft-team-filter");
+    if (!select) return;
+    var seen = {};
+    var teams = [];
     boardData.forEach(function (pick) {
+      if (!seen[pick.rosterId]) {
+        seen[pick.rosterId] = true;
+        teams.push({
+          rosterId: pick.rosterId,
+          label:
+            pick.ownerName && pick.ownerName !== pick.teamName
+              ? pick.teamName + " (" + pick.ownerName + ")"
+              : pick.teamName,
+        });
+      }
+    });
+    teams.sort(function (a, b) {
+      return a.label.localeCompare(b.label);
+    });
+    var currentValue = select.value;
+    select.innerHTML = "";
+    var allOpt = document.createElement("option");
+    allOpt.value = "";
+    allOpt.textContent = "All Teams";
+    select.appendChild(allOpt);
+    teams.forEach(function (t) {
+      var opt = document.createElement("option");
+      opt.value = String(t.rosterId);
+      opt.textContent = t.label;
+      select.appendChild(opt);
+    });
+    if (currentValue && teams.some(function (t) { return String(t.rosterId) === currentValue; })) {
+      select.value = currentValue;
+    }
+    select.onchange = renderDraftBoardFiltered;
+  }
+
+  function buildDraftBreakdown(picks) {
+    var byPosition = {};
+    var byNflTeam = {};
+    picks.forEach(function (pick) {
+      var pos = pick.position || "Unknown";
+      var team = pick.nflTeam || "Unknown";
+      byPosition[pos] = (byPosition[pos] || 0) + 1;
+      byNflTeam[team] = (byNflTeam[team] || 0) + 1;
+    });
+    function toSortedArray(counts) {
+      return Object.keys(counts)
+        .map(function (key) {
+          return { key: key, count: counts[key] };
+        })
+        .sort(function (a, b) {
+          return b.count - a.count || a.key.localeCompare(b.key);
+        });
+    }
+    return {
+      byPosition: toSortedArray(byPosition),
+      byNflTeam: toSortedArray(byNflTeam),
+      totalPicks: picks.length,
+    };
+  }
+
+  function renderDraftBreakdownHtml(containerId, breakdown) {
+    var el = byId(containerId);
+    if (!el) return;
+    if (breakdown.totalPicks === 0) {
+      el.innerHTML = '<p class="status-text">No picks to summarize.</p>';
+      return;
+    }
+
+    function buildCards(entries) {
+      return entries
+        .map(function (entry) {
+          return (
+            '<div class="breakdown-card">' +
+            '<div class="breakdown-card-value">' + entry.count + "</div>" +
+            '<div class="breakdown-card-label">' + escapeHtml(entry.key) + "</div>" +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+
+    el.innerHTML =
+      '<h4 class="breakdown-heading">By Position</h4>' +
+      '<div class="breakdown-grid">' + buildCards(breakdown.byPosition) + "</div>" +
+      '<h4 class="breakdown-heading">By NFL Team</h4>' +
+      '<div class="breakdown-grid">' + buildCards(breakdown.byNflTeam) + "</div>";
+  }
+
+  function renderDraftBoardFiltered() {
+    var board = byId("draft-board");
+    var select = byId("draft-team-filter");
+    if (!board || !state.seasonDraftBoardData) return;
+
+    var rosterId = select && select.value ? Number(select.value) : null;
+    var picks = rosterId
+      ? state.seasonDraftBoardData.filter(function (p) {
+          return p.rosterId === rosterId;
+        })
+      : state.seasonDraftBoardData;
+
+    renderDraftBreakdownHtml("draft-breakdown", buildDraftBreakdown(picks));
+
+    board.innerHTML = "";
+    picks.forEach(function (pick) {
       var div = document.createElement("div");
       div.className = "draft-pick";
       var teamLabel =
@@ -590,10 +725,8 @@ async function renderDraft() {
         '<div class="draft-owner">' + teamLabel + "</div>";
       board.appendChild(div);
     });
-  } catch (e) {
-    board.innerHTML = "<p>Draft data unavailable.</p>";
   }
-}
+
   async function ensureAllWeeksMatchups() {
     if (state.dataSource !== "sleeper") return null;
     if (state.allWeeksMatchups) return state.allWeeksMatchups;
@@ -640,7 +773,7 @@ async function renderDraft() {
     if (info && info.champion) {
       banner.hidden = false;
       var runnerUpText = info.runnerUp
-        ? " â€” defeated " + escapeHtml(info.runnerUp.teamName) + " in the championship"
+        ? " — defeated " + escapeHtml(info.runnerUp.teamName) + " in the championship"
         : "";
       textEl.textContent =
         state.season +
@@ -739,7 +872,7 @@ async function renderDraft() {
         .map(function (team, idx) {
           var isChamp = div.champion && div.champion.rosterId === team.rosterId;
           var isRunnerUp = div.runnerUp && div.runnerUp.rosterId === team.rosterId;
-          var tag = isChamp ? " ðŸ†" : isRunnerUp ? " ðŸ¥ˆ" : "";
+          var tag = isChamp ? " 🏆" : isRunnerUp ? " 🥈" : "";
           return (
             "<tr><td>" + (idx + 1) + "</td><td>" + escapeHtml(team.teamName) + tag +
             "</td><td>" + team.wins + "-" + team.losses + "-" + team.ties +
@@ -756,189 +889,177 @@ async function renderDraft() {
   }
 
   function renderBracket(containerId, bracketData) {
-  var container = byId(containerId);
-  if (!container) return;
+    var container = byId(containerId);
+    if (!container) return;
 
-  var rounds;
-  if (state.dataSource === "espn") {
-    rounds = bracketData;
-  } else {
-    rounds = SleeperAPI.buildBracketView(
-      bracketData,
-      state.rosterMap,
-      state.seedMap,
-      state.allWeeksMatchups,
-      state.playoffStartWeek
-    );
-  }
+    var rounds;
+    if (state.dataSource === "espn") {
+      rounds = bracketData;
+    } else {
+      rounds = SleeperAPI.buildBracketView(
+        bracketData,
+        state.rosterMap,
+        state.seedMap,
+        state.allWeeksMatchups,
+        state.playoffStartWeek
+      );
+    }
 
-  if (!rounds || rounds.length === 0) {
-    container.innerHTML = "<p>No bracket data available yet for this season.</p>";
-    return;
-  }
+    if (!rounds || rounds.length === 0) {
+      container.innerHTML = "<p>No bracket data available yet for this season.</p>";
+      return;
+    }
 
-  // Only the winners/playoff bracket gets "Championship" and
-  // "Nth Place Game" placement labels. The consolation bracket (losers
-  // bracket / toilet bowl) never had a real championship or placement
-  // structure in this league, so it only ever shows plain "Round N"
-  // titles - for both Sleeper AND ESPN seasons.
-  var isPlayoffBracket = containerId === "playoff-bracket";
+    var isPlayoffBracket = containerId === "playoff-bracket";
 
-  container.innerHTML = "";
-  var matchCounter = 0;
-  var totalRounds = rounds.length;
+    container.innerHTML = "";
+    var matchCounter = 0;
+    var totalRounds = rounds.length;
 
-  rounds.forEach(function (roundData, roundIndex) {
-    var roundDiv = document.createElement("div");
-    roundDiv.className = "bracket-round";
-    var roundTitle = document.createElement("h4");
-    roundTitle.textContent = bracketRoundLabel(containerId, roundIndex, totalRounds);
-    roundDiv.appendChild(roundTitle);
+    rounds.forEach(function (roundData, roundIndex) {
+      var roundDiv = document.createElement("div");
+      roundDiv.className = "bracket-round";
+      var roundTitle = document.createElement("h4");
+      roundTitle.textContent = bracketRoundLabel(containerId, roundIndex, totalRounds);
+      roundDiv.appendChild(roundTitle);
 
-    roundData.matches.forEach(function (m) {
-      matchCounter++;
-      var matchDiv = document.createElement("div");
-      matchDiv.className = "bracket-match";
+      roundData.matches.forEach(function (m) {
+        matchCounter++;
+        var matchDiv = document.createElement("div");
+        matchDiv.className = "bracket-match";
 
-      // Render first-round byes (see SleeperAPI.buildBracketView) as a
-      // single-team bye card instead of a normal two-slot matchup.
-      if (m.isBye) {
-        matchDiv.classList.add("bye-match");
-        var byeSlot = m.slot1;
-        var byeSeedHtml = byeSlot.seed ? '<span class="seed">#' + byeSlot.seed + "</span>" : "";
-        var byeScoreHtml =
-          m.slot1Score !== null && m.slot1Score !== undefined
-            ? '<span class="score">' + m.slot1Score.toFixed(2) + "</span>"
-            : "";
-        var byeSlotDiv = document.createElement("div");
-        byeSlotDiv.className = "bracket-slot bye-slot";
-        byeSlotDiv.innerHTML =
-          "<span>" + byeSeedHtml + escapeHtml(bracketSlotLabel(byeSlot)) + "</span>" + byeScoreHtml;
-        matchDiv.appendChild(byeSlotDiv);
+        if (m.isBye) {
+          matchDiv.classList.add("bye-match");
+          var byeSlot = m.slot1;
+          var byeSeedHtml = byeSlot.seed ? '<span class="seed">#' + byeSlot.seed + "</span>" : "";
+          var byeScoreHtml =
+            m.slot1Score !== null && m.slot1Score !== undefined
+              ? '<span class="score">' + m.slot1Score.toFixed(2) + "</span>"
+              : "";
+          var byeSlotDiv = document.createElement("div");
+          byeSlotDiv.className = "bracket-slot bye-slot";
+          byeSlotDiv.innerHTML =
+            "<span>" + byeSeedHtml + escapeHtml(bracketSlotLabel(byeSlot)) + "</span>" + byeScoreHtml;
+          matchDiv.appendChild(byeSlotDiv);
 
-        var byeTagDiv = document.createElement("div");
-        byeTagDiv.className = "bracket-slot bye-tag-row";
-        byeTagDiv.textContent = "BYE";
-        matchDiv.appendChild(byeTagDiv);
+          var byeTagDiv = document.createElement("div");
+          byeTagDiv.className = "bracket-slot bye-tag-row";
+          byeTagDiv.textContent = "BYE";
+          matchDiv.appendChild(byeTagDiv);
 
-        roundDiv.appendChild(matchDiv);
-        return;
-      }
-
-      // buildBracketView exposes the placement as `position` (from
-      // Sleeper's p field); fall back to other names just in case.
-      // Placement labels ("Championship", "3rd Place Game", etc.) only
-      // apply to the playoff/winners bracket - the consolation bracket
-      // skips this block entirely and keeps its plain "Round N" title.
-      if (isPlayoffBracket) {
-        var placement = Number(m.position || m.placement || m.p || 0);
-        if (placement > 1) {
-          var placementLabel = document.createElement("div");
-          placementLabel.className = "bracket-placement-label";
-          placementLabel.textContent = ordinal(placement) + " Place Game";
-          matchDiv.appendChild(placementLabel);
-        } else if (placement === 1) {
-          var championshipLabel = document.createElement("div");
-          championshipLabel.className = "bracket-placement-label";
-          championshipLabel.textContent = "Championship";
-          matchDiv.appendChild(championshipLabel);
-        }
-      }
-
-      [
-        { slot: m.slot1, score: m.slot1Score },
-        { slot: m.slot2, score: m.slot2Score },
-      ].forEach(function (entry) {
-        var slot = entry.slot;
-        var slotDiv = document.createElement("div");
-        var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
-        slotDiv.className =
-          "bracket-slot" + (isWinner ? " win" : "") + (!slot.resolved ? " unresolved" : "");
-        var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
-        var scoreHtml =
-          entry.score !== null && entry.score !== undefined
-            ? '<span class="score">' + entry.score.toFixed(2) + "</span>"
-            : "";
-        slotDiv.innerHTML =
-          "<span>" + seedHtml + escapeHtml(bracketSlotLabel(slot)) + "</span>" + scoreHtml;
-        matchDiv.appendChild(slotDiv);
-      });
-
-      if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
-        var toggleId = containerId + "-rosters-" + matchCounter;
-        var toggleDiv = document.createElement("div");
-        toggleDiv.className = "bracket-match-toggle";
-        var toggleBtn = document.createElement("button");
-        toggleBtn.className = "btn btn-small";
-        toggleBtn.textContent = "Show rosters";
-        toggleBtn.dataset.target = toggleId;
-        toggleBtn.dataset.week = m.week;
-        toggleBtn.dataset.roster1 = m.slot1.rosterId || "";
-        toggleBtn.dataset.roster2 = m.slot2.rosterId || "";
-        toggleDiv.appendChild(toggleBtn);
-        matchDiv.appendChild(toggleDiv);
-
-        var rostersDiv = document.createElement("div");
-        rostersDiv.className = "bracket-rosters";
-        rostersDiv.id = toggleId;
-        matchDiv.appendChild(rostersDiv);
-      }
-
-      roundDiv.appendChild(matchDiv);
-    });
-
-    container.appendChild(roundDiv);
-  });
-
-  if (state.dataSource === "sleeper") {
-    container.querySelectorAll(".bracket-match-toggle button").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        var target = byId(btn.dataset.target);
-        if (!target) return;
-        var expanded = target.classList.contains("expanded");
-        if (expanded) {
-          target.classList.remove("expanded");
-          btn.textContent = "Show rosters";
+          roundDiv.appendChild(matchDiv);
           return;
         }
-        btn.textContent = "Loadingâ€¦";
-        try {
-          if (!state.playersMap) {
-            state.playersMap = await SleeperAPI.getPlayersMap();
+
+        if (isPlayoffBracket) {
+          var placement = Number(m.position || m.placement || m.p || 0);
+          if (placement > 1) {
+            var placementLabel = document.createElement("div");
+            placementLabel.className = "bracket-placement-label";
+            placementLabel.textContent = ordinal(placement) + " Place Game";
+            matchDiv.appendChild(placementLabel);
+          } else if (placement === 1) {
+            var championshipLabel = document.createElement("div");
+            championshipLabel.className = "bracket-placement-label";
+            championshipLabel.textContent = "Championship";
+            matchDiv.appendChild(championshipLabel);
           }
-          var week = Number(btn.dataset.week);
-          var weekMatchups = state.allWeeksMatchups[week] || [];
-          var r1 = Number(btn.dataset.roster1) || null;
-          var r2 = Number(btn.dataset.roster2) || null;
-          var side1 = weekMatchups.find(function (mu) {
-            return mu.roster_id === r1;
-          });
-          var side2 = weekMatchups.find(function (mu) {
-            return mu.roster_id === r2;
-          });
-          var html =
-            '<div class="matchup-roster-col"><h5>' +
-            escapeHtml((r1 && state.rosterMap[r1]) ? state.rosterMap[r1].teamName : "Team 1") +
-            "</h5>" +
-            rosterListHtml(side1) +
-            "</div>" +
-            '<div class="matchup-roster-col"><h5>' +
-            escapeHtml((r2 && state.rosterMap[r2]) ? state.rosterMap[r2].teamName : "Team 2") +
-            "</h5>" +
-            rosterListHtml(side2) +
-            "</div>";
-          target.innerHTML = html;
-          target.classList.add("expanded");
-          btn.textContent = "Hide rosters";
-        } catch (e) {
-          target.innerHTML = "<p>Roster data unavailable.</p>";
-          target.classList.add("expanded");
-          btn.textContent = "Hide rosters";
         }
+
+        [
+          { slot: m.slot1, score: m.slot1Score },
+          { slot: m.slot2, score: m.slot2Score },
+        ].forEach(function (entry) {
+          var slot = entry.slot;
+          var slotDiv = document.createElement("div");
+          var isWinner = slot.resolved && m.winnerRosterId === slot.rosterId;
+          slotDiv.className =
+            "bracket-slot" + (isWinner ? " win" : "") + (!slot.resolved ? " unresolved" : "");
+          var seedHtml = slot.seed ? '<span class="seed">#' + slot.seed + "</span>" : "";
+          var scoreHtml =
+            entry.score !== null && entry.score !== undefined
+              ? '<span class="score">' + entry.score.toFixed(2) + "</span>"
+              : "";
+          slotDiv.innerHTML =
+            "<span>" + seedHtml + escapeHtml(bracketSlotLabel(slot)) + "</span>" + scoreHtml;
+          matchDiv.appendChild(slotDiv);
+        });
+
+        if (state.dataSource === "sleeper" && m.week && (m.slot1.rosterId || m.slot2.rosterId)) {
+          var toggleId = containerId + "-rosters-" + matchCounter;
+          var toggleDiv = document.createElement("div");
+          toggleDiv.className = "bracket-match-toggle";
+          var toggleBtn = document.createElement("button");
+          toggleBtn.className = "btn btn-small";
+          toggleBtn.textContent = "Show rosters";
+          toggleBtn.dataset.target = toggleId;
+          toggleBtn.dataset.week = m.week;
+          toggleBtn.dataset.roster1 = m.slot1.rosterId || "";
+          toggleBtn.dataset.roster2 = m.slot2.rosterId || "";
+          toggleDiv.appendChild(toggleBtn);
+          matchDiv.appendChild(toggleDiv);
+
+          var rostersDiv = document.createElement("div");
+          rostersDiv.className = "bracket-rosters";
+          rostersDiv.id = toggleId;
+          matchDiv.appendChild(rostersDiv);
+        }
+
+        roundDiv.appendChild(matchDiv);
       });
+
+      container.appendChild(roundDiv);
     });
+
+    if (state.dataSource === "sleeper") {
+      container.querySelectorAll(".bracket-match-toggle button").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var target = byId(btn.dataset.target);
+          if (!target) return;
+          var expanded = target.classList.contains("expanded");
+          if (expanded) {
+            target.classList.remove("expanded");
+            btn.textContent = "Show rosters";
+            return;
+          }
+          btn.textContent = "Loading…";
+          try {
+            if (!state.playersMap) {
+              state.playersMap = await SleeperAPI.getPlayersMap();
+            }
+            var week = Number(btn.dataset.week);
+            var weekMatchups = state.allWeeksMatchups[week] || [];
+            var r1 = Number(btn.dataset.roster1) || null;
+            var r2 = Number(btn.dataset.roster2) || null;
+            var side1 = weekMatchups.find(function (mu) {
+              return mu.roster_id === r1;
+            });
+            var side2 = weekMatchups.find(function (mu) {
+              return mu.roster_id === r2;
+            });
+            var html =
+              '<div class="matchup-roster-col"><h5>' +
+              escapeHtml((r1 && state.rosterMap[r1]) ? state.rosterMap[r1].teamName : "Team 1") +
+              "</h5>" +
+              rosterListHtml(side1) +
+              "</div>" +
+              '<div class="matchup-roster-col"><h5>' +
+              escapeHtml((r2 && state.rosterMap[r2]) ? state.rosterMap[r2].teamName : "Team 2") +
+              "</h5>" +
+              rosterListHtml(side2) +
+              "</div>";
+            target.innerHTML = html;
+            target.classList.add("expanded");
+            btn.textContent = "Hide rosters";
+          } catch (e) {
+            target.innerHTML = "<p>Roster data unavailable.</p>";
+            target.classList.add("expanded");
+            btn.textContent = "Hide rosters";
+          }
+        });
+      });
+    }
   }
-}
 
   function rosterListHtml(teamSide) {
     if (!teamSide) return "<p>No data.</p>";
@@ -1001,7 +1122,7 @@ async function renderDraft() {
     var weekSelect = byId("week-select");
     var week = Number(weekSelect.value) || state.currentWeek;
     var list = byId("matchups-list");
-    list.innerHTML = "<p>Loadingâ€¦</p>";
+    list.innerHTML = "<p>Loading…</p>";
 
     var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
     if (!matchups) {
@@ -1031,14 +1152,6 @@ async function renderDraft() {
 
     var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
 
-    // Determine which rosters are in a GENUINE two-team matchup: group the
-    // raw weekly response by matchup_id (ignoring null ids) and keep only
-    // groups with exactly two members. Sleeper gives every roster a row
-    // each week, including teams on a bye â€” those get matchup_id === null
-    // (or a single-member group). Everyone not in a genuine two-team
-    // matchup is a bye and gets its own BYE card below. Byes are
-    // display-only: they never count as games, wins/losses, PF/PA, records,
-    // or All-Time stats.
     var groups = {};
     (matchups || []).forEach(function (m) {
       if (m.matchup_id === null || m.matchup_id === undefined) return;
@@ -1056,8 +1169,6 @@ async function renderDraft() {
 
     list.innerHTML = "";
 
-    // Resolve an owner name from the pair side, falling back to rosterMap
-    // (pairMatchups may not always carry displayName through).
     function ownerOf(team) {
       if (!team) return null;
       return team.displayName ||
@@ -1067,11 +1178,6 @@ async function renderDraft() {
     }
 
     pairs.forEach(function (pair, idx) {
-      // Skip byes here so they render once, as a dedicated BYE card, in the
-      // bye block below (no duplicates). A pair is a bye if it has no second
-      // team OR its matchup_id is null â€” Sleeper marks bye rosters with
-      // matchup_id === null, and pairMatchups would otherwise pair the first
-      // two null-id rows together incorrectly.
       if (!pair.teamB || pair.matchupId === null || pair.matchupId === undefined) return;
 
       var card = document.createElement("div");
@@ -1116,9 +1222,6 @@ async function renderDraft() {
       list.appendChild(card);
     });
 
-    // Bye teams: raw weekly matchup entries that are not part of a two-team
-    // pair. Shown as a card with team (owner), that week's points, and a BYE
-    // row â€” matching the ESPN bye-card style.
     var byeEntries = (matchups || []).filter(function (raw) {
       return raw && raw.roster_id && !pairedRosterIds[raw.roster_id];
     });
@@ -1150,7 +1253,7 @@ async function renderDraft() {
       card.innerHTML =
         '<div class="matchup-row"><span>' +
         escapeHtml(byeLabel) + escapeHtml(byeRecord) +
-        "</span><span>" + byePoints + '</span></div>' +
+        "</span><span>" + byePoints + "</span></div>" +
         '<div class="matchup-row bye-row">BYE</div>';
 
       list.appendChild(card);
@@ -1193,7 +1296,7 @@ async function renderDraft() {
     var rosterId = Number(select.value);
     if (!rosterId) return;
 
-    tbody.innerHTML = '<tr><td colspan="6">Loadingâ€¦</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
     await ensureAllWeeksMatchups();
 
     if (!state.sleeperRunningRecordsByWeek) {
@@ -1236,7 +1339,7 @@ async function renderDraft() {
   async function renderTeams() {
     var grid = byId("teams-grid");
     if (!grid) return;
-    grid.innerHTML = "<p>Loadingâ€¦</p>";
+    grid.innerHTML = "<p>Loading…</p>";
 
     await ensureAllTransactions();
 
@@ -1292,7 +1395,7 @@ async function renderDraft() {
     var week = Number(weekSelect.value) || state.currentWeek;
     if (!rosterId) return;
 
-    tbody2.innerHTML = '<tr><td colspan="5">Loadingâ€¦</td></tr>';
+    tbody2.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
     totalEl.textContent = "";
 
     try {
@@ -1312,7 +1415,7 @@ async function renderDraft() {
 
       var team = state.rosterMap[rosterId];
       totalEl.innerHTML =
-        escapeHtml(team ? team.teamName : "Team") + " â€” Week " + week +
+        escapeHtml(team ? team.teamName : "Team") + " — Week " + week +
         " total: <strong>" + rosterData.totalPoints.toFixed(2) + " pts</strong>";
 
       tbody2.innerHTML = "";
@@ -1332,49 +1435,6 @@ async function renderDraft() {
       tbody2.innerHTML = '<tr><td colspan="5">Roster data unavailable for this week.</td></tr>';
     }
   }
-
-async function renderDraftEspn(season) {
-  var board = byId("draft-board");
-  if (!board) return;
-  if (!window.EspnDraftLoader) {
-    board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
-    return;
-  }
-  board.innerHTML = "<p>Loading draft board&hellip;</p>";
-  try {
-    var draftData = await window.EspnDraftLoader.loadDraft(season);
-    state.espnDraftData = draftData;
-    if (!draftData.picks || draftData.picks.length === 0) {
-      board.innerHTML = "<p>No draft data found for " + season + ".</p>";
-      return;
-    }
-    board.innerHTML = "";
-    draftData.picks.forEach(function (pick) {
-      var div = document.createElement("div");
-      div.className = "draft-pick";
-      var teamLabel = pick.owner
-        ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
-        : escapeHtml(pick.team);
-      var metaLine =
-        (pick.position ? escapeHtml(pick.position) : "") +
-        (pick.position && pick.nflTeam ? " - " : "") +
-        (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-        : "";
-      div.innerHTML =
-        '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")</div>" +
-        "<div>" + escapeHtml(pick.playerName) + "</div>" +
-        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-        '<div class="draft-owner">' + teamLabel + "</div>" +
-        keeperTag;
-      board.appendChild(div);
-    });
-  } catch (e) {
-    console.error(e);
-    board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
-  }
-}
 
   async function populateTxnMemberSelect() {
     var select = byId("txn-member-select");
@@ -1398,7 +1458,7 @@ async function renderDraftEspn(season) {
 
     var mode = byId("txn-filter-mode").value;
     var list = byId("transactions-list");
-    list.innerHTML = "<li>Loadingâ€¦</li>";
+    list.innerHTML = "<li>Loading…</li>";
 
     if (!state.playersMap) {
       try {
@@ -1439,18 +1499,18 @@ async function renderDraftEspn(season) {
         : detail.teams;
 
       var headerHtml =
-        '<div class="txn-header"><span>' + escapeHtml(teamsDisplay.join(" â†” ")) +
+        '<div class="txn-header"><span>' + escapeHtml(teamsDisplay.join(" ↔ ")) +
         '</span><span class="txn-type-tag">' + escapeHtml(detail.type) + "</span></div>";
 
       var dateHtml =
         '<div class="txn-detail-row">' + new Date(detail.statusUpdated).toLocaleString() +
-        (txn._week ? " â€” Week " + txn._week : "") + "</div>";
+        (txn._week ? " — Week " + txn._week : "") + "</div>";
 
       var addsHtml = detail.adds.length
         ? detail.adds.map(function (a) {
             var teamLabel = a.teamWithOwner || a.team;
             return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
-              escapeHtml(a.player) + " â†’ " + escapeHtml(teamLabel) + "</div>";
+              escapeHtml(a.player) + " → " + escapeHtml(teamLabel) + "</div>";
           }).join("")
         : "";
 
@@ -1465,7 +1525,7 @@ async function renderDraftEspn(season) {
       var picksHtml = detail.draftPicks.length
         ? detail.draftPicks.map(function (dp) {
             return '<div class="txn-detail-row">Draft pick: ' + dp.season + " Round " + dp.round +
-              " (" + escapeHtml(dp.from) + " â†’ " + escapeHtml(dp.to) + ")</div>";
+              " (" + escapeHtml(dp.from) + " → " + escapeHtml(dp.to) + ")</div>";
           }).join("")
         : "";
 
@@ -1473,7 +1533,7 @@ async function renderDraftEspn(season) {
         detail.faab && detail.faab.length
           ? detail.faab.map(function (f) {
               return '<div class="txn-detail-row">FAAB: $' + f.amount +
-                " (" + escapeHtml(f.from) + " â†’ " + escapeHtml(f.to) + ")</div>";
+                " (" + escapeHtml(f.from) + " → " + escapeHtml(f.to) + ")</div>";
             }).join("")
           : "";
 
@@ -1509,7 +1569,7 @@ async function renderDraftEspn(season) {
         statusEl.textContent = "Freeze/export is only available for Sleeper seasons.";
         return;
       }
-      statusEl.textContent = "Building snapshotâ€¦ this may take a moment.";
+      statusEl.textContent = "Building snapshot… this may take a moment.";
       try {
         var snapshot = await SleeperAPI.buildSeasonSnapshot(state.leagueId);
         SleeperAPI.downloadJSON(snapshot, "league_season_" + state.season + "_snapshot.json");
@@ -1530,7 +1590,6 @@ async function renderDraftEspn(season) {
       .replace(/'/g, "&#39;");
   }
 
-  // Label a team with its owner when the two differ (e.g. "Spencer's Team (Spencer)").
   function teamWithOwner(teamName, ownerName) {
     if (ownerName && teamName && ownerName !== teamName) {
       return teamName + " (" + ownerName + ")";
@@ -1538,7 +1597,6 @@ async function renderDraftEspn(season) {
     return teamName || ownerName || "Unknown";
   }
 
-  // 1 -> "1st", 2 -> "2nd", 3 -> "3rd", 5 -> "5th", 12 -> "12th".
   function ordinal(place) {
     var suffix = "th";
     var lastTwo = place % 100;
@@ -1551,14 +1609,10 @@ async function renderDraftEspn(season) {
     return place + suffix;
   }
 
-  // Bracket round title. Reverted to plain "Round N" per request; each
-  // match within a round is distinguished by its placement label instead
-  // (Championship, 3rd Place Game, 5th Place Game, etc.).
   function bracketRoundLabel(containerId, roundIndex, totalRounds) {
     return "Round " + (roundIndex + 1);
   }
 
-  // Owner-aware label for a bracket slot.
   function bracketSlotLabel(slot) {
     if (!slot) return "TBD";
     var ownerName =
@@ -1571,6 +1625,128 @@ async function renderDraftEspn(season) {
       return slot.teamName + " (" + ownerName + ")";
     }
     return slot.teamName || "TBD";
+  }
+
+  /* ============================================================
+   * Per-SEASON Records tab. Reuses all-time.js's
+   * buildSeasonMasterRecords/buildSeasonMemberRecords (built for
+   * exactly this purpose), loading all-seasons data once and caching
+   * it in seasonRecordsState so switching seasons doesn't re-fetch.
+   * ============================================================ */
+
+  var SEASON_RECORD_DEFS = [
+    { key: "mostPoints", title: "Most Points in a Week", mode: "score" },
+    { key: "leastPoints", title: "Least Points in a Week", mode: "score" },
+    { key: "largestMarginVictory", title: "Largest Margin of Victory", mode: "margin" },
+    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", mode: "margin" },
+    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", mode: "margin" },
+    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", mode: "margin" },
+  ];
+
+  function setupSeasonRecordsControls() {
+    var viewButtons = document.querySelectorAll(".season-records-view-btn");
+    viewButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        viewButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        seasonRecordsState.view = btn.dataset.view;
+        var wrap = byId("season-records-member-picker-wrap");
+        if (wrap) wrap.hidden = seasonRecordsState.view !== "member";
+        renderSeasonRecords();
+      });
+    });
+
+    var splitButtons = document.querySelectorAll(".season-records-split-btn");
+    splitButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        splitButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        seasonRecordsState.split = btn.dataset.split;
+        renderSeasonRecords();
+      });
+    });
+  }
+
+  async function loadSeasonRecords() {
+    var loadingEl = byId("season-records-loading");
+    var contentEl = byId("season-records-content");
+    if (!loadingEl || !contentEl) return;
+
+    if (seasonRecordsState.allSeasonsData) {
+      populateSeasonRecordsMemberSelector(seasonRecordsState.allSeasonsData);
+      renderSeasonRecords();
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+      return;
+    }
+
+    loadingEl.hidden = false;
+    contentEl.hidden = true;
+    loadingEl.textContent = "Loading season data…";
+
+    try {
+      var allSeasonsData = await window.AllTimeStats.loadAllSeasons();
+      seasonRecordsState.allSeasonsData = allSeasonsData;
+      populateSeasonRecordsMemberSelector(allSeasonsData);
+      renderSeasonRecords();
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+    } catch (err) {
+      console.error("Failed to load season records data", err);
+      loadingEl.textContent =
+        "Could not load season records. Details: " + (err && err.message ? err.message : err);
+    }
+  }
+
+  function populateSeasonRecordsMemberSelector(allSeasonsData) {
+    var select = byId("season-records-member-select");
+    if (!select) return;
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    select.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+    if (owners.length > 0) select.value = owners[0].key;
+    select.onchange = renderSeasonRecords;
+  }
+
+  function renderSeasonRecords() {
+    var grid = byId("season-records-grid");
+    if (!grid || !seasonRecordsState.allSeasonsData || !state.season) return;
+
+    var records;
+    if (seasonRecordsState.view === "master") {
+      records = window.AllTimeStats.buildSeasonMasterRecords(
+        seasonRecordsState.allSeasonsData,
+        state.season,
+        seasonRecordsState.split
+      );
+    } else {
+      var select = byId("season-records-member-select");
+      var ownerKey = select ? select.value : null;
+      if (!ownerKey) {
+        grid.innerHTML = "<p class=\"status-text\">Pick a member to see their personal records.</p>";
+        return;
+      }
+      records = window.AllTimeStats.buildSeasonMemberRecords(
+        seasonRecordsState.allSeasonsData,
+        state.season,
+        seasonRecordsState.split,
+        ownerKey
+      );
+    }
+
+    grid.innerHTML = "";
+    SEASON_RECORD_DEFS.forEach(function (def) {
+      grid.appendChild(renderRecordCard(def, records[def.key]));
+    });
   }
 
   /* ============================================================
@@ -1591,20 +1767,20 @@ async function renderDraftEspn(season) {
     byId("season-main").hidden = false;
   }
 
-function setupAllTimeButtons() {
-  var openBtn = byId("alltime-btn");
-  var backBtn = byId("back-to-season-btn");
-  if (openBtn) openBtn.addEventListener("click", showAllTimeView);
-  if (backBtn) {
-    backBtn.addEventListener("click", function () {
-      hideAllTimeView();
-      var select = byId("season-select");
-      if (select && state.season !== null) {
-        select.value = String(state.season);
-      }
-    });
+  function setupAllTimeButtons() {
+    var openBtn = byId("alltime-btn");
+    var backBtn = byId("back-to-season-btn");
+    if (openBtn) openBtn.addEventListener("click", showAllTimeView);
+    if (backBtn) {
+      backBtn.addEventListener("click", function () {
+        hideAllTimeView();
+        var select = byId("season-select");
+        if (select && state.season !== null) {
+          select.value = String(state.season);
+        }
+      });
+    }
   }
-}
 
   function setupAllTimeTabs() {
     var tabBtns = document.querySelectorAll(".alltime-tabs .tab-btn");
@@ -1725,8 +1901,8 @@ function setupAllTimeButtons() {
       if (idx === 0 && split === "combined" && owner.championships > 0) {
         tr.classList.add("top-champion");
       }
-      var champHtml = owner.championships > 0 ? "ðŸ† x" + owner.championships : "-";
-      var runnerUpHtml = owner.runnerUps > 0 ? "ðŸ¥ˆ x" + owner.runnerUps : "-";
+      var champHtml = owner.championships > 0 ? "🏆 x" + owner.championships : "-";
+      var runnerUpHtml = owner.runnerUps > 0 ? "🥈 x" + owner.runnerUps : "-";
       var txnHtml = owner.totalTransactions + (owner.hasIncompleteTransactionData ? "*" : "");
       if (owner.hasIncompleteTransactionData) anyIncomplete = true;
 
@@ -1793,9 +1969,9 @@ function setupAllTimeButtons() {
       (summary.ties ? "-" + summary.ties : "") +
       '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + " Record</div></div>" +
       '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.ownerAvgA.toFixed(2) +
-      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + ' Avg Score</div></div>' +
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameA) + " Avg Score</div></div>" +
       '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.ownerAvgB.toFixed(2) +
-      '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + ' Avg Score</div></div>';
+      '</div><div class="h2h-stat-label">' + escapeHtml(nameB) + " Avg Score</div></div>";
   }
 
   function renderHeadToHead() {
@@ -1898,7 +2074,7 @@ function setupAllTimeButtons() {
       '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.wins + "-" + summary.losses +
       (summary.ties ? "-" + summary.ties : "") +
       '</div><div class="h2h-stat-label">Record</div></div>' +
-      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + (summary.winPct * 100).toFixed(1) + '%' +
+      '<div class="h2h-stat-card"><div class="h2h-stat-value">' + (summary.winPct * 100).toFixed(1) + "%" +
       '</div><div class="h2h-stat-label">Win %</div></div>' +
       '<div class="h2h-stat-card"><div class="h2h-stat-value">' + summary.avgFor.toFixed(2) +
       '</div><div class="h2h-stat-label">Avg PF</div></div>' +
@@ -1918,7 +2094,6 @@ function setupAllTimeButtons() {
     }
 
     var result = window.AllTimeStats.buildOwnerVsAll(state.allTimeData, ownerKey);
-
     renderOverallCard("vsfield-overall-regular", result.overallRegular);
     renderOverallCard("vsfield-overall-playoff", result.overallPlayoff);
 
@@ -1994,7 +2169,7 @@ function setupAllTimeButtons() {
     }
 
     var valueText = def.mode === "score" ? entry.myScore.toFixed(2) : entry.margin.toFixed(2);
-    var scoreLine = entry.myScore.toFixed(2) + " â€“ " + entry.oppScore.toFixed(2);
+    var scoreLine = entry.myScore.toFixed(2) + " – " + entry.oppScore.toFixed(2);
     var vsLine = "vs " + escapeHtml(entry.opponentName);
     var yearWeek = "Week " + entry.week + ", " + entry.year + " (" + entry.source.toUpperCase() + ")";
 
@@ -2008,12 +2183,6 @@ function setupAllTimeButtons() {
     return card;
   }
 
-  /**
-   * Renders the Records tab for the currently selected view
-   * ("master" = league-wide leaderboard, "member" = one owner's
-   * personal bests/worsts) and split ("regular" or "playoff" - never
-   * blended together, per league preference).
-   */
   function renderRecords() {
     var grid = byId("records-grid");
     if (!grid || !state.allTimeData) return;
@@ -2055,6 +2224,7 @@ function setupAllTimeButtons() {
     setupAllTimeTabs();
     setupCareerToggle();
     setupRecordsControls();
+    setupSeasonRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
@@ -2063,20 +2233,20 @@ function setupAllTimeButtons() {
         : SleeperAPI.CURRENT_LIVE_SEASON;
 
     byId("season-select").value = String(defaultSeason);
-  byId("season-select").addEventListener("change", function (e) {
-  var value = e.target.value;
+    byId("season-select").addEventListener("change", function (e) {
+      var value = e.target.value;
 
-  if (value === "alltime") {
-    showAllTimeView();
-    return;
-  }
+      if (value === "alltime") {
+        showAllTimeView();
+        return;
+      }
 
-  var season = Number(value);
-  var url = new URL(window.location);
-  url.searchParams.set("season", season);
-  window.history.pushState({}, "", url);
-  loadSeason(season);
-});
+      var season = Number(value);
+      var url = new URL(window.location);
+      url.searchParams.set("season", season);
+      window.history.pushState({}, "", url);
+      loadSeason(season);
+    });
 
     byId("refresh-btn").addEventListener("click", function () {
       loadSeason(state.season);
