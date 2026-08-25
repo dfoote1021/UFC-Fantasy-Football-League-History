@@ -1,0 +1,35 @@
+/* draft-enhancements.css
+ * Presentation rules used by draft-enhancements.js.
+ */
+
+/* Compact colored NFL abbreviation next to the player's position. */
+.nfl-team-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.03em;
+  vertical-align: 1px;
+}
+
+/* Gold keeper label, matching the historical ESPN KEEPER treatment. */
+.keeper-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 210, 92, 0.7);
+  border-radius: 4px;
+  color: #ffd25c;
+  background: rgba(255, 210, 92, 0.1);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  vertical-align: 1px;
+}
+
+.keeper-pick {
+  border-color: rgba(255, 210, 92, 0.55);
+}
