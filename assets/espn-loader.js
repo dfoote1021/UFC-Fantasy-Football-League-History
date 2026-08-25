@@ -58,15 +58,18 @@
  * entirely from team_owner / opponent_owner, which already existed.
  *
  * BRACKET PLACEMENT LABELS ("Championship" / "Nth Place Game"):
- * Sleeper's own API supplies a `position` number for matches in the
- * FINAL round of a bracket (p:1 = championship, p:3 = 3rd place game,
- * etc.); earlier rounds are always position: null there too. ESPN's CSV
- * has no equivalent column, so buildBracketView() derives the same thing
- * here: only the bracket's last round gets a position assigned, ranking
- * that round's matches by the best (lowest) seed on either side of each
- * match and numbering them 1, 3, 5, 7... - identical to how Sleeper does
- * it. This uses team_seed / opponent_seed, which the CSV already has;
- * no new columns are needed for this either.
+ * Only the FINAL round of a bracket ever gets a placement label; earlier
+ * rounds always keep position: null (matching how Sleeper's own API
+ * behaves - it only assigns p:1, p:3, etc. to the last round too).
+ * Within that final round, the TOP match listed in espn-matchups.csv is
+ * ALWAYS the championship, by definition of how this league's sheets are
+ * built - regardless of which seeds ended up playing in it (an upset
+ * earlier in the bracket can put a lower seed in that top slot, and
+ * seed-based guessing gets that wrong). So placement is assigned purely
+ * by CSV ROW ORDER within the final round: first row = position 1
+ * (Championship), second row = position 3 (3rd Place Game), third row =
+ * position 5 (5th Place Game), and so on. No seed comparison is used for
+ * this at all.
  *
  * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
@@ -672,11 +675,17 @@
    * boxes show "Team Name (Owner)" just like Sleeper years do, instead
    * of just the bare team name. No new CSV columns required.
    *
-   * Also derives a `position` value for the FINAL round's matches only
-   * (1 = championship, 3 = 3rd place game, 5 = 5th place game, etc.),
-   * ranked by the best (lowest) seed on either side of each match -
-   * mirroring exactly how Sleeper's own API numbers its placement games.
-   * Earlier rounds keep position: null, same as Sleeper.
+   * PLACEMENT LABELS: only the FINAL round of the bracket ever gets a
+   * `position` assigned (earlier rounds stay position: null, matching
+   * Sleeper). Within that final round, placement is assigned by CSV ROW
+   * ORDER, not by seed: the first row encountered for that round is
+   * ALWAYS the championship (position 1), the second row is 3rd place
+   * (position 3), the third row is 5th place (position 5), etc. This
+   * matches how this league's sheets are actually built - the top match
+   * listed for the final round is the championship regardless of which
+   * seeds ended up playing in it (upsets earlier in the bracket can put
+   * a lower seed in that slot, so seed-based guessing would get it
+   * wrong).
    */
   function buildBracketView(rows, bracketType) {
     var playoffRows = rows.filter(function (r) {
@@ -738,31 +747,22 @@
         return a - b;
       });
 
-    // ESPN's CSV has no explicit placement/position field the way Sleeper's
-    // API does (Sleeper marks the championship match p:1, 3rd place game
-    // p:3, etc.). We derive the same thing for ESPN seasons here by looking
-    // only at the FINAL round of this bracket: sort that round's matches by
-    // the best (lowest) seed involved in each match, and assign 1, 3, 5,
-    // 7... in order - exactly mirroring how Sleeper numbers placement
-    // games. Every other round keeps position: null, matching Sleeper's
-    // behavior where only the last round carries a placement label.
+    // Placement labels only apply to the FINAL round of the bracket -
+    // earlier rounds always keep position: null, same as Sleeper's own
+    // API. Within the final round, the TOP match listed in the CSV is
+    // ALWAYS the championship, by definition of how this league's sheets
+    // are built - regardless of which seeds ended up playing in it (an
+    // upset earlier in the bracket can put a lower seed in that top
+    // slot). So placement is assigned by CSV ROW ORDER within the final
+    // round: first row = position 1 (Championship), second row =
+    // position 3 (3rd Place Game), third row = position 5 (5th Place
+    // Game), and so on. No seed comparison is used for this.
     if (roundNumbers.length > 0) {
       var finalRound = roundNumbers[roundNumbers.length - 1];
       var finalMatches = roundsMap[finalRound];
 
-      var withBestSeed = finalMatches.map(function (m) {
-        var seed1 = m.slot1.seed !== null && m.slot1.seed !== undefined ? m.slot1.seed : 999;
-        var seed2 =
-          m.slot2 && m.slot2.seed !== null && m.slot2.seed !== undefined ? m.slot2.seed : 999;
-        return { match: m, bestSeed: Math.min(seed1, seed2) };
-      });
-
-      withBestSeed.sort(function (a, b) {
-        return a.bestSeed - b.bestSeed;
-      });
-
-      withBestSeed.forEach(function (entry, idx) {
-        entry.match.position = idx * 2 + 1; // 1, 3, 5, 7...
+      finalMatches.forEach(function (m, idx) {
+        m.position = idx * 2 + 1; // 1, 3, 5, 7... in CSV row order
       });
     }
 
@@ -790,14 +790,13 @@
       runnerUp = flaggedRunnerUp ? rosterMap[flaggedRunnerUp] : null;
     } else if (winnersRounds.length > 0) {
       var lastRound = winnersRounds[winnersRounds.length - 1];
+      // With position now assigned by row order, the championship match
+      // in the final round is simply the one with position === 1 - no
+      // need to guess by seed here either.
       var champMatch =
-        lastRound.matches.length === 1
-          ? lastRound.matches[0]
-          : lastRound.matches.reduce(function (best, m) {
-              var bestSeed = Math.min(best.slot1.seed || 99, best.slot2.seed || 99);
-              var mSeed = Math.min(m.slot1.seed || 99, m.slot2.seed || 99);
-              return mSeed < bestSeed ? m : best;
-            }, lastRound.matches[0]);
+        lastRound.matches.find(function (m) {
+          return m.position === 1;
+        }) || lastRound.matches[0];
 
       if (champMatch && champMatch.winnerRosterId) {
         champion = rosterMap[champMatch.winnerRosterId] || null;
