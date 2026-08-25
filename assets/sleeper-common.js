@@ -933,16 +933,26 @@
   }
 
   function countTransactionsByRoster(allTransactions) {
-    var counts = {};
+  var counts = {};
 
-    allTransactions.forEach(function (transaction) {
-      (transaction.roster_ids || []).forEach(function (rosterId) {
-        counts[rosterId] = (counts[rosterId] || 0) + 1;
-      });
+  allTransactions.forEach(function (txn) {
+    var isCompleted = txn.status === "complete";
+    var isPlayerMove =
+      txn.type === "waiver" ||
+      txn.type === "free_agent" ||
+      txn.type === "trade";
+
+    if (!isCompleted || !isPlayerMove || !txn.roster_ids) {
+      return;
+    }
+
+    txn.roster_ids.forEach(function (rid) {
+      counts[rid] = (counts[rid] || 0) + 1;
     });
+  });
 
-    return counts;
-  }
+  return counts;
+}
 
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
