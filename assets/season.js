@@ -490,48 +490,47 @@ function populateSeasonSelect() {
   }
 
   async function renderDraftEspn(season) {
-    var board = byId("draft-board");
-    if (!board) return;
-
-    if (!window.EspnDraftLoader) {
-      board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
+  var board = byId("draft-board");
+  if (!board) return;
+  if (!window.EspnDraftLoader) {
+    board.innerHTML = "<p>Draft board data not available (espn-draft-loader.js not loaded).</p>";
+    return;
+  }
+  board.innerHTML = "<p>Loading draft board&hellip;</p>";
+  try {
+    var draftData = await window.EspnDraftLoader.loadDraft(season);
+    state.espnDraftData = draftData;
+    if (!draftData.picks || draftData.picks.length === 0) {
+      board.innerHTML = "<p>No draft data found for " + season + ".</p>";
       return;
     }
-
-    board.innerHTML = "<p>Loading draft board…</p>";
-
-    try {
-      var draftData = await window.EspnDraftLoader.loadDraft(season);
-      state.espnDraftData = draftData;
-
-      if (!draftData.picks || draftData.picks.length === 0) {
-        board.innerHTML = "<p>No draft data found for " + season + ".</p>";
-        return;
-      }
-
-      board.innerHTML = "";
-      draftData.picks.forEach(function (pick) {
-        var div = document.createElement("div");
-        div.className = "draft-pick";
-        var teamLabel = pick.owner
-          ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
-          : escapeHtml(pick.team);
-        var keeperTag = pick.isKeeper
-          ? '<div class="draft-owner" style="color:#ffd25c;">KEEPER</div>'
-          : "";
-        div.innerHTML =
-          '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ')</div>' +
-          "<div>" + escapeHtml(pick.playerName) + "</div>" +
-          '<div class="draft-owner">' + teamLabel + "</div>" +
-          keeperTag;
-        board.appendChild(div);
-      });
-    } catch (e) {
-      console.error(e);
-      board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
-    }
+    board.innerHTML = "";
+    draftData.picks.forEach(function (pick) {
+      var div = document.createElement("div");
+      div.className = "draft-pick";
+      var teamLabel = pick.owner
+        ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
+        : escapeHtml(pick.team);
+      var metaLine =
+        (pick.position ? escapeHtml(pick.position) : "") +
+        (pick.position && pick.nflTeam ? " - " : "") +
+        (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
+      var keeperTag = pick.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : "";
+      div.innerHTML =
+        '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")</div>" +
+        "<div>" + escapeHtml(pick.playerName) + "</div>" +
+        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
+        '<div class="draft-owner">' + teamLabel + "</div>" +
+        keeperTag;
+      board.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    board.innerHTML = "<p>Draft board data unavailable for this season.</p>";
   }
-
+}
   function renderTransactionsUnavailable() {
     var list = byId("transactions-list");
     if (list) {
