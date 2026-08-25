@@ -57,6 +57,17 @@
  * bare team name. No new CSV columns are required for this - it's built
  * entirely from team_owner / opponent_owner, which already existed.
  *
+ * BRACKET PLACEMENT LABELS ("Championship" / "Nth Place Game"):
+ * Sleeper's own API supplies a `position` number for matches in the
+ * FINAL round of a bracket (p:1 = championship, p:3 = 3rd place game,
+ * etc.); earlier rounds are always position: null there too. ESPN's CSV
+ * has no equivalent column, so buildBracketView() derives the same thing
+ * here: only the bracket's last round gets a position assigned, ranking
+ * that round's matches by the best (lowest) seed on either side of each
+ * match and numbering them 1, 3, 5, 7... - identical to how Sleeper does
+ * it. This uses team_seed / opponent_seed, which the CSV already has;
+ * no new columns are needed for this either.
+ *
  * Everything is wrapped in an IIFE and attached only to window.EspnLoader.
  */
 
@@ -660,6 +671,12 @@
    * same team/owner map every other tab already uses) so ESPN bracket
    * boxes show "Team Name (Owner)" just like Sleeper years do, instead
    * of just the bare team name. No new CSV columns required.
+   *
+   * Also derives a `position` value for the FINAL round's matches only
+   * (1 = championship, 3 = 3rd place game, 5 = 5th place game, etc.),
+   * ranked by the best (lowest) seed on either side of each match -
+   * mirroring exactly how Sleeper's own API numbers its placement games.
+   * Earlier rounds keep position: null, same as Sleeper.
    */
   function buildBracketView(rows, bracketType) {
     var playoffRows = rows.filter(function (r) {
@@ -715,13 +732,43 @@
       });
     });
 
-    return Object.keys(roundsMap)
+    var roundNumbers = Object.keys(roundsMap)
+      .map(Number)
       .sort(function (a, b) {
-        return Number(a) - Number(b);
-      })
-      .map(function (r) {
-        return { round: Number(r), matches: roundsMap[r] };
+        return a - b;
       });
+
+    // ESPN's CSV has no explicit placement/position field the way Sleeper's
+    // API does (Sleeper marks the championship match p:1, 3rd place game
+    // p:3, etc.). We derive the same thing for ESPN seasons here by looking
+    // only at the FINAL round of this bracket: sort that round's matches by
+    // the best (lowest) seed involved in each match, and assign 1, 3, 5,
+    // 7... in order - exactly mirroring how Sleeper numbers placement
+    // games. Every other round keeps position: null, matching Sleeper's
+    // behavior where only the last round carries a placement label.
+    if (roundNumbers.length > 0) {
+      var finalRound = roundNumbers[roundNumbers.length - 1];
+      var finalMatches = roundsMap[finalRound];
+
+      var withBestSeed = finalMatches.map(function (m) {
+        var seed1 = m.slot1.seed !== null && m.slot1.seed !== undefined ? m.slot1.seed : 999;
+        var seed2 =
+          m.slot2 && m.slot2.seed !== null && m.slot2.seed !== undefined ? m.slot2.seed : 999;
+        return { match: m, bestSeed: Math.min(seed1, seed2) };
+      });
+
+      withBestSeed.sort(function (a, b) {
+        return a.bestSeed - b.bestSeed;
+      });
+
+      withBestSeed.forEach(function (entry, idx) {
+        entry.match.position = idx * 2 + 1; // 1, 3, 5, 7...
+      });
+    }
+
+    return roundNumbers.map(function (r) {
+      return { round: Number(r), matches: roundsMap[r] };
+    });
   }
 
   function buildFinalStandings(rosterMap, rows) {
