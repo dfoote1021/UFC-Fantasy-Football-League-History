@@ -1,13 +1,13 @@
 /**
  * draft-enhancements.js
  *
- * Adds two presentation/data enhancements without modifying season.js:
- * 1. Gold KEEPER labels to Sleeper draft picks listed in keeper-overrides.js.
- * 2. NFL team-color badges beside draft-player metadata and two-color
- *    cards in the "By NFL Team" draft breakdown.
+ * NFL team-color enhancements for the Draft tab, without changing season.js.
  *
- * Required scripts, in this order, immediately before season.js in index.html:
- *   <script src="assets/keeper-overrides.js"></script>
+ * - Adds a compact NFL badge next to player metadata.
+ * - Styles By NFL Team breakdown cards with a solid secondary-color box and
+ *   primary-color text for better readability.
+ *
+ * Required script order in index.html:
  *   <script src="assets/nfl-team-colors.js"></script>
  *   <script src="assets/draft-enhancements.js"></script>
  *   <script src="assets/season.js"></script>
@@ -15,21 +15,6 @@
 
 (function () {
   "use strict";
-
-  function currentSeason() {
-    var select = document.getElementById("season-select");
-    if (!select || select.value === "alltime") return null;
-    var year = Number(select.value);
-    return isNaN(year) ? null : year;
-  }
-
-  function isEspnSeason(year) {
-    return !!(
-      window.EspnLoader &&
-      window.EspnLoader.ESPN_SEASONS &&
-      window.EspnLoader.ESPN_SEASONS.indexOf(year) !== -1
-    );
-  }
 
   function normalizeTeam(value) {
     return String(value || "").trim().toUpperCase();
@@ -39,7 +24,11 @@
     if (window.NflTeamColors && typeof window.NflTeamColors.get === "function") {
       return window.NflTeamColors.get(team);
     }
-    return { primary: "#48505c", secondary: "#717b8a", contrast: "#ffffff" };
+    return {
+      primary: "#48505c",
+      secondary: "#717b8a",
+      contrast: "#ffffff"
+    };
   }
 
   function addNflBadge(meta) {
@@ -55,43 +44,13 @@
     var badge = document.createElement("span");
     badge.className = "nfl-team-badge";
     badge.textContent = nflTeam;
-    badge.style.background =
-      "linear-gradient(135deg, " + colors.primary + " 0%, " +
-      colors.primary + " 62%, " + colors.secondary + " 62%, " +
-      colors.secondary + " 100%)";
-    badge.style.color = colors.contrast;
+    badge.style.backgroundColor = colors.secondary;
+    badge.style.color = colors.primary;
+    badge.style.borderColor = colors.primary;
 
     meta.textContent = parts.length > 1 ? parts.slice(0, -1).join(" - ") + " " : "";
     meta.appendChild(badge);
     meta.dataset.nflBadgeApplied = "true";
-  }
-
-  function addKeeperBadge(pick, season) {
-    if (!pick || pick.dataset.keeperChecked === "true") return;
-
-    var playerNameEl = pick.querySelector(".pick-num + div");
-    if (!playerNameEl || !window.KeeperOverrides || typeof window.KeeperOverrides.isKeeper !== "function") {
-      pick.dataset.keeperChecked = "true";
-      return;
-    }
-
-    var playerName = (playerNameEl.childNodes[0] && playerNameEl.childNodes[0].textContent)
-      ? playerNameEl.childNodes[0].textContent.trim()
-      : playerNameEl.textContent.trim();
-
-    if (window.KeeperOverrides.isKeeper(season, playerName)) {
-      var existing = pick.querySelector(".keeper-badge");
-      if (!existing) {
-        var badge = document.createElement("span");
-        badge.className = "keeper-badge";
-        badge.textContent = "KEEPER";
-        playerNameEl.appendChild(document.createTextNode(" "));
-        playerNameEl.appendChild(badge);
-        pick.classList.add("keeper-pick");
-      }
-    }
-
-    pick.dataset.keeperChecked = "true";
   }
 
   function colorNflBreakdownCards() {
@@ -100,19 +59,20 @@
 
     var headings = breakdown.querySelectorAll("h3");
     var nflHeading = null;
+
     for (var i = 0; i < headings.length; i++) {
       if ((headings[i].textContent || "").trim().toLowerCase() === "by nfl team") {
         nflHeading = headings[i];
         break;
       }
     }
+
     if (!nflHeading) return;
 
     var grid = nflHeading.nextElementSibling;
     if (!grid || !grid.classList.contains("breakdown-grid")) return;
 
-    var cards = grid.querySelectorAll(".breakdown-card");
-    cards.forEach(function (card) {
+    grid.querySelectorAll(".breakdown-card").forEach(function (card) {
       var label = card.querySelector(".breakdown-card-label");
       if (!label || card.dataset.nflColorApplied === "true") return;
 
@@ -123,25 +83,12 @@
       card.classList.add("nfl-breakdown-card");
       card.style.setProperty("--nfl-primary", colors.primary);
       card.style.setProperty("--nfl-secondary", colors.secondary);
-      card.style.setProperty("--nfl-contrast", colors.contrast);
       card.dataset.nflColorApplied = "true";
     });
   }
 
   function enhanceDraft() {
-    var season = currentSeason();
-    if (!season) return;
-
     document.querySelectorAll("#draft-board .draft-meta").forEach(addNflBadge);
-
-    // ESPN already has keeper values from espn-draft.csv. The manual
-    // override only applies to Sleeper years, where that API field is absent.
-    if (!isEspnSeason(season)) {
-      document.querySelectorAll("#draft-board .draft-pick").forEach(function (pick) {
-        addKeeperBadge(pick, season);
-      });
-    }
-
     colorNflBreakdownCards();
   }
 
