@@ -139,7 +139,7 @@ body {
 .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
 .tab-btn:hover { color: var(--text); }
 
-main {   width: min(100%, 1680px);   max-width: none;   margin: 0 auto;   padding: 24px 32px; }
+main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -590,9 +590,4 @@ main {   width: min(100%, 1680px);   max-width: none;   margin: 0 auto;   paddin
   text-transform: uppercase;
   justify-content: center;
   padding-top: 4px;
-}
-@media (max-width: 700px) {
-  main {
-    padding: 16px;
-  }
 }
