@@ -13,9 +13,18 @@
  * (active-championship-path-only) results, and exclude consolation/
  * toilet-bowl/placement/post-elimination games from every total - see
  * all-time.js for how that three-way classification is computed
- * per-game. The Records tab shows both a league-wide master leaderboard
- * and per-member personal bests/worsts for six "fun stats", each
- * computed separately for regular season vs playoffs (never blended).
+ * per-game.
+ *
+ * The per-SEASON Records tab and the All-Time Records tab both reuse
+ * all-time.js's record-building functions (buildSeasonMasterRecords/
+ * buildSeasonMemberRecords for the season tab; buildMasterRecords/
+ * buildMemberRecords for the All-Time tab) - each computed separately
+ * for regular season vs playoffs (never blended).
+ *
+ * The per-SEASON Draft tab supports filtering by team/owner and shows a
+ * By Position / By NFL Team breakdown (bar-style) for whichever picks
+ * are currently visible - see populateDraftTeamFilter/
+ * renderDraftBoardFiltered/buildDraftBreakdown/renderDraftBreakdownHtml.
  *
  * All point totals/scores throughout this file (standings, matchups,
  * rosters, brackets, and every All-Time view) are displayed with
@@ -61,6 +70,12 @@
     recordsView: "master",
     recordsSplit: "regular",
     seasonDraftBoardData: null,
+  };
+
+  var seasonRecordsState = {
+    view: "master",
+    split: "regular",
+    allSeasonsData: null,
   };
 
   function isEspnYear(season) {
@@ -287,6 +302,7 @@
       await renderDraft();
       await populateTxnMemberSelect();
       await renderTransactions();
+      await loadSeasonRecords();
       renderLeagueInfoRaw();
 
       byId("last-refreshed").textContent =
@@ -352,6 +368,7 @@
       renderTeamScheduleEspn();
       await renderDraftEspn(season);
       renderTransactionsUnavailable();
+      await loadSeasonRecords();
       renderLeagueInfoRawEspn(season);
 
       byId("last-refreshed").textContent =
@@ -652,34 +669,34 @@
       el.innerHTML = '<p class="status-text">No picks to summarize.</p>';
       return;
     }
-    var positionHtml = breakdown.byPosition
-      .map(function (entry) {
-        return (
-          '<div class="breakdown-chip"><span class="breakdown-key">' +
-          escapeHtml(entry.key) +
-          '</span><span class="breakdown-count">' +
-          entry.count +
-          "</span></div>"
-        );
-      })
-      .join("");
-    var teamHtml = breakdown.byNflTeam
-      .map(function (entry) {
-        return (
-          '<div class="breakdown-chip"><span class="breakdown-key">' +
-          escapeHtml(entry.key) +
-          '</span><span class="breakdown-count">' +
-          entry.count +
-          "</span></div>"
-        );
-      })
-      .join("");
+
+    function buildRows(entries) {
+      var maxCount = entries.length ? entries[0].count : 1;
+      return entries
+        .map(function (entry) {
+          var pct = Math.max(6, Math.round((entry.count / maxCount) * 100));
+          return (
+            '<div class="breakdown-row">' +
+            '<span class="breakdown-label">' + escapeHtml(entry.key) + "</span>" +
+            '<div class="breakdown-bar-track">' +
+            '<div class="breakdown-bar-fill" style="width:' + pct + '%"></div>' +
+            "</div>" +
+            '<span class="breakdown-count">' + entry.count + "</span>" +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+
     el.innerHTML =
-      '<div class="breakdown-group"><h4 class="breakdown-heading">By Position</h4><div class="breakdown-chips">' +
-      positionHtml +
-      '</div></div><div class="breakdown-group"><h4 class="breakdown-heading">By NFL Team</h4><div class="breakdown-chips">' +
-      teamHtml +
-      "</div></div>";
+      '<div class="breakdown-columns">' +
+      '<div class="breakdown-group"><h4 class="breakdown-heading">By Position</h4>' +
+      buildRows(breakdown.byPosition) +
+      "</div>" +
+      '<div class="breakdown-group"><h4 class="breakdown-heading">By NFL Team</h4>' +
+      buildRows(breakdown.byNflTeam) +
+      "</div>" +
+      "</div>";
   }
 
   function renderDraftBoardFiltered() {
@@ -1618,6 +1635,128 @@
   }
 
   /* ============================================================
+   * Per-SEASON Records tab. Reuses all-time.js's
+   * buildSeasonMasterRecords/buildSeasonMemberRecords (built for
+   * exactly this purpose), loading all-seasons data once and caching
+   * it in seasonRecordsState so switching seasons doesn't re-fetch.
+   * ============================================================ */
+
+  var SEASON_RECORD_DEFS = [
+    { key: "mostPoints", title: "Most Points in a Week", mode: "score" },
+    { key: "leastPoints", title: "Least Points in a Week", mode: "score" },
+    { key: "largestMarginVictory", title: "Largest Margin of Victory", mode: "margin" },
+    { key: "smallestMarginVictory", title: "Smallest Margin of Victory", mode: "margin" },
+    { key: "largestMarginDefeat", title: "Largest Margin of Defeat", mode: "margin" },
+    { key: "smallestMarginDefeat", title: "Smallest Margin of Defeat", mode: "margin" },
+  ];
+
+  function setupSeasonRecordsControls() {
+    var viewButtons = document.querySelectorAll(".season-records-view-btn");
+    viewButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        viewButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        seasonRecordsState.view = btn.dataset.view;
+        var wrap = byId("season-records-member-picker-wrap");
+        if (wrap) wrap.hidden = seasonRecordsState.view !== "member";
+        renderSeasonRecords();
+      });
+    });
+
+    var splitButtons = document.querySelectorAll(".season-records-split-btn");
+    splitButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        splitButtons.forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        seasonRecordsState.split = btn.dataset.split;
+        renderSeasonRecords();
+      });
+    });
+  }
+
+  async function loadSeasonRecords() {
+    var loadingEl = byId("season-records-loading");
+    var contentEl = byId("season-records-content");
+    if (!loadingEl || !contentEl) return;
+
+    if (seasonRecordsState.allSeasonsData) {
+      populateSeasonRecordsMemberSelector(seasonRecordsState.allSeasonsData);
+      renderSeasonRecords();
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+      return;
+    }
+
+    loadingEl.hidden = false;
+    contentEl.hidden = true;
+    loadingEl.textContent = "Loading season data…";
+
+    try {
+      var allSeasonsData = await window.AllTimeStats.loadAllSeasons();
+      seasonRecordsState.allSeasonsData = allSeasonsData;
+      populateSeasonRecordsMemberSelector(allSeasonsData);
+      renderSeasonRecords();
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+    } catch (err) {
+      console.error("Failed to load season records data", err);
+      loadingEl.textContent =
+        "Could not load season records. Details: " + (err && err.message ? err.message : err);
+    }
+  }
+
+  function populateSeasonRecordsMemberSelector(allSeasonsData) {
+    var select = byId("season-records-member-select");
+    if (!select) return;
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    select.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+    if (owners.length > 0) select.value = owners[0].key;
+    select.onchange = renderSeasonRecords;
+  }
+
+  function renderSeasonRecords() {
+    var grid = byId("season-records-grid");
+    if (!grid || !seasonRecordsState.allSeasonsData || !state.season) return;
+
+    var records;
+    if (seasonRecordsState.view === "master") {
+      records = window.AllTimeStats.buildSeasonMasterRecords(
+        seasonRecordsState.allSeasonsData,
+        state.season,
+        seasonRecordsState.split
+      );
+    } else {
+      var select = byId("season-records-member-select");
+      var ownerKey = select ? select.value : null;
+      if (!ownerKey) {
+        grid.innerHTML = "<p class=\"status-text\">Pick a member to see their personal records.</p>";
+        return;
+      }
+      records = window.AllTimeStats.buildSeasonMemberRecords(
+        seasonRecordsState.allSeasonsData,
+        state.season,
+        seasonRecordsState.split,
+        ownerKey
+      );
+    }
+
+    grid.innerHTML = "";
+    SEASON_RECORD_DEFS.forEach(function (def) {
+      grid.appendChild(renderRecordCard(def, records[def.key]));
+    });
+  }
+
+  /* ============================================================
    * All-Time view: career totals + head-to-head + owner-vs-field +
    * league records across every season.
    * ============================================================ */
@@ -2092,6 +2231,7 @@
     setupAllTimeTabs();
     setupCareerToggle();
     setupRecordsControls();
+    setupSeasonRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
