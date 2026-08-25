@@ -555,7 +555,45 @@ function populateSeasonSelect() {
       2
     );
   }
-
+async function renderDraft() {
+  if (state.dataSource === "espn") {
+    await renderDraftEspn(state.season);
+    return;
+  }
+  var board = byId("draft-board");
+  if (!board) return;
+  board.innerHTML = "<p>Loading&hellip;</p>";
+  try {
+    var draft = await SleeperAPI.getDraft(state.leagueId);
+    if (!draft) {
+      board.innerHTML = "<p>No draft found for this season.</p>";
+      return;
+    }
+    var picks = await SleeperAPI.getDraftPicks(draft.draft_id);
+    var boardData = SleeperAPI.buildDraftBoard(picks, state.rosterMap);
+    board.innerHTML = "";
+    boardData.forEach(function (pick) {
+      var div = document.createElement("div");
+      div.className = "draft-pick";
+      var teamLabel =
+        pick.ownerName && pick.ownerName !== pick.teamName
+          ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
+          : escapeHtml(pick.teamName);
+      var metaLine =
+        (pick.position ? escapeHtml(pick.position) : "") +
+        (pick.position && pick.nflTeam ? " - " : "") +
+        (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
+      div.innerHTML =
+        '<div class="pick-num">Pick ' + pick.pickNo + " (R" + pick.round + ")</div>" +
+        "<div>" + escapeHtml(pick.playerName) + "</div>" +
+        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
+        '<div class="draft-owner">' + teamLabel + "</div>";
+      board.appendChild(div);
+    });
+  } catch (e) {
+    board.innerHTML = "<p>Draft data unavailable.</p>";
+  }
+}
   async function ensureAllWeeksMatchups() {
     if (state.dataSource !== "sleeper") return null;
     if (state.allWeeksMatchups) return state.allWeeksMatchups;
