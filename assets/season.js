@@ -22,8 +22,10 @@
  * for regular season vs playoffs (never blended).
  *
  * The per-SEASON Draft tab supports filtering by team/owner and shows a
- * By Position / By NFL Team breakdown (bar-style) for whichever picks
- * are currently visible - see populateDraftTeamFilter/
+ * By Position / By NFL Team breakdown - rendered as small stat cards
+ * (same visual language as .h2h-stat-card elsewhere on the site: a
+ * bordered box with a big bold count and a small label) for whichever
+ * picks are currently visible - see populateDraftTeamFilter/
  * renderDraftBoardFiltered/buildDraftBreakdown/renderDraftBreakdownHtml.
  *
  * All point totals/scores throughout this file (standings, matchups,
@@ -670,18 +672,13 @@
       return;
     }
 
-    function buildRows(entries) {
-      var maxCount = entries.length ? entries[0].count : 1;
+    function buildCards(entries) {
       return entries
         .map(function (entry) {
-          var pct = Math.max(6, Math.round((entry.count / maxCount) * 100));
           return (
-            '<div class="breakdown-row">' +
-            '<span class="breakdown-label">' + escapeHtml(entry.key) + "</span>" +
-            '<div class="breakdown-bar-track">' +
-            '<div class="breakdown-bar-fill" style="width:' + pct + '%"></div>' +
-            "</div>" +
-            '<span class="breakdown-count">' + entry.count + "</span>" +
+            '<div class="breakdown-card">' +
+            '<div class="breakdown-card-value">' + entry.count + "</div>" +
+            '<div class="breakdown-card-label">' + escapeHtml(entry.key) + "</div>" +
             "</div>"
           );
         })
@@ -689,14 +686,10 @@
     }
 
     el.innerHTML =
-      '<div class="breakdown-columns">' +
-      '<div class="breakdown-group"><h4 class="breakdown-heading">By Position</h4>' +
-      buildRows(breakdown.byPosition) +
-      "</div>" +
-      '<div class="breakdown-group"><h4 class="breakdown-heading">By NFL Team</h4>' +
-      buildRows(breakdown.byNflTeam) +
-      "</div>" +
-      "</div>";
+      '<h4 class="breakdown-heading">By Position</h4>' +
+      '<div class="breakdown-grid">' + buildCards(breakdown.byPosition) + "</div>" +
+      '<h4 class="breakdown-heading">By NFL Team</h4>' +
+      '<div class="breakdown-grid">' + buildCards(breakdown.byNflTeam) + "</div>";
   }
 
   function renderDraftBoardFiltered() {
