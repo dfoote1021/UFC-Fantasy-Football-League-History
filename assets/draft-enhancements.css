@@ -1,13 +1,14 @@
 /* draft-enhancements.css
- * Presentation rules used by draft-enhancements.js.
+ * NFL color presentation used by draft-enhancements.js.
  */
 
-/* Compact NFL abbreviation next to the player's position. Each badge gets
-   a two-color diagonal background from nfl-team-colors.js. */
+/* Small NFL-team box beside a player's position. Uses secondary team color
+   for the box and primary team color for its abbreviation. */
 .nfl-team-badge {
   display: inline-block;
   margin-left: 5px;
   padding: 1px 5px;
+  border: 1px solid transparent;
   border-radius: 4px;
   font-size: 0.62rem;
   font-weight: 800;
@@ -16,53 +17,18 @@
   vertical-align: 1px;
 }
 
-/* Gold keeper label, matching the historical ESPN KEEPER treatment. */
-.keeper-badge {
-  display: inline-block;
-  margin-left: 4px;
-  padding: 1px 5px;
-  border: 1px solid rgba(255, 210, 92, 0.7);
-  border-radius: 4px;
-  color: #ffd25c;
-  background: rgba(255, 210, 92, 0.1);
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  vertical-align: 1px;
-}
-
-.keeper-pick {
-  border-color: rgba(255, 210, 92, 0.55);
-}
-
-/* Two-color NFL-team cards in the By NFL Team breakdown.
-   The top stripe is a true split of the team's primary and secondary
-   colors. The card stays dark and readable like the rest of the site. */
+/* By NFL Team: secondary team color is the full card background; primary
+   team color is used for the number and abbreviation. Example NE: red box,
+   navy number and "NE" label. */
 .breakdown-card.nfl-breakdown-card {
-  border-color: var(--nfl-primary);
-  box-shadow: inset 0 4px 0 transparent;
-  background:
-    linear-gradient(90deg, var(--nfl-primary) 0%, var(--nfl-primary) 50%,
-      var(--nfl-secondary) 50%, var(--nfl-secondary) 100%) top / 100% 4px no-repeat,
-    linear-gradient(135deg, color-mix(in srgb, var(--nfl-primary) 14%, var(--panel)),
-      var(--panel) 58%);
+  background: var(--nfl-secondary);
+  border: 2px solid var(--nfl-primary);
+  box-shadow: none;
 }
 
-.breakdown-card.nfl-breakdown-card .breakdown-card-value {
-  color: var(--nfl-contrast);
-}
-
+.breakdown-card.nfl-breakdown-card .breakdown-card-value,
 .breakdown-card.nfl-breakdown-card .breakdown-card-label {
-  color: var(--nfl-secondary);
+  color: var(--nfl-primary);
   font-weight: 800;
-}
-
-/* Fallback for browsers that do not support color-mix(). */
-@supports not (background: color-mix(in srgb, #000 50%, #fff)) {
-  .breakdown-card.nfl-breakdown-card {
-    background:
-      linear-gradient(90deg, var(--nfl-primary) 0%, var(--nfl-primary) 50%,
-        var(--nfl-secondary) 50%, var(--nfl-secondary) 100%) top / 100% 4px no-repeat,
-      var(--panel);
-  }
+  text-shadow: none;
 }
