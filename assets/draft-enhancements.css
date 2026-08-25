@@ -1,25 +1,11 @@
 /* draft-enhancements.css
- * NFL color presentation used by draft-enhancements.js.
+ * NFL colors for the Draft tab's "By NFL Team" breakdown only.
+ * Player cards retain the normal readable text: Position - NFL Team.
  */
 
-/* Small NFL-team box beside a player's position. Uses secondary team color
-   for the box and primary team color for its abbreviation. */
-.nfl-team-badge {
-  display: inline-block;
-  margin-left: 5px;
-  padding: 1px 5px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1.35;
-  letter-spacing: 0.03em;
-  vertical-align: 1px;
-}
-
-/* By NFL Team: secondary team color is the full card background; primary
-   team color is used for the number and abbreviation. Example NE: red box,
-   navy number and "NE" label. */
+/* The card uses the team's secondary color as its solid background and the
+   primary team color for its border, number, and NFL abbreviation.
+   Example: NE is a red card with navy number and NE label. */
 .breakdown-card.nfl-breakdown-card {
   background: var(--nfl-secondary);
   border: 2px solid var(--nfl-primary);
