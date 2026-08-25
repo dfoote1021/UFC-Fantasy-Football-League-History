@@ -1,11 +1,10 @@
 /**
  * draft-enhancements.js
  *
- * NFL team-color enhancements for the Draft tab, without changing season.js.
+ * NFL colors for the Draft tab's "By NFL Team" breakdown only.
  *
- * - Adds a compact NFL badge next to player metadata.
- * - Styles By NFL Team breakdown cards with a solid secondary-color box and
- *   primary-color text for better readability.
+ * This file intentionally does NOT modify player metadata. Draft cards keep
+ * their normal readable "Position - NFL Team" text, for example: WR - KC.
  *
  * Required script order in index.html:
  *   <script src="assets/nfl-team-colors.js"></script>
@@ -29,28 +28,6 @@
       secondary: "#717b8a",
       contrast: "#ffffff"
     };
-  }
-
-  function addNflBadge(meta) {
-    if (!meta || meta.dataset.nflBadgeApplied === "true") return;
-
-    var rawText = meta.textContent || "";
-    var parts = rawText.split(" - ");
-    var nflTeam = normalizeTeam(parts.length > 1 ? parts[parts.length - 1] : "");
-
-    if (!/^[A-Z]{2,3}$/.test(nflTeam)) return;
-
-    var colors = getTeamColors(nflTeam);
-    var badge = document.createElement("span");
-    badge.className = "nfl-team-badge";
-    badge.textContent = nflTeam;
-    badge.style.backgroundColor = colors.secondary;
-    badge.style.color = colors.primary;
-    badge.style.borderColor = colors.primary;
-
-    meta.textContent = parts.length > 1 ? parts.slice(0, -1).join(" - ") + " " : "";
-    meta.appendChild(badge);
-    meta.dataset.nflBadgeApplied = "true";
   }
 
   function colorNflBreakdownCards() {
@@ -87,33 +64,19 @@
     });
   }
 
-  function enhanceDraft() {
-    document.querySelectorAll("#draft-board .draft-meta").forEach(addNflBadge);
-    colorNflBreakdownCards();
-  }
-
-  function observeDraftChanges() {
-    var board = document.getElementById("draft-board");
+  function observeBreakdownChanges() {
     var breakdown = document.getElementById("draft-breakdown");
+    if (!breakdown) return;
 
-    if (board) {
-      new MutationObserver(enhanceDraft).observe(board, {
-        childList: true,
-        subtree: true
-      });
-    }
-
-    if (breakdown) {
-      new MutationObserver(enhanceDraft).observe(breakdown, {
-        childList: true,
-        subtree: true
-      });
-    }
+    new MutationObserver(colorNflBreakdownCards).observe(breakdown, {
+      childList: true,
+      subtree: true
+    });
   }
 
   function init() {
-    observeDraftChanges();
-    enhanceDraft();
+    observeBreakdownChanges();
+    colorNflBreakdownCards();
   }
 
   if (document.readyState === "loading") {
