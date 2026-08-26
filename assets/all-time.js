@@ -260,7 +260,7 @@
   }
 
   function loadSleeperSeasonForAllTime(year) {
-    var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
+    var leagueId = SleeperAPI.SLEEPERSEASONS[year];
     if (!leagueId) return Promise.resolve(null);
     return Promise.all([
       SleeperAPI.getLeague(leagueId),
@@ -337,7 +337,7 @@
           };
         });
 
-        return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAX_SLEEPER_WEEK).then(function (allWeeksMatchups) {
+        return SleeperAPI.getAllWeeksMatchups(leagueId, SleeperAPI.MAXSLEEPERWEEK).then(function (allWeeksMatchups) {
           var games = [];
           var playedWeeks = SleeperAPI.getPlayedWeeks(allWeeksMatchups);
           playedWeeks.forEach(function (week) {
@@ -386,7 +386,7 @@
 
   function loadAllSeasons() {
     if (_allSeasonsCache) return _allSeasonsCache;
-    var espnYears = (window.EspnLoader && window.EspnLoader.ESPN_SEASONS) || [];
+    var espnYears = (window.EspnLoader && window.EspnLoader.ESPNSEASONS) || [];
     var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
     var espnPromises = espnYears.map(function (year) {
       return loadEspnSeasonForAllTime(year).catch(function (err) {
@@ -880,7 +880,16 @@
       }).length
     };
   }
+    function buildKeeperDraftBreakdown(picks) {
+      var keeperPicks = (picks || []).filter(function (pick) {
+        return !!pick.isKeeper;
+    });
 
+      var breakdown = buildDraftBreakdown(keeperPicks);
+      breakdown.keeperPicks = keeperPicks;
+
+        return breakdown;
+  }
   window.AllTimeStats = {
     loadAllSeasons: loadAllSeasons,
     buildCareerTotals: buildCareerTotals,
@@ -893,6 +902,7 @@
     buildAllTimeDraftPicks: buildAllTimeDraftPicks,
     getSeasonDraftPicks: getSeasonDraftPicks,
     buildDraftBreakdown: buildDraftBreakdown,
+    buildKeeperDraftBreakdown: buildKeeperDraftBreakdown,
     getAllOwnerNames: getAllOwnerNames
   };
 })();
