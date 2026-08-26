@@ -129,8 +129,8 @@
 
   function loadEspnSeasonForAllTime(year) {
     return window.EspnLoader.loadSeason(year).then(function (data) {
-      var teamSummaries = Object.keys(data.rosterMap).map(function (teamKey) {
-        var team = data.rosterMap[teamKey];
+      var rosterMapData = data.rosterMap || {}; var teamSummaries = Object.keys(rosterMapData).map(function (teamKey) {
+        var team = rosterMapData[teamKey];
         var hasMoveData = team.totalMoves !== undefined && team.totalMoves !== null;
         return {
           year: year,
@@ -209,7 +209,7 @@
   }
 
   function loadSleeperSeasonForAllTime(year) {
-    var leagueId = SleeperAPI.SLEEPERSEASONS[year];
+    var leagueId = (SleeperAPI.SLEEPERSEASONS || {})[year];
     if (!leagueId) return Promise.resolve(null);
 
     return Promise.all([
@@ -331,7 +331,7 @@
     if (allSeasonsCache) return allSeasonsCache;
 
     var espnYears = window.EspnLoader ? window.EspnLoader.ESPNSEASONS : [];
-    var sleeperYears = Object.keys(SleeperAPI.SLEEPERSEASONS).map(Number);
+    var sleeperSeasonMap = SleeperAPI.SLEEPERSEASONS || {}; var sleeperYears = Object.keys(sleeperSeasonMap).map(Number);
     var jobs = espnYears.map(function (year) {
       return loadEspnSeasonForAllTime(year).catch(function (error) {
         console.error("All-time ESPN load failed for " + year, error);
