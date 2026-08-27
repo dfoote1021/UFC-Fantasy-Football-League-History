@@ -1886,6 +1886,8 @@
       populateH2hSelectors(state.allTimeData);
       populateVsFieldSelector(state.allTimeData);
       populateRecordsMemberSelector(state.allTimeData);
+      populateAllTimeDraftOwnerFilter(state.allTimeData);
+      renderAllTimeDraftFiltered();
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
       return;
@@ -1901,6 +1903,8 @@
       populateH2hSelectors(allSeasonsData);
       populateVsFieldSelector(allSeasonsData);
       populateRecordsMemberSelector(allSeasonsData);
+      populateAllTimeDraftOwnerFilter(allSeasonsData);
+      renderAllTimeDraftFiltered();
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
     } catch (err) {
@@ -2022,32 +2026,112 @@
     if (noteEl) noteEl.hidden = !anyIncomplete;
   }
 
-  function populateH2hSelectors(allSeasonsData) {
-    var selectA = byId("h2h-owner-a");
-    var selectB = byId("h2h-owner-b");
-    if (!selectA || !selectB) return;
+  function renderDraftBreakdownGrid(containerId, breakdown) {
+  var container = byId(containerId);
+  if (!container) return;
 
-    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
-    [selectA, selectB].forEach(function (sel) {
-      sel.innerHTML = "";
-      owners.forEach(function (o) {
-        var opt = document.createElement("option");
-        opt.value = o.key;
-        opt.textContent = o.name;
-        sel.appendChild(opt);
-      });
+  if (!breakdown || breakdown.totalPicks === 0) {
+    container.innerHTML = '<p class="status-text">No data available.</p>';
+    return;
+  }
+
+  function cardsHtml(entries) {
+    return entries.map(function (e) {
+      return (
+        '<div class="breakdown-card">' +
+          '<div class="breakdown-card-value">' + e.count + '</div>' +
+          '<div class="breakdown-card-label">' + escapeHtml(e.key) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  container.innerHTML =
+    '<h4 class="breakdown-heading">By Position</h4>' +
+    '<div class="breakdown-grid">' + cardsHtml(breakdown.byPosition) + '</div>' +
+    '<h4 class="breakdown-heading">By NFL Team</h4>' +
+    '<div class="breakdown-grid">' + cardsHtml(breakdown.byNflTeam) + '</div>';
+}
+
+function renderAllTimeDraftByYear(picks) {
+  var container = byId('alltime-draft-by-year');
+  if (!container) return;
+
+  if (!picks || picks.length === 0) {
+    container.innerHTML = '<p class="status-text">No draft picks found.</p>';
+    return;
+  }
+
+  var byYear = {};
+  picks.forEach(function (p) {
+    if (!byYear[p.year]) byYear[p.year] = [];
+    byYear[p.year].push(p);
+  });
+
+  var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
+
+  container.innerHTML = years.map(function (year) {
+    var yearPicks = byYear[year].slice().sort(function (a, b) {
+      return (a.pickNo || 0) - (b.pickNo || 0);
     });
 
-    if (owners.length > 1) {
-      selectA.value = owners[0].key;
-      selectB.value = owners[1].key;
-    }
+    var picksHtml = yearPicks.map(function (p) {
+      var keeperTag = p.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : '';
+      var metaLine = p.position
+        ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
+        : '';
+      return (
+        '<div class="draft-pick">' +
+          '<div class="pick-num">Pick ' + (p.pickNo || '-') +
+            (p.round ? ' (R' + p.round + ')' : '') + '</div>' +
+          '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
+          (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
+          '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
+          keeperTag +
+        '</div>'
+      );
+    }).join('');
 
-    selectA.onchange = renderHeadToHead;
-    selectB.onchange = renderHeadToHead;
+    return (
+      '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
+      '<div class="draft-board">' + picksHtml + '</div>'
+    );
+  }).join('');
+}
 
-    if (owners.length > 1) renderHeadToHead();
-  }
+function renderAllTimeDraftFiltered() {
+  if (!state.allTimeData) return;
+  var select = byId('alltime-draft-owner-filter');
+  var ownerName = select ? select.value : '';
+
+  var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
+
+  var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
+  renderDraftBreakdownGrid('alltime-draft-breakdown', allBreakdown);
+
+  var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
+  renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
+
+  renderAllTimeDraftByYear(allPicks);
+}
+
+function populateAllTimeDraftOwnerFilter(allSeasonsData) {
+  var select = byId('alltime-draft-owner-filter');
+  if (!select) return;
+
+  var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+  select.innerHTML = '<option value="">All Owners</option>';
+  owners.forEach(function (o) {
+    var opt = document.createElement('option');
+    opt.value = o.name;
+    opt.textContent = o.name;
+    select.appendChild(opt);
+  });
+
+  select.onchange = renderAllTimeDraftFiltered;
+}
 
   function renderSummaryCards(containerId, summary, nameA, nameB) {
     var el = byId(containerId);
