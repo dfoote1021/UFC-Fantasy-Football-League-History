@@ -882,12 +882,12 @@
   }
 
   function buildKeeperDraftBreakdown(picks) {
-  var keeperPicks = (picks || []).filter(function (p) {
-    return !!p.isKeeper;
-  });
-  var breakdown = buildDraftBreakdown(keeperPicks);
-  breakdown.keeperPicks = keeperPicks;
-  return breakdown;
+    var keeperPicks = (picks || []).filter(function (p) {
+      return !!p.isKeeper;
+    });
+    var breakdown = buildDraftBreakdown(keeperPicks);
+    breakdown.keeperPicks = keeperPicks;
+    return breakdown;
 }
 
 window.AllTimeStats = {
