@@ -10,7 +10,8 @@
 
 <header class="site-header">
   <h1 id="page-title">UFC: Ultimate Football Challenge</h1>
-  <div class="season-picker">
+
+  <div class="season-picker" id="season-picker">
     <span id="season-badge" class="badge season-badge"></span>
     <label for="season-select">Season:</label>
     <select id="season-select"></select>
@@ -19,6 +20,11 @@
     <span id="final-badge" class="badge final-badge" hidden>FINAL</span>
     <span id="last-refreshed"></span>
     <button id="refresh-btn" class="btn">Refresh</button>
+  </div>
+
+  <div class="season-picker alltime-picker" id="alltime-picker" hidden>
+    <span class="badge season-badge">All-Time</span>
+    <span id="alltime-header-status" class="status-text"></span>
   </div>
 </header>
 
