@@ -838,6 +838,7 @@
             "Unknown Player",
           position: meta.position || "",
           nflTeam: meta.team || "",
+          isKeeper: !!pick.is_keeper,
         };
       });
   }
