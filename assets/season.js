@@ -2025,7 +2025,32 @@
     var noteEl = byId("career-txn-note");
     if (noteEl) noteEl.hidden = !anyIncomplete;
   }
+  function populateH2hSelectors(allSeasonsData) {
+  var selectA = byId("h2h-owner-a");
+  var selectB = byId("h2h-owner-b");
+  if (!selectA || !selectB) return;
 
+  var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+
+  [selectA, selectB].forEach(function (sel) {
+    sel.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      sel.appendChild(opt);
+    });
+  });
+
+  if (owners.length > 1) {
+    selectA.value = owners[0].key;
+    selectB.value = owners[1].key;
+  }
+
+  selectA.onchange = renderHeadToHead;
+  selectB.onchange = renderHeadToHead;
+  if (owners.length > 1) renderHeadToHead();
+}
   function renderDraftBreakdownGrid(containerId, breakdown) {
   var container = byId(containerId);
   if (!container) return;
