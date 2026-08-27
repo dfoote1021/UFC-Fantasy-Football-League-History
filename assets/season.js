@@ -1785,6 +1785,8 @@
     byId("season-tabs").hidden = true;
     byId("season-main").hidden = true;
     byId("alltime-main").hidden = false;
+    byId("season-picker").hidden = true;
+    byId("alltime-picker").hidden = false;
     loadAllTimeData();
   }
 
@@ -1792,6 +1794,8 @@
     byId("alltime-main").hidden = true;
     byId("season-tabs").hidden = false;
     byId("season-main").hidden = false;
+    byId("alltime-picker").hidden = true;
+    byId("season-picker").hidden = false;
   }
 
   function setupAllTimeButtons() {
