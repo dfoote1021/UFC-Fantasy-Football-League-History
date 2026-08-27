@@ -881,18 +881,28 @@
     };
   }
 
-  window.AllTimeStats = {
-    loadAllSeasons: loadAllSeasons,
-    buildCareerTotals: buildCareerTotals,
-    buildHeadToHead: buildHeadToHead,
-    buildOwnerVsAll: buildOwnerVsAll,
-    buildMasterRecords: buildMasterRecords,
-    buildMemberRecords: buildMemberRecords,
-    buildSeasonMasterRecords: buildSeasonMasterRecords,
-    buildSeasonMemberRecords: buildSeasonMemberRecords,
-    buildAllTimeDraftPicks: buildAllTimeDraftPicks,
-    getSeasonDraftPicks: getSeasonDraftPicks,
-    buildDraftBreakdown: buildDraftBreakdown,
-    getAllOwnerNames: getAllOwnerNames
-  };
+  function buildKeeperDraftBreakdown(picks) {
+  var keeperPicks = (picks || []).filter(function (p) {
+    return !!p.isKeeper;
+  });
+  var breakdown = buildDraftBreakdown(keeperPicks);
+  breakdown.keeperPicks = keeperPicks;
+  return breakdown;
+}
+
+window.AllTimeStats = {
+  loadAllSeasons: loadAllSeasons,
+  buildCareerTotals: buildCareerTotals,
+  buildHeadToHead: buildHeadToHead,
+  buildOwnerVsAll: buildOwnerVsAll,
+  buildMasterRecords: buildMasterRecords,
+  buildMemberRecords: buildMemberRecords,
+  buildSeasonMasterRecords: buildSeasonMasterRecords,
+  buildSeasonMemberRecords: buildSeasonMemberRecords,
+  buildAllTimeDraftPicks: buildAllTimeDraftPicks,
+  getSeasonDraftPicks: getSeasonDraftPicks,
+  buildDraftBreakdown: buildDraftBreakdown,
+  buildKeeperDraftBreakdown: buildKeeperDraftBreakdown,
+  getAllOwnerNames: getAllOwnerNames
+};
 })();
