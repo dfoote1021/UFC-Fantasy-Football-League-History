@@ -480,6 +480,10 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
 .position-breakdown-card .breakdown-card-label {
   color: var(--pos-secondary, var(--text)) !important;
 }
+.position-breakdown-card .breakdown-card-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
 
 .transactions-list { list-style: none; padding: 0; }
 
