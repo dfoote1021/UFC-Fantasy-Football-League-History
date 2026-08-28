@@ -2,8 +2,10 @@
  * nfl-team-colors.js
  * Official-ish primary/secondary brand colors for all 32 NFL teams, plus a
  * distinct color per fantasy position. Exposes window.NflTeamColors.get(team)
- * returning { primary, secondary } to match draft-enhancements.js, and
- * window.NflTeamColors.getPosition(position) for position-based coloring.
+ * returning { primary, secondary } for team codes, and
+ * window.NflTeamColors.getPosition(position) returning the same shape for
+ * QB/RB/WR/TE/K/D-ST, used by draft-enhancements.js to color the "By NFL
+ * Team" and "By Position" draft breakdown boxes (single-season + All-Time).
  */
 (function () {
   "use strict";
@@ -43,13 +45,17 @@
     WAS: { primary: "#5A1414", secondary: "#FFB612" }
   };
 
+  // Distinct, high-contrast colors per fantasy position - deliberately
+  // different from the NFL team palette above so position-mode boxes are
+  // visually distinguishable from team-mode boxes at a glance.
   var POSITION_COLORS = {
-    QB: { primary: "#7A2E8C", secondary: "#FFD25C" },
-    RB: { primary: "#1E6E4F", secondary: "#B7F0D6" },
-    WR: { primary: "#1D5FA8", secondary: "#BFE0FF" },
-    TE: { primary: "#B45309", secondary: "#FFE3B0" },
-    K: { primary: "#4B5563", secondary: "#E6E8EB" },
-    "D/ST": { primary: "#7A1F2B", secondary: "#F3C6C6" }
+    QB: { primary: "#7A2E8C", secondary: "#F3D9FF" },
+    RB: { primary: "#1E6E4F", secondary: "#D6FFEC" },
+    WR: { primary: "#1D5FA8", secondary: "#DCEEFF" },
+    TE: { primary: "#B45309", secondary: "#FFE9C7" },
+    K: { primary: "#4B5563", secondary: "#F1F2F4" },
+    "D/ST": { primary: "#7A1F2B", secondary: "#FBDADA" },
+    DST: { primary: "#7A1F2B", secondary: "#FBDADA" }
   };
 
   var DEFAULT_COLOR = { primary: "#48505c", secondary: "#717b8a" };
