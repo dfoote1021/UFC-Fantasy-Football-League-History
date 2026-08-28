@@ -3,11 +3,23 @@
  *
  * 1. Applies NFL team colors to every "By NFL Team" draft breakdown box,
  *    and distinct position colors to every "By Position" draft breakdown
- *    box, in both the single-season Draft tab and the All-Time Draft tab.
+ *    box, in both the single-season Draft tab and the All-Time Draft tab
+ *    (including the separate Keepers Breakdown section there).
  * 2. Applies the same position colors to every individual pick card on
  *    the draft board itself (#draft-board and #alltime-draft-by-year),
- *    coloring the card by the drafted player's position. Player names
- *    and text content are left untouched.
+ *    coloring the card by the drafted player's position.
+ * 3. Marks any pick card containing "KEEPER" text with a class that adds
+ *    a corner badge (see season.css .is-keeper-pick::after) - a color
+ *    not used anywhere else on the site, deliberately distinct from
+ *    every NFL team color and every position color.
+ *
+ * Player names and text content are never modified - only classes and
+ * CSS custom properties are added to existing cards.
+ *
+ * Heading search for breakdown boxes checks h2/h3/h4/h5/.breakdown-heading
+ * (not just h3), plus a page-wide fallback pass that infers grid type
+ * directly from card labels, since different breakdown sections on this
+ * site use different heading tag levels / nesting.
  *
  * Load after nfl-team-colors.js and before or after season.js. This script
  * retries after the page's async draft renderers build/rebuild the cards,
@@ -28,7 +40,7 @@
     "alltime-draft-by-year"
   ];
 
-  var POSITION_LIST = ["QB", "RB", "WR", "TE", "K", "D/ST", "DST"];
+  var POSITION_LIST = ["QB", "RB", "WR", "TE", "K", "D/ST", "DST", "DEF"];
 
   function normalizeKey(value) {
     return String(value || "").trim().toUpperCase();
@@ -42,8 +54,9 @@
   }
 
   function getPositionColors(position) {
+    var key = position === "DEF" ? "D/ST" : position;
     if (window.NflTeamColors && typeof window.NflTeamColors.getPosition === "function") {
-      return window.NflTeamColors.getPosition(position);
+      return window.NflTeamColors.getPosition(key);
     }
     return { primary: "#48505c", secondary: "#717b8a" };
   }
@@ -56,9 +69,6 @@
     return POSITION_LIST.indexOf(value) !== -1;
   }
 
-  // Pulls a position code (QB/RB/WR/TE/K/D-ST) out of pick-card text like
-  // "RB - PIT", "D/ST - BAL", or "QB-SEA" (owner/team name lines are never
-  // shaped like this, so this pattern is safe against false positives).
   function extractPositionFromText(text) {
     var match = /^([A-Z\/]{1,4})\s*-\s*[A-Z]{2,4}$/.exec(normalizeKey(text).replace(/\s+/g, " "));
     if (!match) return null;
@@ -67,14 +77,27 @@
     return null;
   }
 
+  // Finds the .breakdown-grid immediately following ANY heading-like
+  // element (h2/h3/h4/h5, or .breakdown-heading class) whose text matches
+  // headingMatch, searched anywhere inside container.
   function findGridByHeading(container, headingMatch) {
     if (!container) return null;
-    var headings = container.querySelectorAll("h3");
-    for (var i = 0; i < headings.length; i++) {
-      var headingText = (headings[i].textContent || "").trim().toLowerCase();
-      if (headingText === headingMatch) {
-        var grid = headings[i].nextElementSibling;
-        if (grid && grid.classList.contains("breakdown-grid")) return grid;
+    var candidates = container.querySelectorAll("h2, h3, h4, h5, .breakdown-heading");
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      var text = (el.textContent || "").trim().toLowerCase();
+      if (text === headingMatch) {
+        var grid = el.nextElementSibling;
+        var hops = 0;
+        while (grid && !grid.classList.contains("breakdown-grid") && hops < 3) {
+          if (grid.querySelector && grid.querySelector(".breakdown-grid")) {
+            grid = grid.querySelector(".breakdown-grid");
+            break;
+          }
+          grid = grid.nextElementSibling;
+          hops++;
+        }
+        if (grid && grid.classList && grid.classList.contains("breakdown-grid")) return grid;
       }
     }
     return null;
@@ -121,33 +144,53 @@
         "--pos-secondary"
       );
     });
+
+    // Fallback safety net: scan every .breakdown-grid on the page directly
+    // and infer its type from its own cards' labels, so nothing is missed
+    // even if heading matching above fails to find a container match.
+    document.querySelectorAll(".breakdown-grid").forEach(function (grid) {
+      var firstLabel = grid.querySelector(".breakdown-card-label");
+      if (!firstLabel) return;
+      var key = normalizeKey(firstLabel.textContent);
+      if (isPositionCode(key)) {
+        applyColorsToGrid(grid, "position-breakdown-card", getPositionColors, isPositionCode, "--pos-primary", "--pos-secondary");
+      } else if (isNflTeamCode(key)) {
+        applyColorsToGrid(grid, "nfl-breakdown-card", getTeamColors, isNflTeamCode, "--nfl-primary", "--nfl-secondary");
+      }
+    });
   }
 
-  // Colors each individual .draft-pick card on the draft board by the
-  // drafted player's position, read from whichever line inside the card
-  // matches the "POS - TEAM" pattern (works for both Sleeper and ESPN
-  // era picks, and for both the single-season and All-Time boards).
   function applyPickCardColors() {
     PICK_BOARD_CONTAINER_IDS.forEach(function (containerId) {
       var container = document.getElementById(containerId);
       if (!container) return;
 
       container.querySelectorAll(".draft-pick").forEach(function (card) {
-        if (card.dataset.posColored === "1") return;
-
-        var lines = card.querySelectorAll("div");
-        var position = null;
-        for (var i = 0; i < lines.length; i++) {
-          position = extractPositionFromText(lines[i].textContent);
-          if (position) break;
+        // Position coloring.
+        if (card.dataset.posColored !== "1") {
+          var lines = card.querySelectorAll("div");
+          var position = null;
+          for (var i = 0; i < lines.length; i++) {
+            position = extractPositionFromText(lines[i].textContent);
+            if (position) break;
+          }
+          if (position) {
+            var colors = getPositionColors(position);
+            card.classList.add("position-draft-pick");
+            card.style.setProperty("--pos-primary", colors.primary);
+            card.style.setProperty("--pos-secondary", colors.secondary);
+            card.dataset.posColored = "1";
+          }
         }
-        if (!position) return;
 
-        var colors = getPositionColors(position);
-        card.classList.add("position-draft-pick");
-        card.style.setProperty("--pos-primary", colors.primary);
-        card.style.setProperty("--pos-secondary", colors.secondary);
-        card.dataset.posColored = "1";
+        // Keeper corner badge - independent of position coloring above.
+        if (card.dataset.keeperChecked !== "1") {
+          var text = card.textContent || "";
+          if (/\bKEEPER\b/i.test(text)) {
+            card.classList.add("is-keeper-pick");
+          }
+          card.dataset.keeperChecked = "1";
+        }
       });
     });
   }
@@ -170,11 +213,7 @@
       });
     });
 
-    // season.js / all-time.js render draft data asynchronously, and the
-    // All-Time containers don't exist in the DOM until that tab is opened.
-    // These retries cover initial load, changing seasons, changing the
-    // team/owner filter, and opening the All-Time view for the first time.
-    [0, 100, 300, 700, 1500, 3000, 6000].forEach(function (delay) {
+    [0, 100, 300, 700, 1500, 3000, 6000, 10000].forEach(function (delay) {
       window.setTimeout(function () {
         watchForRenders();
         applyAll();
