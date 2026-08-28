@@ -445,7 +445,8 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
 }
 
 .breakdown-card-label {
-  font-size: 0.72rem;
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-dim);
   text-transform: uppercase;
   margin-top: 4px;
