@@ -382,13 +382,11 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
   margin-top: 2px;
 }
 
-/* KEEPER text (rendered inline with color:#ffd25c by season.js/
-   espn-loader.js) - made larger and bolder so it stands out clearly
-   from the rest of the pick card's text. */
+/* KEEPER text at the bottom of the card is now redundant with the
+   corner badge (.is-keeper-pick::after below), so it's hidden here
+   rather than styled. */
 .draft-pick .draft-owner[style*="ffd25c"] {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  display: none;
 }
 
 /* Keeper corner badge - a small pinned tag on any pick card containing
