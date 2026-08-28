@@ -9,20 +9,19 @@
  *    the draft board itself (#draft-board and #alltime-draft-by-year),
  *    coloring the card by the drafted player's position.
  * 3. Marks any pick card containing "KEEPER" text with a class that adds
- *    a corner badge (see season.css .is-keeper-pick::after) - a color
- *    not used anywhere else on the site.
+ *    a corner badge (see season.css .is-keeper-pick::after).
  *
- * The keeper-badge pass (step 3) runs as its own unconditional sweep of
- * EVERY .draft-pick on the page on every tick, independent of the
- * position-coloring dataset flags, because the All-Time Draft tab
- * (#alltime-draft-by-year) renders its per-year pick lists later /
- * separately from the single-season board, and a dataset-guarded pass
- * tied to the wrong timing window can miss cards added after the guard
- * was already set. This sweep is cheap (class list check + regex) so
- * running it unconditionally on every retry/mutation is fine.
- *
- * Player names and text content are never modified - only classes and
- * CSS custom properties are added to existing cards.
+ * IMPORTANT TIMING NOTE: the All-Time Draft tab renders many years of
+ * picks, and individual year sections can attach to the DOM well after
+ * the initial fixed-delay retries below have already fired (confirmed
+ * via DOM inspection - a card can exist with data-pos-colored="1" set
+ * but never receive is-keeper-pick, because the one-time retry list
+ * finished before that particular card was added). To make this robust
+ * regardless of how the page renders, applyKeeperBadges() runs on BOTH
+ * the fixed retry schedule AND a standing setInterval that keeps running
+ * for the life of the page - it is a cheap no-op once a card is already
+ * tagged (classList.add on an existing class does nothing), so running
+ * it repeatedly forever has no real cost.
  *
  * Load after nfl-team-colors.js and before or after season.js.
  */
@@ -164,14 +163,14 @@
     });
   }
 
-  // Unconditional sweep of every .draft-pick anywhere on the page (not
-  // just inside the two known board container IDs) - catches the
-  // All-Time Draft tab's per-year sections even if they render outside
-  // #alltime-draft-by-year or attach later than the container watchers
-  // account for. Cheap enough to re-run every tick without a guard flag
-  // on the card itself (classList.add is a no-op if already present).
+  // Unconditional, page-wide, un-guarded sweep - deliberately re-checks
+  // every .draft-pick every time it runs (no dataset flag skip) so a
+  // card that attaches to the DOM late (confirmed to happen in the
+  // All-Time Draft tab) still gets tagged on the next tick, whenever
+  // that tick happens to land after the card exists.
   function applyKeeperBadges() {
     document.querySelectorAll(".draft-pick").forEach(function (card) {
+      if (card.classList.contains("is-keeper-pick")) return;
       var text = card.textContent || "";
       if (/\bKEEPER\b/i.test(text)) {
         card.classList.add("is-keeper-pick");
@@ -186,10 +185,6 @@
   }
 
   function watchForRenders() {
-    // Watch the whole document body for any draft-related DOM changes,
-    // in addition to the specific known containers, so newly-created
-    // per-year sections inside the All-Time Draft tab are caught even
-    // if they live outside the originally-expected container ids.
     if (document.body && document.body.dataset.draftWatching !== "1") {
       document.body.dataset.draftWatching = "1";
       new MutationObserver(function (mutations) {
@@ -205,9 +200,16 @@
       });
     }
 
-    [0, 100, 300, 700, 1500, 3000, 6000, 10000, 15000].forEach(function (delay) {
+    [0, 100, 300, 700, 1500, 3000, 6000].forEach(function (delay) {
       window.setTimeout(applyAll, delay);
     });
+
+    // Standing interval: keeps re-checking for the life of the page.
+    // Handles any pick cards that attach after all fixed retries above
+    // have already fired (e.g. slow-loading All-Time year sections).
+    if (!window.__draftEnhancementsInterval) {
+      window.__draftEnhancementsInterval = window.setInterval(applyAll, 2000);
+    }
   }
 
   function init() {
