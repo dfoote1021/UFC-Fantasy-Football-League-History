@@ -10,21 +10,21 @@
  *    coloring the card by the drafted player's position.
  * 3. Marks any pick card containing "KEEPER" text with a class that adds
  *    a corner badge (see season.css .is-keeper-pick::after) - a color
- *    not used anywhere else on the site, deliberately distinct from
- *    every NFL team color and every position color.
+ *    not used anywhere else on the site.
+ *
+ * The keeper-badge pass (step 3) runs as its own unconditional sweep of
+ * EVERY .draft-pick on the page on every tick, independent of the
+ * position-coloring dataset flags, because the All-Time Draft tab
+ * (#alltime-draft-by-year) renders its per-year pick lists later /
+ * separately from the single-season board, and a dataset-guarded pass
+ * tied to the wrong timing window can miss cards added after the guard
+ * was already set. This sweep is cheap (class list check + regex) so
+ * running it unconditionally on every retry/mutation is fine.
  *
  * Player names and text content are never modified - only classes and
  * CSS custom properties are added to existing cards.
  *
- * Heading search for breakdown boxes checks h2/h3/h4/h5/.breakdown-heading
- * (not just h3), plus a page-wide fallback pass that infers grid type
- * directly from card labels, since different breakdown sections on this
- * site use different heading tag levels / nesting.
- *
- * Load after nfl-team-colors.js and before or after season.js. This script
- * retries after the page's async draft renderers build/rebuild the cards,
- * and watches all relevant containers for re-renders (season change,
- * team/owner filter change, switching into All-Time view, etc).
+ * Load after nfl-team-colors.js and before or after season.js.
  */
 (function () {
   "use strict";
@@ -77,9 +77,6 @@
     return null;
   }
 
-  // Finds the .breakdown-grid immediately following ANY heading-like
-  // element (h2/h3/h4/h5, or .breakdown-heading class) whose text matches
-  // headingMatch, searched anywhere inside container.
   function findGridByHeading(container, headingMatch) {
     if (!container) return null;
     var candidates = container.querySelectorAll("h2, h3, h4, h5, .breakdown-heading");
@@ -125,29 +122,12 @@
       if (!container) return;
 
       var nflGrid = findGridByHeading(container, "by nfl team");
-      applyColorsToGrid(
-        nflGrid,
-        "nfl-breakdown-card",
-        getTeamColors,
-        isNflTeamCode,
-        "--nfl-primary",
-        "--nfl-secondary"
-      );
+      applyColorsToGrid(nflGrid, "nfl-breakdown-card", getTeamColors, isNflTeamCode, "--nfl-primary", "--nfl-secondary");
 
       var posGrid = findGridByHeading(container, "by position");
-      applyColorsToGrid(
-        posGrid,
-        "position-breakdown-card",
-        getPositionColors,
-        isPositionCode,
-        "--pos-primary",
-        "--pos-secondary"
-      );
+      applyColorsToGrid(posGrid, "position-breakdown-card", getPositionColors, isPositionCode, "--pos-primary", "--pos-secondary");
     });
 
-    // Fallback safety net: scan every .breakdown-grid on the page directly
-    // and infer its type from its own cards' labels, so nothing is missed
-    // even if heading matching above fails to find a container match.
     document.querySelectorAll(".breakdown-grid").forEach(function (grid) {
       var firstLabel = grid.querySelector(".breakdown-card-label");
       if (!firstLabel) return;
@@ -160,64 +140,73 @@
     });
   }
 
-  function applyPickCardColors() {
+  function applyPositionColorsToPickCards() {
     PICK_BOARD_CONTAINER_IDS.forEach(function (containerId) {
       var container = document.getElementById(containerId);
       if (!container) return;
 
       container.querySelectorAll(".draft-pick").forEach(function (card) {
-        // Position coloring.
-        if (card.dataset.posColored !== "1") {
-          var lines = card.querySelectorAll("div");
-          var position = null;
-          for (var i = 0; i < lines.length; i++) {
-            position = extractPositionFromText(lines[i].textContent);
-            if (position) break;
-          }
-          if (position) {
-            var colors = getPositionColors(position);
-            card.classList.add("position-draft-pick");
-            card.style.setProperty("--pos-primary", colors.primary);
-            card.style.setProperty("--pos-secondary", colors.secondary);
-            card.dataset.posColored = "1";
-          }
+        if (card.dataset.posColored === "1") return;
+        var lines = card.querySelectorAll("div");
+        var position = null;
+        for (var i = 0; i < lines.length; i++) {
+          position = extractPositionFromText(lines[i].textContent);
+          if (position) break;
         }
+        if (!position) return;
 
-        // Keeper corner badge - independent of position coloring above.
-        if (card.dataset.keeperChecked !== "1") {
-          var text = card.textContent || "";
-          if (/\bKEEPER\b/i.test(text)) {
-            card.classList.add("is-keeper-pick");
-          }
-          card.dataset.keeperChecked = "1";
-        }
+        var colors = getPositionColors(position);
+        card.classList.add("position-draft-pick");
+        card.style.setProperty("--pos-primary", colors.primary);
+        card.style.setProperty("--pos-secondary", colors.secondary);
+        card.dataset.posColored = "1";
       });
+    });
+  }
+
+  // Unconditional sweep of every .draft-pick anywhere on the page (not
+  // just inside the two known board container IDs) - catches the
+  // All-Time Draft tab's per-year sections even if they render outside
+  // #alltime-draft-by-year or attach later than the container watchers
+  // account for. Cheap enough to re-run every tick without a guard flag
+  // on the card itself (classList.add is a no-op if already present).
+  function applyKeeperBadges() {
+    document.querySelectorAll(".draft-pick").forEach(function (card) {
+      var text = card.textContent || "";
+      if (/\bKEEPER\b/i.test(text)) {
+        card.classList.add("is-keeper-pick");
+      }
     });
   }
 
   function applyAll() {
     applyBreakdownColors();
-    applyPickCardColors();
+    applyPositionColorsToPickCards();
+    applyKeeperBadges();
   }
 
   function watchForRenders() {
-    BREAKDOWN_CONTAINER_IDS.concat(PICK_BOARD_CONTAINER_IDS).forEach(function (containerId) {
-      var container = document.getElementById(containerId);
-      if (!container || container.dataset.posWatching === "1") return;
-      container.dataset.posWatching = "1";
-      new MutationObserver(function () {
-        applyAll();
-      }).observe(container, {
+    // Watch the whole document body for any draft-related DOM changes,
+    // in addition to the specific known containers, so newly-created
+    // per-year sections inside the All-Time Draft tab are caught even
+    // if they live outside the originally-expected container ids.
+    if (document.body && document.body.dataset.draftWatching !== "1") {
+      document.body.dataset.draftWatching = "1";
+      new MutationObserver(function (mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+            applyAll();
+            break;
+          }
+        }
+      }).observe(document.body, {
         childList: true,
         subtree: true
       });
-    });
+    }
 
-    [0, 100, 300, 700, 1500, 3000, 6000, 10000].forEach(function (delay) {
-      window.setTimeout(function () {
-        watchForRenders();
-        applyAll();
-      }, delay);
+    [0, 100, 300, 700, 1500, 3000, 6000, 10000, 15000].forEach(function (delay) {
+      window.setTimeout(applyAll, delay);
     });
   }
 
