@@ -139,7 +139,7 @@ body {
 .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
 .tab-btn:hover { color: var(--text); }
 
-main {   width: 100%;   max-width: 1680px;   margin: 0 auto;   padding: 24px 32px; }
+main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -381,6 +381,34 @@ main {   width: 100%;   max-width: 1680px;   margin: 0 auto;   padding: 24px 32p
   margin-top: 2px;
 }
 
+/* Draft pick headshots (Sleeper CDN for 2022+ picks, ESPN CDN for
+   2012-2021 picks). Falls back gracefully to a plain colored circle
+   if a headshot URL 404s (see onerror handling in draft-enhancements.js). */
+.draft-pick .draft-headshot-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--panel-alt);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.draft-pick .draft-headshot-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.draft-pick .draft-headshot-fallback {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
 /* Draft breakdown ("By Position" / "By NFL Team") - same visual
    language as .h2h-stat-card elsewhere on the site: bordered box,
    big bold value, small dim label underneath, in a responsive grid. */
@@ -422,6 +450,34 @@ main {   width: 100%;   max-width: 1680px;   margin: 0 auto;   padding: 24px 32p
   text-transform: uppercase;
   margin-top: 4px;
   letter-spacing: 0.03em;
+}
+
+/* NFL-team-colored breakdown cards ("By NFL Team"). draft-enhancements.js
+   sets --nfl-primary/--nfl-secondary per card from nfl-team-colors.js;
+   this makes the whole box use the team's primary color as its
+   background and the secondary color for both the count and the
+   abbreviation label, so each box is two-toned per team. */
+.nfl-breakdown-card {
+  background: var(--nfl-primary, var(--panel)) !important;
+  border-color: var(--nfl-primary, var(--border)) !important;
+}
+
+.nfl-breakdown-card .breakdown-card-value,
+.nfl-breakdown-card .breakdown-card-label {
+  color: var(--nfl-secondary, var(--text)) !important;
+}
+
+/* Position-colored breakdown cards ("By Position"). Same pattern as
+   .nfl-breakdown-card but driven by --pos-primary/--pos-secondary,
+   set from window.NflTeamColors.getPosition() in draft-enhancements.js. */
+.position-breakdown-card {
+  background: var(--pos-primary, var(--panel)) !important;
+  border-color: var(--pos-primary, var(--border)) !important;
+}
+
+.position-breakdown-card .breakdown-card-value,
+.position-breakdown-card .breakdown-card-label {
+  color: var(--pos-secondary, var(--text)) !important;
 }
 
 .transactions-list { list-style: none; padding: 0; }
@@ -475,6 +531,106 @@ main {   width: 100%;   max-width: 1680px;   margin: 0 auto;   padding: 24px 32p
   color: var(--text-dim);
   font-size: 0.8rem;
   padding: 20px;
+}
+
+/* ---- Records (Season Records tab + All-Time Records tab) ---- */
+
+.records-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.records-view-toggle,
+.records-split-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.season-records-view-btn.active,
+.season-records-split-btn.active,
+.records-view-btn.active,
+.records-split-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#records-member-picker-wrap,
+#season-records-member-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.record-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.record-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+}
+
+.record-card h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.record-card .record-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.record-card .record-holder {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.record-card .record-detail {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.record-card.no-data {
+  opacity: 0.6;
+}
+
+.record-card.no-data::before {
+  background: var(--border);
+}
+
+.record-card.no-data p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
 }
 
 /* ---- All-Time view ---- */
@@ -591,6 +747,18 @@ main {   width: 100%;   max-width: 1680px;   margin: 0 auto;   padding: 24px 32p
   justify-content: center;
   padding-top: 4px;
 }
+
+/* Fix: .season-picker has display:flex, which overrides the browser's
+   default [hidden]{display:none} behavior. Without this, the All-Time
+   header bar (#alltime-picker) and the normal Season header bar
+   (#season-picker) can both stay visible at once even after JS sets
+   .hidden = true, since [hidden] alone loses to a more specific
+   display:flex rule. This restores correct hide/show behavior for
+   both bars when toggling into/out of the All-Time view. */
+.season-picker[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 700px) {
   main {
     padding: 16px;
