@@ -168,15 +168,16 @@
   // card that attaches to the DOM late (confirmed to happen in the
   // All-Time Draft tab) still gets tagged on the next tick, whenever
   // that tick happens to land after the card exists.
-  function applyKeeperBadges() {
+   function applyKeeperBadges() {
     document.querySelectorAll(".draft-pick").forEach(function (card) {
       if (card.classList.contains("is-keeper-pick")) return;
-      var text = card.textContent || "";
-      if (/\bKEEPER\b/i.test(text)) {
+      var keeperEl = card.querySelector('[style*="ffd25c"]');
+      var hasKeeperText = keeperEl && /KEEPER/i.test(keeperEl.textContent || "");
+      if (hasKeeperText) {
         card.classList.add("is-keeper-pick");
-      }
-    });
-  }
+    }
+  });
+}
 
   function applyAll() {
     applyBreakdownColors();
