@@ -753,6 +753,27 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
   padding-top: 4px;
 }
 
+/* Individual draft board pick cards, colored by the drafted player's
+   position (QB/RB/WR/TE/K/D-ST) using the same palette as the "By
+   Position" breakdown boxes. Text stays legible via --pos-secondary.
+   Applies to both the single-season Draft tab (#draft-board) and the
+   All-Time Draft tab (#alltime-draft-by-year) via draft-enhancements.js. */
+.draft-pick.position-draft-pick {
+  background: var(--pos-primary, var(--panel)) !important;
+  border-color: var(--pos-primary, var(--border)) !important;
+}
+
+.draft-pick.position-draft-pick .pick-num,
+.draft-pick.position-draft-pick .draft-owner,
+.draft-pick.position-draft-pick .draft-meta {
+  color: var(--pos-secondary, var(--text-dim)) !important;
+}
+
+.draft-pick.position-draft-pick > div:not(.pick-num):not(.draft-owner):not(.draft-meta) {
+  color: var(--pos-secondary, var(--text)) !important;
+  font-weight: 700;
+}
+
 /* Fix: .season-picker has display:flex, which overrides the browser's
    default [hidden]{display:none} behavior. Without this, the All-Time
    header bar (#alltime-picker) and the normal Season header bar
