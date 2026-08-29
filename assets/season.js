@@ -7,15 +7,18 @@
  *
  * Also drives the "All-Time" view (career totals + head-to-head +
  * owner-vs-the-field + league records across every season), toggled via
- * the "All-Time" option in the season dropdown - see showAllTimeView()/
- * hideAllTimeView() near the bottom of this file. Career totals,
- * head-to-head, and vs-field all split regular-season from playoff
- * (active-championship-path-only) results, and exclude consolation/
- * toilet-bowl/placement/post-elimination games from every total - see
- * all-time.js for how that three-way classification is computed
- * per-game. The Records tab shows both a league-wide master leaderboard
- * and per-member personal bests/worsts for six "fun stats", each
- * computed separately for regular season vs playoffs (never blended).
+ * the dedicated All-Time button - see showAllTimeView()/hideAllTimeView()
+ * near the bottom of this file. Career totals, head-to-head, and vs-field
+ * all split regular-season from playoff (active-championship-path-only)
+ * results, and exclude consolation/toilet-bowl/placement/post-elimination
+ * games from every total - see all-time.js for how that three-way
+ * classification is computed per-game. The All-Time Records tab and the
+ * per-season Records tab both show a league-wide master leaderboard and
+ * per-member personal bests/worsts for six "fun stats", each computed
+ * separately for regular season vs playoffs (never blended); the
+ * per-season version scopes those same six stats to just the currently
+ * selected season via SleeperAPI/AllTimeStats' buildSeasonMasterRecords()/
+ * buildSeasonMemberRecords().
  *
  * All point totals/scores throughout this file (standings, matchups,
  * rosters, brackets, and every All-Time view) are displayed with
@@ -72,6 +75,13 @@
     recordsSplit: "regular",
     loadToken: 0,
   };
+
+  // Season Records tab state (separate from the All-Time Records tab's
+  // state.recordsView/state.recordsSplit above) - scoped to whichever
+  // season is currently loaded.
+  var seasonRecordsView = "master";
+  var seasonRecordsSplit = "regular";
+  var seasonAllTimeDataForRecords = null;
 
   function isEspnYear(season) {
     return (
@@ -296,6 +306,8 @@
       await populateTxnMemberSelect();
       await renderTransactions();
       renderLeagueInfoRaw();
+      await populateSeasonRecordsMemberSelector();
+      renderSeasonRecords();
 
       if (myToken !== state.loadToken) return;
 
@@ -370,6 +382,8 @@
       await renderDraftEspn(season, myToken);
       renderTransactionsUnavailable();
       renderLeagueInfoRawEspn(season);
+      await populateSeasonRecordsMemberSelector();
+      renderSeasonRecords();
 
       if (myToken !== state.loadToken) return;
 
@@ -735,38 +749,38 @@
    * team (or all teams), plus the By Position / By NFL Team breakdown.
    */
   function renderDraftBoardFiltered() {
-  var board = byId("draft-board");
-  if (!board || !state.sleeperDraftBoardData) return;
-  var filterSelect = byId("draft-team-filter");
-  var selectedRosterId = filterSelect ? filterSelect.value : "";
-  var picks = state.sleeperDraftBoardData.filter(function (pick) {
-    return !selectedRosterId || String(pick.rosterId) === selectedRosterId;
-  });
-  renderDraftBreakdownHtml(picks, "draft-breakdown");
-  if (picks.length === 0) {
-    board.innerHTML = "<p>No picks found for this team.</p>";
-    return;
+    var board = byId("draft-board");
+    if (!board || !state.sleeperDraftBoardData) return;
+    var filterSelect = byId("draft-team-filter");
+    var selectedRosterId = filterSelect ? filterSelect.value : "";
+    var picks = state.sleeperDraftBoardData.filter(function (pick) {
+      return !selectedRosterId || String(pick.rosterId) === selectedRosterId;
+    });
+    renderDraftBreakdownHtml(picks, "draft-breakdown");
+    if (picks.length === 0) {
+      board.innerHTML = "<p>No picks found for this team.</p>";
+      return;
+    }
+    board.innerHTML = "";
+    picks.forEach(function (pick) {
+      var div = document.createElement("div");
+      div.className = "draft-pick";
+      var teamLabel = pick.ownerName && pick.ownerName !== pick.teamName
+        ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
+        : escapeHtml(pick.teamName);
+      var metaLine = pick.position ? escapeHtml(pick.position) + (pick.position && pick.nflTeam ? " - " : "") + (pick.nflTeam ? escapeHtml(pick.nflTeam) : "") : "";
+      var keeperTag = pick.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : "";
+      div.innerHTML =
+        '<div class="pick-num">Pick ' + pick.pickNo + " R" + pick.round + "</div>" +
+        "<div>" + escapeHtml(pick.playerName) + "</div>" +
+        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
+        '<div class="draft-owner">' + teamLabel + "</div>" +
+        keeperTag;
+      board.appendChild(div);
+    });
   }
-  board.innerHTML = "";
-  picks.forEach(function (pick) {
-    var div = document.createElement("div");
-    div.className = "draft-pick";
-    var teamLabel = pick.ownerName && pick.ownerName !== pick.teamName
-      ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
-      : escapeHtml(pick.teamName);
-    var metaLine = pick.position ? escapeHtml(pick.position) + (pick.position && pick.nflTeam ? " - " : "") + (pick.nflTeam ? escapeHtml(pick.nflTeam) : "") : "";
-    var keeperTag = pick.isKeeper
-      ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-      : "";
-    div.innerHTML =
-      '<div class="pick-num">Pick ' + pick.pickNo + " R" + pick.round + "</div>" +
-      "<div>" + escapeHtml(pick.playerName) + "</div>" +
-      (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-      '<div class="draft-owner">' + teamLabel + "</div>" +
-      keeperTag;
-    board.appendChild(div);
-  });
-}
 
   /**
    * Shared breakdown renderer used by both the Sleeper and ESPN draft
@@ -1310,7 +1324,6 @@
       card.className = "matchup-card";
       var aWins = pair.teamA.points > pair.teamB.points;
       var bWins = pair.teamB.points > pair.teamA.points;
-
       var aLabel = teamWithOwner(pair.teamA.teamName, ownerOf(pair.teamA));
       var bLabel = teamWithOwner(pair.teamB.teamName, ownerOf(pair.teamB));
 
@@ -1838,42 +1851,44 @@
       });
     });
   }
+
   function setupCareerSort() {
-  var select = byId("career-sort-select");
-  if (select) {
-    select.onchange = function () {
-      state.careerSort = select.value;
-      syncCareerSortHeaders();
-      if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
-    };
+    var select = byId("career-sort-select");
+    if (select) {
+      select.onchange = function () {
+        state.careerSort = select.value;
+        syncCareerSortHeaders();
+        if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
+      };
+    }
+
+    document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
+      th.style.cursor = "pointer";
+      th.addEventListener("click", function () {
+        state.careerSort = th.dataset.sort;
+        if (select) select.value = state.careerSort;
+        syncCareerSortHeaders();
+        if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
+      });
+    });
+
+    syncCareerSortHeaders();
   }
 
-  document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
-    th.style.cursor = "pointer";
-    th.addEventListener("click", function () {
-      state.careerSort = th.dataset.sort;
-      if (select) select.value = state.careerSort;
-      syncCareerSortHeaders();
-      if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
+  // Adds a visual indicator (▲) to whichever column header matches the
+  // currently active state.careerSort, so it's clear at a glance what
+  // the table is sorted by - regardless of whether that sort was set via
+  // clicking a header or via the #career-sort-select dropdown.
+  function syncCareerSortHeaders() {
+    document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
+      if (th.dataset.sort === state.careerSort) {
+        th.classList.add("sort-active");
+      } else {
+        th.classList.remove("sort-active");
+      }
     });
-  });
+  }
 
-  syncCareerSortHeaders();
-}
-
-// Adds a visual indicator (▲) to whichever column header matches the
-// currently active state.careerSort, so it's clear at a glance what
-// the table is sorted by - regardless of whether that sort was set via
-// clicking a header or via the #career-sort-select dropdown.
-function syncCareerSortHeaders() {
-  document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
-    if (th.dataset.sort === state.careerSort) {
-      th.classList.add("sort-active");
-    } else {
-      th.classList.remove("sort-active");
-    }
-  });
-}
   function setupRecordsControls() {
     var viewButtons = document.querySelectorAll(".records-view-btn");
     viewButtons.forEach(function (btn) {
@@ -1899,6 +1914,107 @@ function syncCareerSortHeaders() {
         renderRecords();
       });
     });
+  }
+
+  /* ============================================================
+   * Season Records tab (per-season, not All-Time): shows the same six
+   * "fun stats" as the All-Time Records tab, but scoped to just the
+   * currently loaded season via buildSeasonMasterRecords()/
+   * buildSeasonMemberRecords(). Reuses RECORD_DEFS and renderRecordCard()
+   * defined further below. The underlying all-seasons dataset is cached
+   * in seasonAllTimeDataForRecords so switching seasons only re-filters
+   * already-fetched data instead of re-fetching every season again.
+   * ============================================================ */
+
+  async function ensureSeasonRecordsData() {
+    if (seasonAllTimeDataForRecords) return seasonAllTimeDataForRecords;
+    seasonAllTimeDataForRecords = await window.AllTimeStats.loadAllSeasons();
+    return seasonAllTimeDataForRecords;
+  }
+
+  async function renderSeasonRecords() {
+    var loadingEl = byId("season-records-loading");
+    var contentEl = byId("season-records-content");
+    var grid = byId("season-records-grid");
+    if (!grid) return;
+
+    if (loadingEl) loadingEl.hidden = false;
+    if (contentEl) contentEl.hidden = true;
+
+    try {
+      var allSeasonsData = await ensureSeasonRecordsData();
+      var records;
+      if (seasonRecordsView === "master") {
+        records = window.AllTimeStats.buildSeasonMasterRecords(allSeasonsData, state.season, seasonRecordsSplit);
+      } else {
+        var select = byId("season-records-member-select");
+        var ownerKey = select ? select.value : null;
+        if (!ownerKey) {
+          grid.innerHTML = '<p class="status-text">Pick a member to see their personal records.</p>';
+          if (loadingEl) loadingEl.hidden = true;
+          if (contentEl) contentEl.hidden = false;
+          return;
+        }
+        records = window.AllTimeStats.buildSeasonMemberRecords(allSeasonsData, state.season, seasonRecordsSplit, ownerKey);
+      }
+      grid.innerHTML = "";
+      RECORD_DEFS.forEach(function (def) {
+        grid.appendChild(renderRecordCard(def, records[def.key]));
+      });
+    } catch (err) {
+      console.error("Failed to load season records", err);
+      if (grid) grid.innerHTML = '<p class="status-text">Could not load records for this season.</p>';
+    }
+
+    if (loadingEl) loadingEl.hidden = true;
+    if (contentEl) contentEl.hidden = false;
+  }
+
+  async function populateSeasonRecordsMemberSelector() {
+    var select = byId("season-records-member-select");
+    if (!select) return;
+    var allSeasonsData = await ensureSeasonRecordsData();
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    var previousValue = select.value;
+    select.innerHTML = "";
+    owners.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
+    if (previousValue && owners.some(function (o) { return o.key === previousValue; })) {
+      select.value = previousValue;
+    }
+  }
+
+  function setupSeasonRecordsControls() {
+    var viewButtons = document.querySelectorAll(".season-records-view-btn");
+    viewButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        viewButtons.forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        seasonRecordsView = btn.dataset.view;
+        var wrap = byId("season-records-member-picker-wrap");
+        if (wrap) wrap.hidden = seasonRecordsView !== "member";
+        renderSeasonRecords();
+      });
+    });
+
+    var splitButtons = document.querySelectorAll(".season-records-split-btn");
+    splitButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        splitButtons.forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        seasonRecordsSplit = btn.dataset.split;
+        renderSeasonRecords();
+      });
+    });
+
+    var memberSelect = byId("season-records-member-select");
+    if (memberSelect) {
+      memberSelect.addEventListener("change", renderSeasonRecords);
+    }
   }
 
   async function loadAllTimeData() {
@@ -1942,78 +2058,78 @@ function syncCareerSortHeaders() {
     var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
 
     var sorted = totals.slice().sort(function (a, b) {
-  var recA = a[split];
-  var recB = b[split];
-  var sortBy = state.careerSort || "championships";
+      var recA = a[split];
+      var recB = b[split];
+      var sortBy = state.careerSort || "championships";
 
-  if (sortBy === "championships") {
-    if (b.championships !== a.championships) {
-      return b.championships - a.championships;
-    }
-    if (recB.winPct !== recA.winPct) {
-      return recB.winPct - recA.winPct;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "championships") {
+        if (b.championships !== a.championships) {
+          return b.championships - a.championships;
+        }
+        if (recB.winPct !== recA.winPct) {
+          return recB.winPct - recA.winPct;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "pf") {
-    if (recB.pointsFor !== recA.pointsFor) {
-      return recB.pointsFor - recA.pointsFor;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "pf") {
+        if (recB.pointsFor !== recA.pointsFor) {
+          return recB.pointsFor - recA.pointsFor;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "pa") {
-    if (recA.pointsAgainst !== recB.pointsAgainst) {
-      return recA.pointsAgainst - recB.pointsAgainst;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "pa") {
+        if (recA.pointsAgainst !== recB.pointsAgainst) {
+          return recA.pointsAgainst - recB.pointsAgainst;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "wins") {
-    if (recB.wins !== recA.wins) {
-      return recB.wins - recA.wins;
-    }
-    return recB.winPct - recA.winPct;
-  }
-  if (sortBy === "losses") {
-    if (recB.losses !== recA.losses) return recA.losses - recB.losses;
-      return recB.winPct - recA.winPct;
-  }
-  if (sortBy === "winPct") {
-    if (recB.winPct !== recA.winPct) {
-      return recB.winPct - recA.winPct;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "wins") {
+        if (recB.wins !== recA.wins) {
+          return recB.wins - recA.wins;
+        }
+        return recB.winPct - recA.winPct;
+      }
+      if (sortBy === "losses") {
+        if (recB.losses !== recA.losses) return recA.losses - recB.losses;
+        return recB.winPct - recA.winPct;
+      }
+      if (sortBy === "winPct") {
+        if (recB.winPct !== recA.winPct) {
+          return recB.winPct - recA.winPct;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "seasons") {
-    if (b.seasons !== a.seasons) {
-      return b.seasons - a.seasons;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "seasons") {
+        if (b.seasons !== a.seasons) {
+          return b.seasons - a.seasons;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "runnerUps") {
-    if (b.runnerUps !== a.runnerUps) {
-      return b.runnerUps - a.runnerUps;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "runnerUps") {
+        if (b.runnerUps !== a.runnerUps) {
+          return b.runnerUps - a.runnerUps;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "transactions") {
-    if (b.totalTransactions !== a.totalTransactions) {
-      return b.totalTransactions - a.totalTransactions;
-    }
-    return recB.wins - recA.wins;
-  }
+      if (sortBy === "transactions") {
+        if (b.totalTransactions !== a.totalTransactions) {
+          return b.totalTransactions - a.totalTransactions;
+        }
+        return recB.wins - recA.wins;
+      }
 
-  if (sortBy === "name") {
-    return a.ownerName.localeCompare(b.ownerName);
-  }
+      if (sortBy === "name") {
+        return a.ownerName.localeCompare(b.ownerName);
+      }
 
-  return 0;
-});
+      return 0;
+    });
 
     tbody.innerHTML = "";
 
@@ -2049,138 +2165,140 @@ function syncCareerSortHeaders() {
     var noteEl = byId("career-txn-note");
     if (noteEl) noteEl.hidden = !anyIncomplete;
   }
+
   function populateH2hSelectors(allSeasonsData) {
-  var selectA = byId("h2h-owner-a");
-  var selectB = byId("h2h-owner-b");
-  if (!selectA || !selectB) return;
+    var selectA = byId("h2h-owner-a");
+    var selectB = byId("h2h-owner-b");
+    if (!selectA || !selectB) return;
 
-  var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
 
-  [selectA, selectB].forEach(function (sel) {
-    sel.innerHTML = "";
-    owners.forEach(function (o) {
-      var opt = document.createElement("option");
-      opt.value = o.key;
-      opt.textContent = o.name;
-      sel.appendChild(opt);
+    [selectA, selectB].forEach(function (sel) {
+      sel.innerHTML = "";
+      owners.forEach(function (o) {
+        var opt = document.createElement("option");
+        opt.value = o.key;
+        opt.textContent = o.name;
+        sel.appendChild(opt);
+      });
     });
-  });
 
-  if (owners.length > 1) {
-    selectA.value = owners[0].key;
-    selectB.value = owners[1].key;
+    if (owners.length > 1) {
+      selectA.value = owners[0].key;
+      selectB.value = owners[1].key;
+    }
+
+    selectA.onchange = renderHeadToHead;
+    selectB.onchange = renderHeadToHead;
+    if (owners.length > 1) renderHeadToHead();
   }
 
-  selectA.onchange = renderHeadToHead;
-  selectB.onchange = renderHeadToHead;
-  if (owners.length > 1) renderHeadToHead();
-}
   function renderDraftBreakdownGrid(containerId, breakdown) {
-  var container = byId(containerId);
-  if (!container) return;
+    var container = byId(containerId);
+    if (!container) return;
 
-  if (!breakdown || breakdown.totalPicks === 0) {
-    container.innerHTML = '<p class="status-text">No data available.</p>';
-    return;
+    if (!breakdown || breakdown.totalPicks === 0) {
+      container.innerHTML = '<p class="status-text">No data available.</p>';
+      return;
+    }
+
+    function cardsHtml(entries) {
+      return entries.map(function (e) {
+        return (
+          '<div class="breakdown-card">' +
+            '<div class="breakdown-card-value">' + e.count + '</div>' +
+            '<div class="breakdown-card-label">' + escapeHtml(e.key) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    container.innerHTML =
+      '<h4 class="breakdown-heading">By Position</h4>' +
+      '<div class="breakdown-grid">' + cardsHtml(breakdown.byPosition) + '</div>' +
+      '<h4 class="breakdown-heading">By NFL Team</h4>' +
+      '<div class="breakdown-grid">' + cardsHtml(breakdown.byNflTeam) + '</div>';
   }
 
-  function cardsHtml(entries) {
-    return entries.map(function (e) {
-      return (
-        '<div class="breakdown-card">' +
-          '<div class="breakdown-card-value">' + e.count + '</div>' +
-          '<div class="breakdown-card-label">' + escapeHtml(e.key) + '</div>' +
-        '</div>'
-      );
-    }).join('');
-  }
+  function renderAllTimeDraftByYear(picks) {
+    var container = byId('alltime-draft-by-year');
+    if (!container) return;
 
-  container.innerHTML =
-    '<h4 class="breakdown-heading">By Position</h4>' +
-    '<div class="breakdown-grid">' + cardsHtml(breakdown.byPosition) + '</div>' +
-    '<h4 class="breakdown-heading">By NFL Team</h4>' +
-    '<div class="breakdown-grid">' + cardsHtml(breakdown.byNflTeam) + '</div>';
-}
+    if (!picks || picks.length === 0) {
+      container.innerHTML = '<p class="status-text">No draft picks found.</p>';
+      return;
+    }
 
-function renderAllTimeDraftByYear(picks) {
-  var container = byId('alltime-draft-by-year');
-  if (!container) return;
-
-  if (!picks || picks.length === 0) {
-    container.innerHTML = '<p class="status-text">No draft picks found.</p>';
-    return;
-  }
-
-  var byYear = {};
-  picks.forEach(function (p) {
-    if (!byYear[p.year]) byYear[p.year] = [];
-    byYear[p.year].push(p);
-  });
-
-  var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
-
-  container.innerHTML = years.map(function (year) {
-    var yearPicks = byYear[year].slice().sort(function (a, b) {
-      return (a.pickNo || 0) - (b.pickNo || 0);
+    var byYear = {};
+    picks.forEach(function (p) {
+      if (!byYear[p.year]) byYear[p.year] = [];
+      byYear[p.year].push(p);
     });
 
-    var picksHtml = yearPicks.map(function (p) {
-      var keeperTag = p.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-        : '';
-      var metaLine = p.position
-        ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
-        : '';
+    var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
+
+    container.innerHTML = years.map(function (year) {
+      var yearPicks = byYear[year].slice().sort(function (a, b) {
+        return (a.pickNo || 0) - (b.pickNo || 0);
+      });
+
+      var picksHtml = yearPicks.map(function (p) {
+        var keeperTag = p.isKeeper
+          ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+          : '';
+        var metaLine = p.position
+          ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
+          : '';
+        return (
+          '<div class="draft-pick">' +
+            '<div class="pick-num">Pick ' + (p.pickNo || '-') +
+              (p.round ? ' (R' + p.round + ')' : '') + '</div>' +
+            '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
+            (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
+            '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
+            keeperTag +
+          '</div>'
+        );
+      }).join('');
+
       return (
-        '<div class="draft-pick">' +
-          '<div class="pick-num">Pick ' + (p.pickNo || '-') +
-            (p.round ? ' (R' + p.round + ')' : '') + '</div>' +
-          '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
-          (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
-          '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
-          keeperTag +
-        '</div>'
+        '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
+        '<div class="draft-board">' + picksHtml + '</div>'
       );
     }).join('');
+  }
 
-    return (
-      '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
-      '<div class="draft-board">' + picksHtml + '</div>'
-    );
-  }).join('');
-}
+  function renderAllTimeDraftFiltered() {
+    if (!state.allTimeData) return;
+    var select = byId('alltime-draft-owner-filter');
+    var ownerName = select ? select.value : '';
 
-function renderAllTimeDraftFiltered() {
-  if (!state.allTimeData) return;
-  var select = byId('alltime-draft-owner-filter');
-  var ownerName = select ? select.value : '';
+    var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
 
-  var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
+    var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid('alltime-draft-breakdown', allBreakdown);
 
-  var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
-  renderDraftBreakdownGrid('alltime-draft-breakdown', allBreakdown);
+    var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
 
-  var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
-  renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
+    renderAllTimeDraftByYear(allPicks);
+  }
 
-  renderAllTimeDraftByYear(allPicks);
-}
+  function populateAllTimeDraftOwnerFilter(allSeasonsData) {
+    var select = byId('alltime-draft-owner-filter');
+    if (!select) return;
 
-function populateAllTimeDraftOwnerFilter(allSeasonsData) {
-  var select = byId('alltime-draft-owner-filter');
-  if (!select) return;
+    var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
+    select.innerHTML = '<option value="">All Owners</option>';
+    owners.forEach(function (o) {
+      var opt = document.createElement('option');
+      opt.value = o.name;
+      opt.textContent = o.name;
+      select.appendChild(opt);
+    });
 
-  var owners = window.AllTimeStats.getAllOwnerNames(allSeasonsData);
-  select.innerHTML = '<option value="">All Owners</option>';
-  owners.forEach(function (o) {
-    var opt = document.createElement('option');
-    opt.value = o.name;
-    opt.textContent = o.name;
-    select.appendChild(opt);
-  });
-
-  select.onchange = renderAllTimeDraftFiltered;
-}
+    select.onchange = renderAllTimeDraftFiltered;
+  }
 
   function renderSummaryCards(containerId, summary, nameA, nameB) {
     var el = byId(containerId);
@@ -2414,7 +2532,7 @@ function populateAllTimeDraftOwnerFilter(allSeasonsData) {
   }
 
   /**
-   * Renders the Records tab for the currently selected view
+   * Renders the All-Time Records tab for the currently selected view
    * ("master" = league-wide leaderboard, "member" = one owner's
    * personal bests/worsts) and split ("regular" or "playoff" - never
    * blended together, per league preference).
@@ -2461,6 +2579,7 @@ function populateAllTimeDraftOwnerFilter(allSeasonsData) {
     setupCareerToggle();
     setupCareerSort();
     setupRecordsControls();
+    setupSeasonRecordsControls();
 
     var urlSeason = getSeasonFromURL();
     var defaultSeason =
