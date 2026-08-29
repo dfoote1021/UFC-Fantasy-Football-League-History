@@ -833,6 +833,21 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
   display: none !important;
 }
 
+/* Same root cause as .season-picker[hidden] above: .champion-banner
+   and .tabs both have display:flex, which overrides the browser's
+   default [hidden]{display:none} behavior. Without this, elements
+   marked hidden by showAllTimeView() (season-tabs, champion-banner)
+   stay visually visible even though hidden=true is correctly set in
+   the DOM (confirmed via console: both reported hidden=true while
+   still rendering on screen). */
+.champion-banner[hidden] {
+  display: none !important;
+}
+
+.tabs[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 700px) {
   main {
     padding: 16px;
