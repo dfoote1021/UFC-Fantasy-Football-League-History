@@ -227,10 +227,20 @@
         <button class="btn career-toggle-btn" data-split="playoff">Playoffs Only</button>
       </div>
       <table id="career-totals-table" class="data-table">
-        <thead>
+        <<thead>
           <tr>
-            <th>#</th><th>Owner</th><th>Seasons</th><th>W</th><th>L</th><th>T</th>
-            <th>Win %</th><th>PF</th><th>PA</th><th>🏆</th><th>🥈</th><th>Txns</th>
+            <th>#</th>
+            <th class="sortable-col" data-sort="name">Owner</th>
+            <th class="sortable-col" data-sort="seasons">Seasons</th>
+            <th class="sortable-col" data-sort="wins">W</th>
+            <th>L</th>
+            <th>T</th>
+            <th class="sortable-col" data-sort="winPct">Win %</th>
+            <th class="sortable-col" data-sort="pf">PF</th>
+            <th class="sortable-col" data-sort="pa">PA</th>
+            <th class="sortable-col" data-sort="championships">🏆</th>
+            <th class="sortable-col" data-sort="runnerUps">🥈</th>
+            <th class="sortable-col" data-sort="transactions">Txns</th>
           </tr>
         </thead>
         <tbody></tbody>
