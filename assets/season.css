@@ -707,6 +707,24 @@ main { width: 100%; max-width: 1680px; margin: 0 auto; padding: 24px 32px; }
 
 #career-totals-table tr.top-champion td { color: var(--gold); font-weight: 700; }
 
+/* Career Totals sortable column headers - clicking Owner/Seasons/W/L/
+   Win %/PF/PA/🏆/🥈/Txns re-sorts the table via state.careerSort (see
+   setupCareerSort() in season.js). The currently active sort column is
+   highlighted in accent blue with a small up-triangle indicator. */
+#career-totals-table th.sortable-col {
+  user-select: none;
+}
+#career-totals-table th.sortable-col:hover {
+  color: var(--accent);
+}
+#career-totals-table th.sortable-col.sort-active {
+  color: var(--accent);
+}
+#career-totals-table th.sortable-col.sort-active::after {
+  content: " \25B2";
+  font-size: 0.7rem;
+}
+
 .h2h-picker {
   display: flex;
   align-items: center;
