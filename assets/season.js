@@ -1782,6 +1782,8 @@
     byId("alltime-main").hidden = false;
     byId("season-picker").hidden = true;
     byId("alltime-picker").hidden = false;
+    var championBanner = byId("champion-banner");
+    if (championBanner) championBanner.hidden = true;
     loadAllTimeData();
   }
 
@@ -1791,6 +1793,11 @@
     byId("season-main").hidden = false;
     byId("alltime-picker").hidden = true;
     byId("season-picker").hidden = false;
+    // Restore the champion banner if the current season actually has a
+    // champion - renderChampionBanner() (called during loadSeason) is
+    // the source of truth for whether it should show at all, so just
+    // re-run it rather than blindly setting hidden = false here.
+    renderChampionBanner();
   }
 
   function setupAllTimeButtons() {
