@@ -89,18 +89,9 @@
   function populateSeasonSelect() {
     var select = byId("season-select");
     select.innerHTML = "";
-
-    var allTimeOpt = document.createElement("option");
-    allTimeOpt.value = "alltime";
-    allTimeOpt.textContent = "All-Time";
-    select.appendChild(allTimeOpt);
-
     var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
     var espnYears = window.EspnLoader ? window.EspnLoader.ESPN_SEASONS.slice() : [];
-    var allYears = sleeperYears.concat(espnYears).sort(function (a, b) {
-      return b - a;
-    });
-
+    var allYears = sleeperYears.concat(espnYears).sort(function (a, b) { return b - a; });
     allYears.forEach(function (year) {
       var opt = document.createElement("option");
       opt.value = year;
