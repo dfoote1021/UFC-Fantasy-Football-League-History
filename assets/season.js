@@ -1978,7 +1978,10 @@ function syncCareerSortHeaders() {
     }
     return recB.winPct - recA.winPct;
   }
-
+  if (sortBy === "losses") {
+    if (recB.losses !== recA.losses) return recA.losses - recB.losses;
+      return recB.winPct - recA.winPct;
+  }
   if (sortBy === "winPct") {
     if (recB.winPct !== recA.winPct) {
       return recB.winPct - recA.winPct;
