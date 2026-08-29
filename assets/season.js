@@ -1842,15 +1842,39 @@
   }
   function setupCareerSort() {
   var select = byId("career-sort-select");
-  if (!select) return;
+  if (select) {
+    select.onchange = function () {
+      state.careerSort = select.value;
+      syncCareerSortHeaders();
+      if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
+    };
+  }
 
-  select.onchange = function () {
-    state.careerSort = select.value;
+  document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", function () {
+      state.careerSort = th.dataset.sort;
+      if (select) select.value = state.careerSort;
+      syncCareerSortHeaders();
+      if (state.allTimeData) renderCareerTotals(state.allTimeData, state.careerSplit);
+    });
+  });
 
-    if (state.allTimeData) {
-      renderCareerTotals(state.allTimeData, state.careerSplit);
+  syncCareerSortHeaders();
+}
+
+// Adds a visual indicator (▲) to whichever column header matches the
+// currently active state.careerSort, so it's clear at a glance what
+// the table is sorted by - regardless of whether that sort was set via
+// clicking a header or via the #career-sort-select dropdown.
+function syncCareerSortHeaders() {
+  document.querySelectorAll("#career-totals-table th.sortable-col").forEach(function (th) {
+    if (th.dataset.sort === state.careerSort) {
+      th.classList.add("sort-active");
+    } else {
+      th.classList.remove("sort-active");
     }
-  };
+  });
 }
   function setupRecordsControls() {
     var viewButtons = document.querySelectorAll(".records-view-btn");
