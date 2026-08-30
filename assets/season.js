@@ -2236,52 +2236,68 @@
   }
 
   function renderAllTimeDraftByYear(picks) {
-    var container = byId('alltime-draft-by-year');
-    if (!container) return;
+  var container = byId('alltime-draft-by-year');
+  if (!container) return;
 
-    if (!picks || picks.length === 0) {
-      container.innerHTML = '<p class="status-text">No draft picks found.</p>';
-      return;
-    }
+  if (!picks || picks.length === 0) {
+    container.innerHTML = '<p class="status-text">No draft picks found.</p>';
+    return;
+  }
 
-    var byYear = {};
-    picks.forEach(function (p) {
-      if (!byYear[p.year]) byYear[p.year] = [];
-      byYear[p.year].push(p);
+  var byYear = {};
+  picks.forEach(function (p) {
+    if (!byYear[p.year]) byYear[p.year] = [];
+    byYear[p.year].push(p);
+  });
+
+  var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
+
+  container.innerHTML = years.map(function (year) {
+    var yearPicks = byYear[year].slice().sort(function (a, b) {
+      return (a.pickNo || 0) - (b.pickNo || 0);
     });
 
-    var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
+    // Derive teams-per-round for THIS year from the number of distinct
+    // owners who picked in round 1 - each year's league may have a
+    // different roster count (e.g. league size changed across seasons),
+    // so this must be computed per-year rather than once globally.
+    // ESPN-sourced years already carry roundPick directly; only Sleeper
+    // years need it derived from pickNo/round.
+    var round1Teams = {};
+    yearPicks.forEach(function (p) {
+      if (p.round === 1 && p.ownerKey) round1Teams[p.ownerKey] = true;
+    });
+    var teamCount = Object.keys(round1Teams).length || 12;
 
-    container.innerHTML = years.map(function (year) {
-      var yearPicks = byYear[year].slice().sort(function (a, b) {
-        return (a.pickNo || 0) - (b.pickNo || 0);
-      });
-
-      var picksHtml = yearPicks.map(function (p) {
-        var keeperTag = p.isKeeper
-          ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-          : '';
-        var metaLine = p.position
-          ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
-          : '';
-        return (
-          '<div class="draft-pick">' +
-            '<div class="pick-num">Pick ' + (p.pickNo || '-') +
-              (p.round ? ' (R' + p.round + ')' : '') + '</div>' +
-            '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
-            (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
-            '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
-            keeperTag +
-          '</div>'
-        );
-      }).join('');
-
+    var picksHtml = yearPicks.map(function (p) {
+      var keeperTag = p.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : '';
+      var metaLine = p.position
+        ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
+        : '';
+      var roundPick = p.roundPick || (p.round && p.pickNo
+        ? p.pickNo - (p.round - 1) * teamCount
+        : null);
+      var pickLabel = 'Pick ' + (p.pickNo || '-') +
+        (p.round ? ' (R' + p.round + (roundPick ? '.' + roundPick : '') + ')' : '');
       return (
-        '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
-        '<div class="draft-board">' + picksHtml + '</div>'
+        '<div class="draft-pick">' +
+          '<div class="pick-num">' + pickLabel + '</div>' +
+          '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
+          (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
+          '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
+          keeperTag +
+        '</div>'
       );
     }).join('');
-  }
+
+    return (
+      '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
+      '<div class="draft-board">' + picksHtml + '</div>'
+    );
+  }).join('');
+}
 
   function renderAllTimeDraftFiltered() {
     if (!state.allTimeData) return;
