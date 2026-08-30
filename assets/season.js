@@ -755,32 +755,47 @@
     var selectedRosterId = filterSelect ? filterSelect.value : "";
     var picks = state.sleeperDraftBoardData.filter(function (pick) {
       return !selectedRosterId || String(pick.rosterId) === selectedRosterId;
-    });
-    renderDraftBreakdownHtml(picks, "draft-breakdown");
+  });
+  renderDraftBreakdownHtml(picks, "draft-breakdown");
     if (picks.length === 0) {
-      board.innerHTML = "<p>No picks found for this team.</p>";
-      return;
-    }
-    board.innerHTML = "";
-    picks.forEach(function (pick) {
-      var div = document.createElement("div");
-      div.className = "draft-pick";
-      var teamLabel = pick.ownerName && pick.ownerName !== pick.teamName
-        ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
-        : escapeHtml(pick.teamName);
-      var metaLine = pick.position ? escapeHtml(pick.position) + (pick.position && pick.nflTeam ? " - " : "") + (pick.nflTeam ? escapeHtml(pick.nflTeam) : "") : "";
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-        : "";
-      div.innerHTML =
-        '<div class="pick-num">Pick ' + pick.pickNo + " R" + pick.round + "</div>" +
-        "<div>" + escapeHtml(pick.playerName) + "</div>" +
-        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-        '<div class="draft-owner">' + teamLabel + "</div>" +
-        keeperTag;
-      board.appendChild(div);
-    });
+    board.innerHTML = "<p>No picks found for this team.</p>";
+    return;
   }
+
+  // Sleeper's buildDraftBoard() only provides the overall pickNo, not a
+  // pick-within-round number like ESPN's roundPick - derive it here from
+  // the number of distinct teams in the full (unfiltered) board, so the
+  // label matches ESPN's "Pick N (R#.#)" format regardless of which team
+  // filter is currently applied.
+  var teamCount = Object.keys(
+    state.sleeperDraftBoardData.reduce(function (acc, p) {
+      acc[p.rosterId] = true;
+      return acc;
+    }, {})
+  ).length || 1;
+
+  board.innerHTML = "";
+  picks.forEach(function (pick) {
+    var div = document.createElement("div");
+    div.className = "draft-pick";
+    var teamLabel = pick.ownerName && pick.ownerName !== pick.teamName
+      ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
+      : escapeHtml(pick.teamName);
+    var metaLine = pick.position ? escapeHtml(pick.position) + (pick.position && pick.nflTeam ? " - " : "") + (pick.nflTeam ? escapeHtml(pick.nflTeam) : "") : "";
+    var keeperTag = pick.isKeeper
+      ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+      : "";
+    var roundPick = pick.round ? pick.pickNo - (pick.round - 1) * teamCount : null;
+    var pickLabel = "Pick " + pick.pickNo + " (R" + pick.round + (roundPick ? "." + roundPick : "") + ")";
+    div.innerHTML =
+      '<div class="pick-num">' + pickLabel + "</div>" +
+      "<div>" + escapeHtml(pick.playerName) + "</div>" +
+      (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
+      '<div class="draft-owner">' + teamLabel + "</div>" +
+      keeperTag;
+    board.appendChild(div);
+  });
+}
 
   /**
    * Shared breakdown renderer used by both the Sleeper and ESPN draft
