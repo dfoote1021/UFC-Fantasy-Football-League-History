@@ -1,11 +1,11 @@
 /**
  * espn-roster-loader.js
  *
- * Loads end-of-season ESPN roster snapshots from:
+ * Loads final ESPN end-of-season roster snapshots from:
  * assets/data/espn-final-rosters.csv
  *
- * Expected CSV columns:
- * season,teamName,owner,playerName,position,nflTeam,slot,isStarter,isKeeper
+ * CSV headers required:
+ * season,teamName,owner,playerName,position,nflTeam
  */
 
 (function () {
@@ -18,9 +18,8 @@
     var currentRow = [];
     var currentCell = "";
     var inQuotes = false;
-    var i;
 
-    for (i = 0; i < text.length; i++) {
+    for (var i = 0; i < text.length; i++) {
       var ch = text[i];
       var next = text[i + 1];
 
@@ -63,46 +62,8 @@
     return rows;
   }
 
-  function normalizeHeader(value) {
-    return String(value || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[\s_-]+/g, "");
-  }
-
-  function parseBoolean(value) {
-    var normalized = String(value || "")
-      .trim()
-      .toLowerCase();
-
-    return (
-      normalized === "true" ||
-      normalized === "1" ||
-      normalized === "yes" ||
-      normalized === "y" ||
-      normalized === "starter" ||
-      normalized === "keeper"
-    );
-  }
-
-  function valueAt(row, headerMap, names) {
-    var i;
-
-    for (i = 0; i < names.length; i++) {
-      var key = normalizeHeader(names[i]);
-
-      if (headerMap[key] !== undefined) {
-        return String(row[headerMap[key]] || "").trim();
-      }
-    }
-
-    return "";
-  }
-
   async function loadAllRows() {
-    if (cachedRows) {
-      return cachedRows;
-    }
+    if (cachedRows) return cachedRows;
 
     var response = await fetch("assets/data/espn-final-rosters.csv");
 
@@ -114,78 +75,54 @@
       );
     }
 
-    var text = await response.text();
-    var table = parseCsv(text);
+    var rows = parseCsv(await response.text());
 
-    if (!table || table.length < 2) {
-      throw new Error("The ESPN final-roster CSV is empty or has no data rows.");
+    if (!rows || rows.length < 2) {
+      throw new Error("The ESPN final-roster CSV is empty.");
     }
 
-    var headers = table[0];
-    var headerMap = {};
-
-    headers.forEach(function (header, index) {
-      headerMap[normalizeHeader(header)] = index;
+    var headers = rows[0].map(function (header) {
+      return String(header || "").trim().toLowerCase();
     });
 
-    cachedRows = table.slice(1).map(function (row) {
+    function col(name) {
+      return headers.indexOf(name);
+    }
+
+    var seasonCol = col("season");
+    var teamNameCol = col("teamname");
+    var ownerCol = col("owner");
+    var playerNameCol = col("playername");
+    var positionCol = col("position");
+    var nflTeamCol = col("nflteam");
+
+    var requiredColumns = [
+      { name: "season", index: seasonCol },
+      { name: "teamName", index: teamNameCol },
+      { name: "owner", index: ownerCol },
+      { name: "playerName", index: playerNameCol },
+      { name: "position", index: positionCol },
+      { name: "nflTeam", index: nflTeamCol },
+    ];
+
+    requiredColumns.forEach(function (column) {
+      if (column.index === -1) {
+        throw new Error(
+          "Missing required CSV column: " +
+            column.name +
+            ". Expected: season,teamName,owner,playerName,position,nflTeam"
+        );
+      }
+    });
+
+    cachedRows = rows.slice(1).map(function (row) {
       return {
-        season: Number(
-          valueAt(row, headerMap, ["season", "year"])
-        ),
-
-        teamName: valueAt(row, headerMap, [
-          "teamName",
-          "team",
-          "fantasyTeam",
-          "fantasyTeamName",
-        ]),
-
-        owner: valueAt(row, headerMap, [
-          "owner",
-          "ownerName",
-          "manager",
-          "displayName",
-        ]),
-
-        playerName: valueAt(row, headerMap, [
-          "playerName",
-          "player",
-          "name",
-        ]),
-
-        position: valueAt(row, headerMap, [
-          "position",
-          "pos",
-        ]),
-
-        nflTeam: valueAt(row, headerMap, [
-          "nflTeam",
-          "nfl",
-          "proTeam",
-          "teamAbbr",
-        ]),
-
-        slot: valueAt(row, headerMap, [
-          "slot",
-          "rosterSlot",
-          "lineupSlot",
-          "status",
-        ]),
-
-        isStarter: parseBoolean(
-          valueAt(row, headerMap, [
-            "isStarter",
-            "starter",
-          ])
-        ),
-
-        isKeeper: parseBoolean(
-          valueAt(row, headerMap, [
-            "isKeeper",
-            "keeper",
-          ])
-        ),
+        season: Number(row[seasonCol] || 0),
+        teamName: String(row[teamNameCol] || "").trim(),
+        owner: String(row[ownerCol] || "").trim(),
+        playerName: String(row[playerNameCol] || "").trim(),
+        position: String(row[positionCol] || "").trim(),
+        nflTeam: String(row[nflTeamCol] || "").trim(),
       };
     });
 
@@ -214,15 +151,16 @@
         };
       }
 
-      var slot = row.slot || (row.isStarter ? "Starter" : "Bench");
-
       teamsByOwner[owner].players.push({
         playerName: row.playerName || "Unknown Player",
         position: row.position || "-",
         nflTeam: row.nflTeam || "-",
-        slot: slot,
-        isStarter: row.isStarter,
-        isKeeper: row.isKeeper,
+
+        // Your CSV is an end-of-season roster list only, not a weekly
+        // lineup export. Therefore, it does not identify starters/bench/IR.
+        slot: "Final Roster",
+        isStarter: false,
+        isKeeper: false,
       });
     });
 
@@ -230,22 +168,7 @@
       .map(function (owner) {
         var team = teamsByOwner[owner];
 
-        // Sort roster display: starting lineup first, then bench, then IR;
-        // within each group, sort alphabetically by player name.
         team.players.sort(function (a, b) {
-          function slotRank(player) {
-            if (player.slot === "IR") return 3;
-            if (player.isStarter) return 1;
-            return 2;
-          }
-
-          var rankA = slotRank(a);
-          var rankB = slotRank(b);
-
-          if (rankA !== rankB) {
-            return rankA - rankB;
-          }
-
           return a.playerName.localeCompare(b.playerName);
         });
 
