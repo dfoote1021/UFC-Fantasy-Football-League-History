@@ -839,6 +839,33 @@
         return result.concat(roundPicks);
       }, []);
   }
+    /**
+   * Gets a visual arrow for a pick card in a snake draft.
+   *
+   * For 12-team draft boards:
+   * - Pick .12 in each non-final round gets ↓.
+   * - Odd rounds otherwise use →.
+   * - Even rounds otherwise use ←.
+   * - The final overall pick gets no arrow.
+   */
+  function getSnakeArrow(round, pickWithinRound, isFinalPick) {
+    if (isFinalPick) {
+      return "";
+    }
+
+    if (Number(pickWithinRound) === 12) {
+      return "↓";
+    }
+
+    return Number(round) % 2 === 0 ? "←" : "→";
+  }
+
+  function getSnakeArrowText(arrow) {
+    if (arrow === "→") return "Next pick to the right";
+    if (arrow === "←") return "Next pick to the left";
+    if (arrow === "↓") return "Next round";
+    return "";
+  }
    /**
    * Renders the ESPN draft board filtered to the currently selected team
    * (or all teams), plus the By Position / By NFL Team breakdown for
@@ -850,7 +877,8 @@
    *
    * Actual historical pick labels are unchanged.
    */
-  function renderDraftBoardFilteredEspn() {
+  
+    function renderDraftBoardFilteredEspn() {
     var board = byId("draft-board");
     if (!board || !state.espnDraftData) return;
 
@@ -868,11 +896,6 @@
       return;
     }
 
-    /*
-     * Group selected picks by round so we can reverse only even-numbered
-     * rounds. Sorting each group by actual overall pick ensures the board
-     * remains correct even if the CSV/API data arrives out of order.
-     */
     var picksByRound = {};
 
     picks.forEach(function (pick) {
@@ -899,7 +922,6 @@
           return Number(a.overallPick) - Number(b.overallPick);
         });
 
-        // Conventional snake draft display reverses every even round.
         if (round % 2 === 0) {
           roundPicks.reverse();
         }
@@ -909,9 +931,30 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick) {
+    snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
-      div.className = "draft-pick";
+      div.className = "draft-pick draft-pick-snake";
+
+      var round = Number(pick.round) || 0;
+      var pickWithinRound = Number(pick.roundPick) || 0;
+
+      var directionArrow = getSnakeArrow(
+        round,
+        pickWithinRound,
+        snakeIndex === snakePicks.length - 1
+      );
+
+      var directionText = getSnakeArrowText(directionArrow);
+
+      var arrowHtml = directionArrow
+        ? '<div class="draft-direction" title="' +
+          directionText +
+          '" aria-label="' +
+          directionText +
+          '">' +
+          directionArrow +
+          "</div>"
+        : "";
 
       var teamLabel = pick.owner
         ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
@@ -923,7 +966,7 @@
         (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
 
       var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
         : "";
 
       div.innerHTML =
@@ -934,6 +977,7 @@
         "." +
         pick.roundPick +
         ")</div>" +
+        arrowHtml +
         "<div>" +
         escapeHtml(pick.playerName) +
         "</div>" +
@@ -948,7 +992,6 @@
       board.appendChild(div);
     });
   }
-
   function renderTransactionsUnavailable() {
     var list = byId("transactions-list");
     if (list) {
@@ -1045,7 +1088,7 @@
    * Renders the Sleeper draft board filtered to the currently-selected
    * team (or all teams), plus the By Position / By NFL Team breakdown.
    */
-   function renderDraftBoardFiltered() {
+     function renderDraftBoardFiltered() {
     var board = byId("draft-board");
     if (!board || !state.sleeperDraftBoardData) return;
 
@@ -1063,25 +1106,13 @@
       return;
     }
 
-    // Sleeper's buildDraftBoard() provides the overall pick number but
-    // not an explicit pick-within-round number. Calculate it using the
-    // full, unfiltered draft so a team filter does not alter R#.## labels.
     var teamCount = Object.keys(
       state.sleeperDraftBoardData.reduce(function (acc, pick) {
         acc[pick.rosterId] = true;
         return acc;
       }, {})
-    ).length || 1;
+    ).length || 12;
 
-    /*
-     * Create visual snake order:
-     *
-     * Odd rounds:  ascending overall picks, left -> right.
-     * Even rounds: descending overall picks, left -> right.
-     *
-     * This affects display only. `pickNo` remains the actual historical
-     * overall selection number used in the Pick N and R#.## labels.
-     */
     var picksByRound = {};
 
     picks.forEach(function (pick) {
@@ -1108,7 +1139,6 @@
           return Number(a.pickNo) - Number(b.pickNo);
         });
 
-        // Reverse every even-numbered round for snake-board display.
         if (round % 2 === 0) {
           roundPicks.reverse();
         }
@@ -1118,9 +1148,33 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick) {
+    snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
-      div.className = "draft-pick";
+      div.className = "draft-pick draft-pick-snake";
+
+      var round = Number(pick.round) || 0;
+
+      var pickWithinRound = round
+        ? Number(pick.pickNo) - (round - 1) * teamCount
+        : 0;
+
+      var directionArrow = getSnakeArrow(
+        round,
+        pickWithinRound,
+        snakeIndex === snakePicks.length - 1
+      );
+
+      var directionText = getSnakeArrowText(directionArrow);
+
+      var arrowHtml = directionArrow
+        ? '<div class="draft-direction" title="' +
+          directionText +
+          '" aria-label="' +
+          directionText +
+          '">' +
+          directionArrow +
+          "</div>"
+        : "";
 
       var teamLabel =
         pick.ownerName && pick.ownerName !== pick.teamName
@@ -1137,25 +1191,22 @@
         : "";
 
       var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
         : "";
-
-      var roundPick = pick.round
-        ? pick.pickNo - (pick.round - 1) * teamCount
-        : null;
 
       var pickLabel =
         "Pick " +
         pick.pickNo +
         " (R" +
         pick.round +
-        (roundPick ? "." + roundPick : "") +
+        (pickWithinRound ? "." + pickWithinRound : "") +
         ")";
 
       div.innerHTML =
         '<div class="pick-num">' +
         pickLabel +
         "</div>" +
+        arrowHtml +
         "<div>" +
         escapeHtml(pick.playerName) +
         "</div>" +
@@ -1170,7 +1221,6 @@
       board.appendChild(div);
     });
   }
-
   /**
    * Shared breakdown renderer used by both the Sleeper and ESPN draft
    * tabs: groups whichever `picks` array is currently visible by
@@ -2735,22 +2785,28 @@
              * ↓ on the last card of every non-final round
              * no arrow on the final card in the year's draft
              */
-            var picksInThisRound = snakePicks.filter(function (entry) {
-              return Number(entry.round) === round;
-            });
-
-            var positionInRound = picksInThisRound.indexOf(pick);
+                        /*
+             * Find this pick's original selection number inside its round.
+             * This is intentionally calculated from pickNo rather than
+             * its visual grid position: the board reverses even rounds,
+             * but the #12 pick of every round should always get ↓.
+             */
+            var pickWithinRound =
+              pick.roundPick ||
+              (round && pick.pickNo
+                ? pick.pickNo - (round - 1) * teamCount
+                : null);
 
             var isFinalPickInYear =
               snakeIndex === snakePicks.length - 1;
 
-            var isLastPickInRound =
-              positionInRound === picksInThisRound.length - 1;
+            var isTwelfthPickOfRound =
+              Number(pickWithinRound) === 12;
 
             var directionArrow = "";
 
             if (!isFinalPickInYear) {
-              if (isLastPickInRound) {
+              if (isTwelfthPickOfRound) {
                 directionArrow = "↓";
               } else if (round % 2 === 0) {
                 directionArrow = "←";
