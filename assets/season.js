@@ -839,6 +839,35 @@
         return result.concat(roundPicks);
       }, []);
   }
+    function getSnakeArrow(round, pickWithinRound, teamCount, isFinalPick) {
+    var roundNumber = Number(round) || 0;
+    var roundPickNumber = Number(pickWithinRound) || 0;
+    var totalTeams = Number(teamCount) || 12;
+
+    if (isFinalPick) {
+      return "";
+    }
+
+    // Your requested exception: R16.12 has no arrow.
+    if (roundNumber === 16 && roundPickNumber === totalTeams) {
+      return "";
+    }
+
+    // Every .12 pick gets a down arrow.
+    if (roundPickNumber === totalTeams) {
+      return "↓";
+    }
+
+    // All other picks point horizontally by round direction.
+    return roundNumber % 2 === 0 ? "←" : "→";
+  }
+
+  function getSnakeArrowText(arrow) {
+    if (arrow === "→") return "Next pick to the right";
+    if (arrow === "←") return "Next pick to the left";
+    if (arrow === "↓") return "Next round";
+    return "";
+  }
     /**
    * Gets a visual arrow for a pick card in a snake draft.
    *
@@ -2840,7 +2869,7 @@
              * Only the actual final card in the year's complete draft has
              * no arrow at all.
              */
-                       var pickWithinRound =
+            var pickWithinRound =
               pick.roundPick ||
               (round && pick.pickNo
                 ? pick.pickNo - (round - 1) * teamCount
@@ -2854,30 +2883,14 @@
              * while the last displayed item of an even row is R#.1.
              * That final displayed item gets the downward turn arrow.
              */
-            var nextPick = snakePicks[snakeIndex + 1];
-
-            var isVisualLastPickInRound =
-              !nextPick || Number(nextPick.round) !== round;
-
-            var isFinalPickInYear =
-              snakeIndex === snakePicks.length - 1;
-
-                        /*
-             * The All-Time owner filter shows only one owner's picks.
-             * Suppress arrows in that view because the next actual pick
-             * in the complete draft is usually not visible.
-             */
-            var directionArrow = "";
-
-            if (showSnakeArrows && !isFinalPickInYear) {
-              if (isVisualLastPickInRound) {
-                directionArrow = "↓";
-              } else if (round % 2 === 0) {
-                directionArrow = "←";
-              } else {
-                directionArrow = "→";
-              }
-            }
+            var directionArrow = showSnakeArrows
+              ? getSnakeArrow(
+                round,
+                pickWithinRound,
+                teamCount,
+                snakeIndex === snakePicks.length - 1
+              )
+            : "";
 
             var directionText = "";
             if (directionArrow === "→") {
