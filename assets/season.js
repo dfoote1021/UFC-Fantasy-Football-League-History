@@ -1209,30 +1209,28 @@
         "draft-pick draft-pick-snake" +
         (pick.isKeeper ? " is-keeper-pick" : "");
 
-      var round = Number(pick.round) || 0;
+     var round = Number(pick.round) || 0;
 
-      /*
-       * Use the next visible snake-ordered pick to detect the turn.
-       * This makes R16.1 the down-arrow card in an even round.
-       */
-      var nextPick = snakePicks[snakeIndex + 1];
+/*
+ * Calculate the actual pick number inside the round.
+ * Example in a 12-team league:
+ * Pick 24 in Round 2 becomes R2.12.
+ */
+var pickWithinRound =
+  Number(pick.pickNo) - (round - 1) * teamCount;
 
-      var isVisualLastPickInRound =
-        !nextPick || Number(nextPick.round) !== round;
-
-            /*
-       * Do not show snake-path arrows while one team is filtered. The
-       * unseen selections between this team's picks would make arrows
-       * visually misleading.
-       */
-      var directionArrow = selectedRosterId
-        ? ""
-        : getSnakeArrow(
-            round,
-            pickWithinRound,
-            teamCount,
-            snakeIndex === snakePicks.length - 1
-        );
+/*
+ * Hide arrows for a filtered single-team view because the picks
+ * between that team's selections are not shown.
+ */
+var directionArrow = selectedRosterId
+  ? ""
+  : getSnakeArrow(
+      round,
+      pickWithinRound,
+      teamCount,
+      snakeIndex === snakePicks.length - 1
+    );
 
       var directionText = getSnakeArrowText(directionArrow);
 
