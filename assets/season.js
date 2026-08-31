@@ -44,7 +44,6 @@
   function byId(id) {
     return document.getElementById(id);
   }
-
   var state = {
     season: null,
     dataSource: null,
@@ -64,18 +63,29 @@
     allTransactionsFlat: null,
     txnCountsByRoster: {},
     playoffStartWeek: null,
+
+    // ESPN-specific cached data.
     espnSeasonData: null,
     espnDraftData: null,
+    espnRosterData: null,
+
+    // Sleeper-specific cached data.
     sleeperRunningRecordsByWeek: null,
     sleeperPlayedWeeks: null,
+    sleeperDraftBoardData: null,
+
+    // All-Time view state.
     allTimeData: null,
     careerSplit: "combined",
     careerSort: "championships",
     recordsView: "master",
     recordsSplit: "regular",
+
+    // Incremented for every season load so slow prior requests cannot
+    // overwrite data after the user has selected another season.
     loadToken: 0,
   };
-
+  
   // Season Records tab state (separate from the All-Time Records tab's
   // state.recordsView/state.recordsSplit above) - scoped to whichever
   // season is currently loaded.
@@ -217,6 +227,7 @@
     state.allTransactionsFlat = null;
     state.espnSeasonData = null;
     state.espnDraftData = null;
+    state.espnRosterData = null;
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
 
@@ -524,7 +535,196 @@
       tbody.appendChild(tr);
     });
   }
+  function renderTeamScheduleEspn() {
+    var select = byId("schedule-team-select");
+    var tbody = document.querySelector("#schedule-table tbody");
+    if (!select || !tbody || !state.espnSeasonData) return;
 
+    var teamName = select.value;
+    if (!teamName) return;
+
+    var schedule = state.espnSeasonData.getTeamSchedule(teamName);
+    if (!schedule || schedule.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">No schedule data available.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = "";
+    schedule.forEach(function (game) {
+      var tr = document.createElement("tr");
+      if (game.result === "W") tr.classList.add("result-w");
+      if (game.result === "L") tr.classList.add("result-l");
+      var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
+      tr.innerHTML =
+        "<td>" + weekLabel + "</td>" +
+        "<td>" + escapeHtml(game.opponentName) + "</td>" +
+        "<td>" + game.result + "</td>" +
+        "<td>" + game.myPoints.toFixed(2) + "</td>" +
+        "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>" +
+        "<td>" + escapeHtml(game.recordAfter) + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ============================================================
+   * INSERT THE FOLLOWING TWO FUNCTIONS HERE
+   * ============================================================ */
+
+  function setRosterWeekSelectorVisible(isVisible) {
+    var weekSelect = byId("roster-week-select");
+    if (!weekSelect) return;
+
+    var wrapper =
+      weekSelect.closest(".week-picker") ||
+      weekSelect.closest(".select-wrap") ||
+      weekSelect.parentElement;
+
+    if (wrapper) {
+      wrapper.hidden = !isVisible;
+    } else {
+      weekSelect.hidden = !isVisible;
+    }
+  }
+
+  async function renderFinalRosterEspn() {
+    var teamSelect = byId("roster-team-select");
+    var totalEl = byId("roster-total");
+    var tbody = document.querySelector("#roster-table tbody");
+
+    if (!tbody) return;
+
+    // ESPN has one end-of-season roster snapshot, not weekly roster data.
+    setRosterWeekSelectorVisible(false);
+
+    if (!window.EspnRosterLoader) {
+      tbody.innerHTML =
+        '<tr><td colspan="5">Roster data not available (espn-roster-loader.js not loaded).</td></tr>';
+
+      if (totalEl) totalEl.textContent = "";
+      return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+
+    if (totalEl) {
+      totalEl.textContent = "";
+    }
+
+    try {
+      var data = await window.EspnRosterLoader.loadSeasonRoster(state.season);
+
+      // Optional cache. This requires the earlier state-object addition:
+      // espnRosterData: null,
+      state.espnRosterData = data;
+
+      if (teamSelect) {
+        var previousValue = teamSelect.value;
+        teamSelect.innerHTML = "";
+
+        (data.teams || []).forEach(function (team) {
+          var opt = document.createElement("option");
+
+          // Owner is used as the selection key because it should be
+          // stable across this single season's end-of-season roster CSV.
+          opt.value = team.owner;
+
+          opt.textContent =
+            team.teamName !== team.owner
+              ? team.teamName + " (" + team.owner + ")"
+              : team.owner;
+
+          teamSelect.appendChild(opt);
+        });
+
+        var priorTeamExists = (data.teams || []).some(function (team) {
+          return team.owner === previousValue;
+        });
+
+        teamSelect.value = priorTeamExists
+          ? previousValue
+          : (data.teams && data.teams[0] ? data.teams[0].owner : "");
+
+        teamSelect.onchange = renderFinalRosterEspn;
+      }
+
+      var selectedOwner = teamSelect
+        ? teamSelect.value
+        : (data.teams && data.teams[0] ? data.teams[0].owner : "");
+
+      var selectedTeam = (data.teams || []).find(function (team) {
+        return team.owner === selectedOwner;
+      });
+
+      if (
+        !selectedTeam ||
+        !selectedTeam.players ||
+        selectedTeam.players.length === 0
+      ) {
+        tbody.innerHTML =
+          '<tr><td colspan="5">No final roster data for this team.</td></tr>';
+        return;
+      }
+
+      if (totalEl) {
+        totalEl.innerHTML =
+          escapeHtml(selectedTeam.teamName) +
+          " — Final Roster (" +
+          state.season +
+          ")";
+      }
+
+      tbody.innerHTML = "";
+
+      selectedTeam.players.forEach(function (player) {
+        var tr = document.createElement("tr");
+
+        tr.className = player.isStarter
+          ? "starter-row"
+          : "bench-row";
+
+        var slotLabel;
+
+        if (player.slot === "Bench") {
+          slotLabel = "Bench";
+        } else if (player.slot === "IR") {
+          slotLabel = "IR";
+        } else if (player.isStarter) {
+          slotLabel = "Starter";
+        } else {
+          slotLabel = player.slot || "Bench";
+        }
+
+        var keeperSuffix = player.isKeeper
+          ? " (Keeper)"
+          : "";
+
+        tr.innerHTML =
+          "<td>" + escapeHtml(slotLabel) + "</td>" +
+          "<td>" + escapeHtml(player.playerName) + keeperSuffix + "</td>" +
+          "<td>" + escapeHtml(player.position || "-") + "</td>" +
+          "<td>" + escapeHtml(player.nflTeam || "-") + "</td>" +
+          "<td>-</td>";
+
+        tbody.appendChild(tr);
+      });
+    } catch (error) {
+      console.error("Could not load ESPN final roster data:", error);
+
+      tbody.innerHTML =
+        '<tr><td colspan="5">Final roster data unavailable for this season.</td></tr>';
+    }
+  }
+
+  /* ============================================================
+   * YOUR EXISTING ESPN DRAFT FUNCTION CONTINUES HERE
+   * ============================================================ */
+
+  /**
+   * ESPN draft tab entry point. Fetches this season's draft picks...
+   */
+  async function renderDraftEspn(season, myToken) {
+    // your existing code remains unchanged
+  }
   /**
    * ESPN draft tab entry point. Fetches this season's draft picks, then
    * populates the #draft-team-filter dropdown and renders the board
@@ -1535,12 +1735,13 @@
     select.onchange = renderWeeklyRoster;
   }
 
-  async function renderWeeklyRoster() {
+    async function renderWeeklyRoster() {
     if (state.dataSource === "espn") {
-      var tbody = document.querySelector("#roster-table tbody");
-      if (tbody) tbody.innerHTML = '<tr><td colspan="5">Weekly rosters not available for ESPN seasons.</td></tr>';
+      await renderFinalRosterEspn();
       return;
     }
+
+    setRosterWeekSelectorVisible(true);
 
     var teamSelect = byId("roster-team-select");
     var weekSelect = byId("roster-week-select");
