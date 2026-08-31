@@ -2826,6 +2826,20 @@
              * Only the actual final card in the year's complete draft has
              * no arrow at all.
              */
+                       var pickWithinRound =
+              pick.roundPick ||
+              (round && pick.pickNo
+                ? pick.pickNo - (round - 1) * teamCount
+                : null);
+
+            /*
+             * The board has already been put in snake display order:
+             * odd rounds go left-to-right; even rounds have been reversed.
+             *
+             * Therefore, the last displayed item of an odd row is R#.12,
+             * while the last displayed item of an even row is R#.1.
+             * That final displayed item gets the downward turn arrow.
+             */
             var nextPick = snakePicks[snakeIndex + 1];
 
             var isVisualLastPickInRound =
@@ -2847,7 +2861,6 @@
             }
 
             var directionText = "";
-
             if (directionArrow === "→") {
               directionText = "Next pick to the right";
             } else if (directionArrow === "←") {
