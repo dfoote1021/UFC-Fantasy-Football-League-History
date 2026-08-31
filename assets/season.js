@@ -1045,54 +1045,131 @@
    * Renders the Sleeper draft board filtered to the currently-selected
    * team (or all teams), plus the By Position / By NFL Team breakdown.
    */
-  function renderDraftBoardFiltered() {
+   function renderDraftBoardFiltered() {
     var board = byId("draft-board");
     if (!board || !state.sleeperDraftBoardData) return;
+
     var filterSelect = byId("draft-team-filter");
     var selectedRosterId = filterSelect ? filterSelect.value : "";
+
     var picks = state.sleeperDraftBoardData.filter(function (pick) {
       return !selectedRosterId || String(pick.rosterId) === selectedRosterId;
-  });
-  renderDraftBreakdownHtml(picks, "draft-breakdown");
+    });
+
+    renderDraftBreakdownHtml(picks, "draft-breakdown");
+
     if (picks.length === 0) {
-    board.innerHTML = "<p>No picks found for this team.</p>";
-    return;
+      board.innerHTML = "<p>No picks found for this team.</p>";
+      return;
+    }
+
+    // Sleeper's buildDraftBoard() provides the overall pick number but
+    // not an explicit pick-within-round number. Calculate it using the
+    // full, unfiltered draft so a team filter does not alter R#.## labels.
+    var teamCount = Object.keys(
+      state.sleeperDraftBoardData.reduce(function (acc, pick) {
+        acc[pick.rosterId] = true;
+        return acc;
+      }, {})
+    ).length || 1;
+
+    /*
+     * Create visual snake order:
+     *
+     * Odd rounds:  ascending overall picks, left -> right.
+     * Even rounds: descending overall picks, left -> right.
+     *
+     * This affects display only. `pickNo` remains the actual historical
+     * overall selection number used in the Pick N and R#.## labels.
+     */
+    var picksByRound = {};
+
+    picks.forEach(function (pick) {
+      var round = Number(pick.round) || 0;
+
+      if (!picksByRound[round]) {
+        picksByRound[round] = [];
+      }
+
+      picksByRound[round].push(pick);
+    });
+
+    var snakePicks = [];
+
+    Object.keys(picksByRound)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (round) {
+        var roundPicks = picksByRound[round].slice();
+
+        roundPicks.sort(function (a, b) {
+          return Number(a.pickNo) - Number(b.pickNo);
+        });
+
+        // Reverse every even-numbered round for snake-board display.
+        if (round % 2 === 0) {
+          roundPicks.reverse();
+        }
+
+        snakePicks = snakePicks.concat(roundPicks);
+      });
+
+    board.innerHTML = "";
+
+    snakePicks.forEach(function (pick) {
+      var div = document.createElement("div");
+      div.className = "draft-pick";
+
+      var teamLabel =
+        pick.ownerName && pick.ownerName !== pick.teamName
+          ? escapeHtml(pick.teamName) +
+            " (" +
+            escapeHtml(pick.ownerName) +
+            ")"
+          : escapeHtml(pick.teamName);
+
+      var metaLine = pick.position
+        ? escapeHtml(pick.position) +
+          (pick.position && pick.nflTeam ? " - " : "") +
+          (pick.nflTeam ? escapeHtml(pick.nflTeam) : "")
+        : "";
+
+      var keeperTag = pick.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : "";
+
+      var roundPick = pick.round
+        ? pick.pickNo - (pick.round - 1) * teamCount
+        : null;
+
+      var pickLabel =
+        "Pick " +
+        pick.pickNo +
+        " (R" +
+        pick.round +
+        (roundPick ? "." + roundPick : "") +
+        ")";
+
+      div.innerHTML =
+        '<div class="pick-num">' +
+        pickLabel +
+        "</div>" +
+        "<div>" +
+        escapeHtml(pick.playerName) +
+        "</div>" +
+        (metaLine
+          ? '<div class="draft-meta">' + metaLine + "</div>"
+          : "") +
+        '<div class="draft-owner">' +
+        teamLabel +
+        "</div>" +
+        keeperTag;
+
+      board.appendChild(div);
+    });
   }
-
-  // Sleeper's buildDraftBoard() only provides the overall pickNo, not a
-  // pick-within-round number like ESPN's roundPick - derive it here from
-  // the number of distinct teams in the full (unfiltered) board, so the
-  // label matches ESPN's "Pick N (R#.#)" format regardless of which team
-  // filter is currently applied.
-  var teamCount = Object.keys(
-    state.sleeperDraftBoardData.reduce(function (acc, p) {
-      acc[p.rosterId] = true;
-      return acc;
-    }, {})
-  ).length || 1;
-
-  board.innerHTML = "";
-  picks.forEach(function (pick) {
-    var div = document.createElement("div");
-    div.className = "draft-pick";
-    var teamLabel = pick.ownerName && pick.ownerName !== pick.teamName
-      ? escapeHtml(pick.teamName) + " (" + escapeHtml(pick.ownerName) + ")"
-      : escapeHtml(pick.teamName);
-    var metaLine = pick.position ? escapeHtml(pick.position) + (pick.position && pick.nflTeam ? " - " : "") + (pick.nflTeam ? escapeHtml(pick.nflTeam) : "") : "";
-    var keeperTag = pick.isKeeper
-      ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-      : "";
-    var roundPick = pick.round ? pick.pickNo - (pick.round - 1) * teamCount : null;
-    var pickLabel = "Pick " + pick.pickNo + " (R" + pick.round + (roundPick ? "." + roundPick : "") + ")";
-    div.innerHTML =
-      '<div class="pick-num">' + pickLabel + "</div>" +
-      "<div>" + escapeHtml(pick.playerName) + "</div>" +
-      (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-      '<div class="draft-owner">' + teamLabel + "</div>" +
-      keeperTag;
-    board.appendChild(div);
-  });
-}
 
   /**
    * Shared breakdown renderer used by both the Sleeper and ESPN draft
