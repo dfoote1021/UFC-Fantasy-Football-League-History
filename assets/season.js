@@ -839,6 +839,26 @@
         return result.concat(roundPicks);
       }, []);
   }
+    /**
+   * Returns the correct direction arrow for a card in a snake draft board.
+   *
+   * - → moves across odd-numbered round rows.
+   * - ← moves across even-numbered round rows.
+   * - ↓ appears on the final visual card in every non-final round,
+   *   leading the eye down to the start of the next snake row.
+   * - The final pick in the rendered board gets no arrow.
+   */
+  function snakeDraftArrow(round, positionInRound, totalPicksInRound, isFinalPick) {
+    if (isFinalPick) {
+      return "";
+    }
+
+    if (positionInRound === totalPicksInRound - 1) {
+      return "↓";
+    }
+
+    return Number(round) % 2 === 0 ? "←" : "→";
+  }
    /**
    * Renders the ESPN draft board filtered to the currently selected team
    * (or all teams), plus the By Position / By NFL Team breakdown for
@@ -909,7 +929,7 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick) {
+    snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
       div.className = "draft-pick";
 
@@ -1118,7 +1138,7 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick) {
+    snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
       div.className = "draft-pick";
 
@@ -2706,8 +2726,8 @@
             snakePicks = snakePicks.concat(roundPicks);
           });
 
-        var picksHtml = snakePicks
-          .map(function (pick) {
+          var picksHtml = snakePicks
+          .map(function (pick, snakeIndex) {
             var round = Number(pick.round) || 0;
 
             var roundPick =
@@ -2726,18 +2746,47 @@
                   ")"
                 : "");
 
-            /*
-             * Direction arrow is attached to each card:
-             * → for standard left-to-right rounds,
-             * ← for reversed right-to-left rounds.
+                       /*
+             * Build one continuous snake path:
+             *
+             * Odd rounds: → across the row.
+             * Even rounds: ← across the row.
+             * Last displayed pick in every non-final round: ↓.
+             * Final displayed pick in the entire draft: no arrow.
              */
-            var directionArrow =
-              round > 0 && round % 2 === 0 ? "←" : "→";
+            var roundPicks = snakePicks.filter(function (entry) {
+              return Number(entry.round) === round;
+            });
 
-            var directionText =
-              round > 0 && round % 2 === 0
-                ? "Even round: right to left"
-                : "Odd round: left to right";
+            var positionInRound = roundPicks.indexOf(pick);
+
+            var isFinalPickInYear =
+              snakeIndex === snakePicks.length - 1;
+
+            var isLastPickInRound =
+              positionInRound === roundPicks.length - 1;
+
+            var directionArrow = "";
+
+            if (!isFinalPickInYear) {
+              if (isLastPickInRound) {
+                directionArrow = "↓";
+              } else if (round % 2 === 0) {
+                directionArrow = "←";
+              } else {
+                directionArrow = "→";
+              }
+            }
+
+            var directionText = "";
+
+            if (directionArrow === "→") {
+              directionText = "Next pick to the right";
+            } else if (directionArrow === "←") {
+              directionText = "Next pick to the left";
+            } else if (directionArrow === "↓") {
+              directionText = "Next round";
+            }
 
             var keeperTag = pick.isKeeper
               ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
@@ -2755,13 +2804,15 @@
                 '<div class="pick-num">' +
                   pickLabel +
                 '</div>' +
-                '<div class="draft-direction" title="' +
-                  directionText +
-                  '" aria-label="' +
-                  directionText +
-                  '">' +
-                  directionArrow +
-                '</div>' +
+                (directionArrow
+                  ? '<div class="draft-direction" title="' +
+                    directionText +
+                    '" aria-label="' +
+                    directionText +
+                    '">' +
+                    directionArrow +
+                    "</div>"
+                  : "") +
                 '<div>' +
                   escapeHtml(pick.playerName || "Unknown Player") +
                 '</div>' +
@@ -2774,20 +2825,6 @@
                 keeperTag +
               "</div>"
             );
-          })
-          .join("");
-
-        return (
-          '<h3 class="playoff-heading">' +
-            year +
-            ' Draft</h3>' +
-          '<div class="draft-board draft-board-snake">' +
-            picksHtml +
-          "</div>"
-        );
-      })
-      .join("");
-  }
 
   function renderAllTimeDraftFiltered() {
     if (!state.allTimeData) return;
