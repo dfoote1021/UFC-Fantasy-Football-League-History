@@ -85,7 +85,7 @@
     // overwrite data after the user has selected another season.
     loadToken: 0,
   };
-  
+
   // Season Records tab state (separate from the All-Time Records tab's
   // state.recordsView/state.recordsSplit above) - scoped to whichever
   // season is currently loaded.
@@ -839,57 +839,16 @@
         return result.concat(roundPicks);
       }, []);
   }
-    /**
-   * Returns the correct direction arrow for a card in a snake draft board.
-   *
-   * - → moves across odd-numbered round rows.
-   * - ← moves across even-numbered round rows.
-   * - ↓ appears on the final visual card in every non-final round,
-   *   leading the eye down to the start of the next snake row.
-   * - The final pick in the rendered board gets no arrow.
-   */
-  function snakeDraftArrow(round, positionInRound, totalPicksInRound, isFinalPick) {
-    if (isFinalPick) {
-      return "";
-    }
-
-    if (positionInRound === totalPicksInRound - 1) {
-      return "↓";
-    }
-
-    return Number(round) % 2 === 0 ? "←" : "→";
-  }
-    /**
-   * Returns the correct direction arrow for a card in a snake draft board.
-   *
-   * Odd rounds travel left to right.
-   * Even rounds travel right to left.
-   * The last visual card of every non-final round gets a down arrow.
-   * The final card in the draft gets no arrow.
-   */
-  function snakeDraftArrow(round, positionInRound, totalPicksInRound, isFinalPick) {
-    if (isFinalPick) {
-      return "";
-    }
-
-    if (positionInRound === totalPicksInRound - 1) {
-      return "↓";
-    }
-
-    return Number(round) % 2 === 0 ? "←" : "→";
-  }
-
-  function snakeDraftArrowText(arrow) {
-    if (arrow === "→") return "Next pick to the right";
-    if (arrow === "←") return "Next pick to the left";
-    if (arrow === "↓") return "Next round";
-    return "";
-  }
-
-  /**
+   /**
    * Renders the ESPN draft board filtered to the currently selected team
-   * or all teams. Even-numbered rounds are visually reversed so the board
-   * follows snake-draft flow.
+   * (or all teams), plus the By Position / By NFL Team breakdown for
+   * whichever picks are currently visible.
+   *
+   * The board is displayed in snake order:
+   * - Odd rounds: left to right, ascending pick number.
+   * - Even rounds: right to left, descending pick number.
+   *
+   * Actual historical pick labels are unchanged.
    */
   function renderDraftBoardFilteredEspn() {
     var board = byId("draft-board");
@@ -909,6 +868,11 @@
       return;
     }
 
+    /*
+     * Group selected picks by round so we can reverse only even-numbered
+     * rounds. Sorting each group by actual overall pick ensures the board
+     * remains correct even if the CSV/API data arrives out of order.
+     */
     var picksByRound = {};
 
     picks.forEach(function (pick) {
@@ -935,6 +899,7 @@
           return Number(a.overallPick) - Number(b.overallPick);
         });
 
+        // Conventional snake draft display reverses every even round.
         if (round % 2 === 0) {
           roundPicks.reverse();
         }
@@ -944,26 +909,9 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick, snakeIndex) {
+    snakePicks.forEach(function (pick) {
       var div = document.createElement("div");
-      div.className = "draft-pick draft-pick-snake";
-
-      var currentRound = Number(pick.round) || 0;
-
-      var currentRoundPicks = snakePicks.filter(function (entry) {
-        return Number(entry.round) === currentRound;
-      });
-
-      var positionInRound = currentRoundPicks.indexOf(pick);
-
-      var directionArrow = snakeDraftArrow(
-        currentRound,
-        positionInRound,
-        currentRoundPicks.length,
-        snakeIndex === snakePicks.length - 1
-      );
-
-      var directionText = snakeDraftArrowText(directionArrow);
+      div.className = "draft-pick";
 
       var teamLabel = pick.owner
         ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
@@ -975,17 +923,7 @@
         (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
 
       var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
-        : "";
-
-      var arrowHtml = directionArrow
-        ? '<div class="draft-direction" title="' +
-          directionText +
-          '" aria-label="' +
-          directionText +
-          '">' +
-          directionArrow +
-          "</div>"
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
         : "";
 
       div.innerHTML =
@@ -996,265 +934,6 @@
         "." +
         pick.roundPick +
         ")</div>" +
-        arrowHtml +
-        "<div>" +
-        escapeHtml(pick.playerName) +
-        "</div>" +
-        (metaLine
-          ? '<div class="draft-meta">' + metaLine + "</div>"
-          : "") +
-        '<div class="draft-owner">' +
-        teamLabel +
-        "</div>" +
-        keeperTag;
-
-      board.appendChild(div);
-    });
-  }
-
-  function renderTransactionsUnavailable() {
-    var list = byId("transactions-list");
-
-    if (list) {
-      list.innerHTML =
-        "<li>Detailed per-move transaction history is not available for ESPN seasons. " +
-        "Total transaction counts, if available, show on the Teams tab for each team.</li>";
-    }
-  }
-
-  function renderLeagueInfoRawEspn(season) {
-    var el = byId("league-info-raw");
-    if (!el) return;
-
-    el.textContent = JSON.stringify(
-      {
-        season: season,
-        source: "ESPN (local CSV)",
-        teams: Object.keys(state.rosterMap).length,
-        weeks: state.espnSeasonData
-          ? state.espnSeasonData.weeks.length
-          : 0,
-        draftPicksLoaded: state.espnDraftData
-          ? state.espnDraftData.picks.length
-          : 0,
-      },
-      null,
-      2
-    );
-  }
-
-  /**
-   * Sleeper draft tab entry point. Delegates to ESPN when appropriate;
-   * otherwise loads Sleeper draft picks and renders the filtered board.
-   */
-  async function renderDraft() {
-    if (state.dataSource === "espn") {
-      await renderDraftEspn(state.season);
-      return;
-    }
-
-    var board = byId("draft-board");
-    if (!board) return;
-
-    board.innerHTML = "<p>Loading&hellip;</p>";
-
-    try {
-      var draft = await SleeperAPI.getDraft(state.leagueId);
-
-      if (!draft) {
-        board.innerHTML = "<p>No draft found for this season.</p>";
-        return;
-      }
-
-      var picks = await SleeperAPI.getDraftPicks(draft.draft_id);
-      var boardData = SleeperAPI.buildDraftBoard(picks, state.rosterMap);
-
-      state.sleeperDraftBoardData = boardData;
-      populateDraftTeamFilter(boardData);
-      renderDraftBoardFiltered();
-    } catch (error) {
-      console.error(error);
-      board.innerHTML = "<p>Draft data unavailable.</p>";
-    }
-  }
-
-  /**
-   * Populates the draft-team filter dropdown for Sleeper seasons.
-   */
-  function populateDraftTeamFilter(boardData) {
-    var select = byId("draft-team-filter");
-    if (!select) return;
-
-    var previousValue = select.value;
-    var seen = {};
-    var teams = [];
-
-    boardData.forEach(function (pick) {
-      var key = String(pick.rosterId);
-
-      if (seen[key]) return;
-
-      seen[key] = true;
-
-      teams.push({
-        rosterId: pick.rosterId,
-        teamName: pick.teamName,
-        ownerName: pick.ownerName,
-      });
-    });
-
-    teams.sort(function (a, b) {
-      return a.teamName.localeCompare(b.teamName);
-    });
-
-    select.innerHTML = '<option value="">All Teams</option>';
-
-    teams.forEach(function (team) {
-      var opt = document.createElement("option");
-
-      opt.value = String(team.rosterId);
-
-      opt.textContent =
-        team.ownerName && team.ownerName !== team.teamName
-          ? team.teamName + " (" + team.ownerName + ")"
-          : team.teamName;
-
-      select.appendChild(opt);
-    });
-
-    select.value = seen[previousValue] ? previousValue : "";
-    select.onchange = renderDraftBoardFiltered;
-  }
-
-  /**
-   * Renders the Sleeper draft board in visual snake order.
-   */
-  function renderDraftBoardFiltered() {
-    var board = byId("draft-board");
-    if (!board || !state.sleeperDraftBoardData) return;
-
-    var filterSelect = byId("draft-team-filter");
-    var selectedRosterId = filterSelect ? filterSelect.value : "";
-
-    var picks = state.sleeperDraftBoardData.filter(function (pick) {
-      return !selectedRosterId || String(pick.rosterId) === selectedRosterId;
-    });
-
-    renderDraftBreakdownHtml(picks, "draft-breakdown");
-
-    if (picks.length === 0) {
-      board.innerHTML = "<p>No picks found for this team.</p>";
-      return;
-    }
-
-    var teamCount = Object.keys(
-      state.sleeperDraftBoardData.reduce(function (acc, pick) {
-        acc[pick.rosterId] = true;
-        return acc;
-      }, {})
-    ).length || 1;
-
-    var picksByRound = {};
-
-    picks.forEach(function (pick) {
-      var round = Number(pick.round) || 0;
-
-      if (!picksByRound[round]) {
-        picksByRound[round] = [];
-      }
-
-      picksByRound[round].push(pick);
-    });
-
-    var snakePicks = [];
-
-    Object.keys(picksByRound)
-      .map(Number)
-      .sort(function (a, b) {
-        return a - b;
-      })
-      .forEach(function (round) {
-        var roundPicks = picksByRound[round].slice();
-
-        roundPicks.sort(function (a, b) {
-          return Number(a.pickNo) - Number(b.pickNo);
-        });
-
-        if (round % 2 === 0) {
-          roundPicks.reverse();
-        }
-
-        snakePicks = snakePicks.concat(roundPicks);
-      });
-
-    board.innerHTML = "";
-
-    snakePicks.forEach(function (pick, snakeIndex) {
-      var div = document.createElement("div");
-      div.className = "draft-pick draft-pick-snake";
-
-      var currentRound = Number(pick.round) || 0;
-
-      var currentRoundPicks = snakePicks.filter(function (entry) {
-        return Number(entry.round) === currentRound;
-      });
-
-      var positionInRound = currentRoundPicks.indexOf(pick);
-
-      var directionArrow = snakeDraftArrow(
-        currentRound,
-        positionInRound,
-        currentRoundPicks.length,
-        snakeIndex === snakePicks.length - 1
-      );
-
-      var directionText = snakeDraftArrowText(directionArrow);
-
-      var teamLabel =
-        pick.ownerName && pick.ownerName !== pick.teamName
-          ? escapeHtml(pick.teamName) +
-            " (" +
-            escapeHtml(pick.ownerName) +
-            ")"
-          : escapeHtml(pick.teamName);
-
-      var metaLine = pick.position
-        ? escapeHtml(pick.position) +
-          (pick.position && pick.nflTeam ? " - " : "") +
-          (pick.nflTeam ? escapeHtml(pick.nflTeam) : "")
-        : "";
-
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
-        : "";
-
-      var roundPick = pick.round
-        ? pick.pickNo - (pick.round - 1) * teamCount
-        : null;
-
-      var pickLabel =
-        "Pick " +
-        pick.pickNo +
-        " (R" +
-        pick.round +
-        (roundPick ? "." + roundPick : "") +
-        ")";
-
-      var arrowHtml = directionArrow
-        ? '<div class="draft-direction" title="' +
-          directionText +
-          '" aria-label="' +
-          directionText +
-          '">' +
-          directionArrow +
-          "</div>"
-        : "";
-
-      div.innerHTML =
-        '<div class="pick-num">' +
-        pickLabel +
-        "</div>" +
-        arrowHtml +
         "<div>" +
         escapeHtml(pick.playerName) +
         "</div>" +
@@ -1439,7 +1118,7 @@
 
     board.innerHTML = "";
 
-    snakePicks.forEach(function (pick, snakeIndex) {
+    snakePicks.forEach(function (pick) {
       var div = document.createElement("div");
       div.className = "draft-pick";
 
@@ -2942,33 +2621,87 @@
    * R#.## labels are preserved exactly.
    */
   function renderAllTimeDraftByYear(picks) {
+  var container = byId('alltime-draft-by-year');
+  if (!container) return;
     var container = byId("alltime-draft-by-year");
     if (!container) return;
 
+  if (!picks || picks.length === 0) {
+    container.innerHTML = '<p class="status-text">No draft picks found.</p>';
+    return;
+  }
     if (!picks || picks.length === 0) {
       container.innerHTML =
         '<p class="status-text">No draft picks found.</p>';
       return;
     }
 
+  var byYear = {};
+  picks.forEach(function (p) {
+    if (!byYear[p.year]) byYear[p.year] = [];
+    byYear[p.year].push(p);
+  });
     var picksByYear = {};
 
+  var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
     picks.forEach(function (pick) {
       var year = Number(pick.year);
 
+  container.innerHTML = years.map(function (year) {
+    var yearPicks = byYear[year].slice().sort(function (a, b) {
+      return (a.pickNo || 0) - (b.pickNo || 0);
+    });
       if (!picksByYear[year]) {
         picksByYear[year] = [];
       }
 
+    // Derive teams-per-round for THIS year from the number of distinct
+    // owners who picked in round 1 - each year's league may have a
+    // different roster count (e.g. league size changed across seasons),
+    // so this must be computed per-year rather than once globally.
+    // ESPN-sourced years already carry roundPick directly; only Sleeper
+    // years need it derived from pickNo/round.
+    var round1Teams = {};
+    yearPicks.forEach(function (p) {
+      if (p.round === 1 && p.ownerKey) round1Teams[p.ownerKey] = true;
       picksByYear[year].push(pick);
     });
+    var teamCount = Object.keys(round1Teams).length || 12;
 
+    var picksHtml = yearPicks.map(function (p) {
+      var keeperTag = p.isKeeper
+        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
+        : '';
+      var metaLine = p.position
+        ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
+        : '';
+      var roundPick = p.roundPick || (p.round && p.pickNo
+        ? p.pickNo - (p.round - 1) * teamCount
+        : null);
+      var pickLabel = 'Pick ' + (p.pickNo || '-') +
+        (p.round ? ' (R' + p.round + (roundPick ? '.' + roundPick : '') + ')' : '');
+      return (
+        '<div class="draft-pick">' +
+          '<div class="pick-num">' + pickLabel + '</div>' +
+          '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
+          (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
+          '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
+          keeperTag +
+        '</div>'
+      );
+    }).join('');
     var years = Object.keys(picksByYear)
       .map(Number)
       .sort(function (a, b) {
         return b - a;
       });
 
+    return (
+      '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
+      '<div class="draft-board">' + picksHtml + '</div>'
+    );
+  }).join('');
+}
     container.innerHTML = years
       .map(function (year) {
         var yearPicks = picksByYear[year].slice();
@@ -3027,8 +2760,8 @@
             snakePicks = snakePicks.concat(roundPicks);
           });
 
-          var picksHtml = snakePicks
-          .map(function (pick, snakeIndex) {
+        var picksHtml = snakePicks
+          .map(function (pick) {
             var round = Number(pick.round) || 0;
 
             var roundPick =
@@ -3047,47 +2780,18 @@
                   ")"
                 : "");
 
-                       /*
-             * Build one continuous snake path:
-             *
-             * Odd rounds: → across the row.
-             * Even rounds: ← across the row.
-             * Last displayed pick in every non-final round: ↓.
-             * Final displayed pick in the entire draft: no arrow.
+            /*
+             * Direction arrow is attached to each card:
+             * → for standard left-to-right rounds,
+             * ← for reversed right-to-left rounds.
              */
-            var roundPicks = snakePicks.filter(function (entry) {
-              return Number(entry.round) === round;
-            });
+            var directionArrow =
+              round > 0 && round % 2 === 0 ? "←" : "→";
 
-            var positionInRound = roundPicks.indexOf(pick);
-
-            var isFinalPickInYear =
-              snakeIndex === snakePicks.length - 1;
-
-            var isLastPickInRound =
-              positionInRound === roundPicks.length - 1;
-
-            var directionArrow = "";
-
-            if (!isFinalPickInYear) {
-              if (isLastPickInRound) {
-                directionArrow = "↓";
-              } else if (round % 2 === 0) {
-                directionArrow = "←";
-              } else {
-                directionArrow = "→";
-              }
-            }
-
-            var directionText = "";
-
-            if (directionArrow === "→") {
-              directionText = "Next pick to the right";
-            } else if (directionArrow === "←") {
-              directionText = "Next pick to the left";
-            } else if (directionArrow === "↓") {
-              directionText = "Next round";
-            }
+            var directionText =
+              round > 0 && round % 2 === 0
+                ? "Even round: right to left"
+                : "Odd round: left to right";
 
             var keeperTag = pick.isKeeper
               ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
@@ -3105,15 +2809,13 @@
                 '<div class="pick-num">' +
                   pickLabel +
                 '</div>' +
-                (directionArrow
-                  ? '<div class="draft-direction" title="' +
-                    directionText +
-                    '" aria-label="' +
-                    directionText +
-                    '">' +
-                    directionArrow +
-                    "</div>"
-                  : "") +
+                '<div class="draft-direction" title="' +
+                  directionText +
+                  '" aria-label="' +
+                  directionText +
+                  '">' +
+                  directionArrow +
+                '</div>' +
                 '<div>' +
                   escapeHtml(pick.playerName || "Unknown Player") +
                 '</div>' +
@@ -3126,6 +2828,20 @@
                 keeperTag +
               "</div>"
             );
+          })
+          .join("");
+
+        return (
+          '<h3 class="playoff-heading">' +
+            year +
+            ' Draft</h3>' +
+          '<div class="draft-board draft-board-snake">' +
+            picksHtml +
+          "</div>"
+        );
+      })
+      .join("");
+  }
 
   function renderAllTimeDraftFiltered() {
     if (!state.allTimeData) return;
