@@ -1,11 +1,13 @@
 /**
  * espn-roster-loader.js
  *
- * Loads final ESPN end-of-season roster snapshots from:
+ * Loads ESPN end-of-season roster snapshots from:
  * assets/data/espn-final-rosters.csv
  *
- * CSV headers required:
- * season,teamName,owner,playerName,position,nflTeam
+ * Compatible headers include:
+ * Season, Team, Owner, Player Name, Position, NFL Team
+ *
+ * Extra CSV columns are ignored safely.
  */
 
 (function () {
@@ -15,55 +17,92 @@
 
   function parseCsv(text) {
     var rows = [];
-    var currentRow = [];
-    var currentCell = "";
+    var row = [];
+    var cell = "";
     var inQuotes = false;
 
     for (var i = 0; i < text.length; i++) {
-      var ch = text[i];
-      var next = text[i + 1];
+      var char = text[i];
+      var nextChar = text[i + 1];
 
-      if (ch === '"') {
-        if (inQuotes && next === '"') {
-          currentCell += '"';
-          i++;
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          cell += '"';
+          i += 1;
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (ch === "," && !inQuotes) {
-        currentRow.push(currentCell);
-        currentCell = "";
-      } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
-        if (ch === "\r" && next === "\n") {
-          i++;
+      } else if (char === "," && !inQuotes) {
+        row.push(cell);
+        cell = "";
+      } else if ((char === "\n" || char === "\r") && !inQuotes) {
+        if (char === "\r" && nextChar === "\n") {
+          i += 1;
         }
 
-        currentRow.push(currentCell);
+        row.push(cell);
 
-        if (
-          currentRow.length > 1 ||
-          (currentRow.length === 1 && currentRow[0].trim() !== "")
-        ) {
-          rows.push(currentRow);
+        var hasContent = row.some(function (value) {
+          return String(value || "").trim() !== "";
+        });
+
+        if (hasContent) {
+          rows.push(row);
         }
 
-        currentRow = [];
-        currentCell = "";
+        row = [];
+        cell = "";
       } else {
-        currentCell += ch;
+        cell += char;
       }
     }
 
-    if (currentCell !== "" || currentRow.length > 0) {
-      currentRow.push(currentCell);
-      rows.push(currentRow);
+    if (cell !== "" || row.length > 0) {
+      row.push(cell);
+
+      var finalRowHasContent = row.some(function (value) {
+        return String(value || "").trim() !== "";
+      });
+
+      if (finalRowHasContent) {
+        rows.push(row);
+      }
     }
 
     return rows;
   }
 
+  function normalizeHeader(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+  }
+
+  function findColumn(headerMap, possibleNames) {
+    for (var i = 0; i < possibleNames.length; i++) {
+      var key = normalizeHeader(possibleNames[i]);
+
+      if (headerMap[key] !== undefined) {
+        return headerMap[key];
+      }
+    }
+
+    return -1;
+  }
+
+  function cellValue(row, columnIndex) {
+    if (columnIndex < 0 || row[columnIndex] === undefined) {
+      return "";
+    }
+
+    return String(row[columnIndex]).trim();
+  }
+
   async function loadAllRows() {
-    if (cachedRows) return cachedRows;
+    if (cachedRows) {
+      return cachedRows;
+    }
 
     var response = await fetch("assets/data/espn-final-rosters.csv");
 
@@ -75,66 +114,112 @@
       );
     }
 
-    var rows = parseCsv(await response.text());
+    var text = await response.text();
+    var parsedRows = parseCsv(text);
 
-    if (!rows || rows.length < 2) {
-      throw new Error("The ESPN final-roster CSV is empty.");
+    if (!parsedRows || parsedRows.length < 2) {
+      throw new Error("The ESPN final-roster CSV has no roster rows.");
     }
 
-    var headers = rows[0].map(function (header) {
-      return String(header || "").trim().toLowerCase();
+    var headerMap = {};
+
+    parsedRows[0].forEach(function (header, index) {
+      headerMap[normalizeHeader(header)] = index;
     });
 
-    function col(name) {
-      return headers.indexOf(name);
+    /*
+     * Supports both your actual header names:
+     * Season, Team, Owner, Player Name, Position, NFL Team
+     *
+     * and the alternate camelCase names used in earlier examples.
+     */
+    var seasonColumn = findColumn(headerMap, [
+      "season",
+      "year",
+    ]);
+
+    var teamColumn = findColumn(headerMap, [
+      "team",
+      "teamName",
+      "fantasyTeam",
+      "fantasyTeamName",
+    ]);
+
+    var ownerColumn = findColumn(headerMap, [
+      "owner",
+      "ownerName",
+      "manager",
+      "displayName",
+    ]);
+
+    var playerColumn = findColumn(headerMap, [
+      "playerName",
+      "player",
+      "name",
+    ]);
+
+    var positionColumn = findColumn(headerMap, [
+      "position",
+      "pos",
+    ]);
+
+    var nflTeamColumn = findColumn(headerMap, [
+      "nflTeam",
+      "nfl",
+      "proTeam",
+      "teamAbbr",
+    ]);
+
+    var missingColumns = [];
+
+    if (seasonColumn === -1) missingColumns.push("Season");
+    if (teamColumn === -1) missingColumns.push("Team");
+    if (ownerColumn === -1) missingColumns.push("Owner");
+    if (playerColumn === -1) missingColumns.push("Player Name");
+    if (positionColumn === -1) missingColumns.push("Position");
+    if (nflTeamColumn === -1) missingColumns.push("NFL Team");
+
+    if (missingColumns.length > 0) {
+      throw new Error(
+        "Missing roster CSV column(s): " +
+          missingColumns.join(", ") +
+          ". Found headers: " +
+          parsedRows[0].join(", ")
+      );
     }
 
-    var seasonCol = col("season");
-    var teamNameCol = col("teamname");
-    var ownerCol = col("owner");
-    var playerNameCol = col("playername");
-    var positionCol = col("position");
-    var nflTeamCol = col("nflteam");
-
-    var requiredColumns = [
-      { name: "season", index: seasonCol },
-      { name: "teamName", index: teamNameCol },
-      { name: "owner", index: ownerCol },
-      { name: "playerName", index: playerNameCol },
-      { name: "position", index: positionCol },
-      { name: "nflTeam", index: nflTeamCol },
-    ];
-
-    requiredColumns.forEach(function (column) {
-      if (column.index === -1) {
-        throw new Error(
-          "Missing required CSV column: " +
-            column.name +
-            ". Expected: season,teamName,owner,playerName,position,nflTeam"
+    cachedRows = parsedRows
+      .slice(1)
+      .map(function (row) {
+        return {
+          season: Number(cellValue(row, seasonColumn)),
+          teamName: cellValue(row, teamColumn),
+          owner: cellValue(row, ownerColumn),
+          playerName: cellValue(row, playerColumn),
+          position: cellValue(row, positionColumn),
+          nflTeam: cellValue(row, nflTeamColumn),
+        };
+      })
+      .filter(function (row) {
+        // Ignores blank rows and malformed rows that appear later in the CSV.
+        return (
+          Number.isFinite(row.season) &&
+          row.season > 0 &&
+          row.teamName &&
+          row.owner &&
+          row.playerName
         );
-      }
-    });
-
-    cachedRows = rows.slice(1).map(function (row) {
-      return {
-        season: Number(row[seasonCol] || 0),
-        teamName: String(row[teamNameCol] || "").trim(),
-        owner: String(row[ownerCol] || "").trim(),
-        playerName: String(row[playerNameCol] || "").trim(),
-        position: String(row[positionCol] || "").trim(),
-        nflTeam: String(row[nflTeamCol] || "").trim(),
-      };
-    });
+      });
 
     return cachedRows;
   }
 
   async function loadSeasonRoster(season) {
-    var year = Number(season);
-    var rows = await loadAllRows();
+    var selectedSeason = Number(season);
+    var allRows = await loadAllRows();
 
-    var seasonRows = rows.filter(function (row) {
-      return row.season === year;
+    var seasonRows = allRows.filter(function (row) {
+      return row.season === selectedSeason;
     });
 
     var teamsByOwner = {};
@@ -143,21 +228,30 @@
       var owner = row.owner || row.teamName || "Unknown Owner";
       var teamName = row.teamName || owner;
 
-      if (!teamsByOwner[owner]) {
-        teamsByOwner[owner] = {
+      /*
+       * Uses owner + team name as the grouping key. This protects against
+       * any rare case of one owner appearing with a different team name
+       * during the same historical season.
+       */
+      var teamKey = owner + "||" + teamName;
+
+      if (!teamsByOwner[teamKey]) {
+        teamsByOwner[teamKey] = {
           owner: owner,
           teamName: teamName,
           players: [],
         };
       }
 
-      teamsByOwner[owner].players.push({
-        playerName: row.playerName || "Unknown Player",
+      teamsByOwner[teamKey].players.push({
+        playerName: row.playerName,
         position: row.position || "-",
         nflTeam: row.nflTeam || "-",
 
-        // Your CSV is an end-of-season roster list only, not a weekly
-        // lineup export. Therefore, it does not identify starters/bench/IR.
+        /*
+         * Your historical CSV is a final-roster list, not a weekly lineup.
+         * It does not identify starter, bench, IR, or keeper status.
+         */
         slot: "Final Roster",
         isStarter: false,
         isKeeper: false,
@@ -165,8 +259,8 @@
     });
 
     var teams = Object.keys(teamsByOwner)
-      .map(function (owner) {
-        var team = teamsByOwner[owner];
+      .map(function (teamKey) {
+        var team = teamsByOwner[teamKey];
 
         team.players.sort(function (a, b) {
           return a.playerName.localeCompare(b.playerName);
@@ -179,7 +273,7 @@
       });
 
     return {
-      season: year,
+      season: selectedSeason,
       teams: teams,
     };
   }
