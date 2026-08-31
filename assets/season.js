@@ -385,9 +385,15 @@
       renderDivisionStandingsEspn(data.divisionStandings);
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
+
       await populateWeekSelectsEspn(data.weeks);
       renderMatchupsEspn();
       renderTeamsEspn();
+
+      // ESPN has end-of-season roster snapshots rather than weekly data.
+      // This fills the Team dropdown, hides Week, and renders the roster.
+      await renderWeeklyRoster();
+
       await populateScheduleTeamSelectEspn();
       renderTeamScheduleEspn();
       await renderDraftEspn(season, myToken);
