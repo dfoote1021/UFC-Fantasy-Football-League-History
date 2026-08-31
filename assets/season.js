@@ -959,11 +959,18 @@
       var isVisualLastPickInRound =
         !nextPick || Number(nextPick.round) !== round;
 
-      var directionArrow = getSnakeArrow(
-        round,
-        isVisualLastPickInRound,
-        snakeIndex === snakePicks.length - 1
-      );
+            /*
+       * Arrows are only meaningful on the complete board. When a team is
+       * selected, other teams' intervening picks are hidden, so suppress
+       * the path indicators entirely.
+       */
+      var directionArrow = selectedTeam
+        ? ""
+        : getSnakeArrow(
+            round,
+            isVisualLastPickInRound,
+            snakeIndex === snakePicks.length - 1
+          );
 
       var directionText = getSnakeArrowText(directionArrow);
 
@@ -1184,11 +1191,18 @@
       var isVisualLastPickInRound =
         !nextPick || Number(nextPick.round) !== round;
 
-      var directionArrow = getSnakeArrow(
-        round,
-        isVisualLastPickInRound,
-        snakeIndex === snakePicks.length - 1
-      );
+            /*
+       * Do not show snake-path arrows while one team is filtered. The
+       * unseen selections between this team's picks would make arrows
+       * visually misleading.
+       */
+      var directionArrow = selectedRosterId
+        ? ""
+        : getSnakeArrow(
+            round,
+            isVisualLastPickInRound,
+            snakeIndex === snakePicks.length - 1
+          );
 
       var directionText = getSnakeArrowText(directionArrow);
 
@@ -2694,7 +2708,7 @@
    * This changes display order only. Historical pick numbers and their
    * R#.## labels are preserved exactly.
    */
-    function renderAllTimeDraftByYear(picks) {
+    function renderAllTimeDraftByYear(picks, showSnakeArrows) {
     var container = byId("alltime-draft-by-year");
     if (!container) return;
 
@@ -2848,9 +2862,14 @@
             var isFinalPickInYear =
               snakeIndex === snakePicks.length - 1;
 
+                        /*
+             * The All-Time owner filter shows only one owner's picks.
+             * Suppress arrows in that view because the next actual pick
+             * in the complete draft is usually not visible.
+             */
             var directionArrow = "";
 
-            if (!isFinalPickInYear) {
+            if (showSnakeArrows && !isFinalPickInYear) {
               if (isVisualLastPickInRound) {
                 directionArrow = "↓";
               } else if (round % 2 === 0) {
@@ -2934,7 +2953,7 @@
     var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
     renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
 
-    renderAllTimeDraftByYear(allPicks);
+        renderAllTimeDraftByYear(allPicks, !ownerName);
   }
 
   function populateAllTimeDraftOwnerFilter(allSeasonsData) {
