@@ -682,17 +682,7 @@
           ? "starter-row"
           : "bench-row";
 
-        var slotLabel;
-
-        if (player.slot === "Bench") {
-          slotLabel = "Bench";
-        } else if (player.slot === "IR") {
-          slotLabel = "IR";
-        } else if (player.isStarter) {
-          slotLabel = "Starter";
-        } else {
-          slotLabel = player.slot || "Bench";
-        }
+         var slotLabel = player.slot || "Final Roster";
 
         var keeperSuffix = player.isKeeper
           ? " (Keeper)"
