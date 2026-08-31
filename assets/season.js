@@ -2883,14 +2883,12 @@ var directionArrow = selectedRosterId
              * while the last displayed item of an even row is R#.1.
              * That final displayed item gets the downward turn arrow.
              */
-            var directionArrow = showSnakeArrows
-              ? getSnakeArrow(
-                round,
-                pickWithinRound,
-                teamCount,
-                snakeIndex === snakePicks.length - 1
-              )
-            : "";
+            var directionArrow = getSnakeArrow(
+              round,
+              pickWithinRound,
+              teamCount,
+              snakeIndex === snakePicks.length - 1
+            );
 
             var directionText = "";
             if (directionArrow === "→") {
