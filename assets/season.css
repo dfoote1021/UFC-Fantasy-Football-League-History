@@ -876,14 +876,33 @@ display: none !important;
   opacity: 0.9;
 }
 
-/* Preserves the old yellow keeper label if it appears on a snake card.
-   Your pink .is-keeper-pick corner badge remains the primary keeper UI. */
+/* Keeper badge shown directly by season.js on all draft boards:
+   ESPN seasons, Sleeper seasons, and All-Time yearly boards. */
+.draft-pick.is-keeper-pick::after {
+  content: "KEEPER";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 5;
+  background: #ff2fd4;
+  color: #1a0014;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Optional fallback for any older renderer still outputting a textual
+   KEEPER label at the bottom of the card. */
 .draft-keeper-tag {
   color: var(--gold) !important;
   font-weight: 700;
 }
+
 @media (max-width: 700px) {
-main {
-padding: 16px;
-}
+  main {
+    padding: 16px;
+  }
 }
