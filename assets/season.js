@@ -2610,69 +2610,184 @@
       '<div class="breakdown-grid">' + cardsHtml(breakdown.byNflTeam) + '</div>';
   }
 
+    /**
+   * Renders every visible All-Time draft grouped by year.
+   *
+   * Each year is shown as a visual snake board:
+   * - Odd-numbered rounds: ascending pick order, left → right.
+   * - Even-numbered rounds: descending pick order, right ← left.
+   *
+   * This changes display order only. Historical pick numbers and their
+   * R#.## labels are preserved exactly.
+   */
   function renderAllTimeDraftByYear(picks) {
-  var container = byId('alltime-draft-by-year');
-  if (!container) return;
+    var container = byId("alltime-draft-by-year");
+    if (!container) return;
 
-  if (!picks || picks.length === 0) {
-    container.innerHTML = '<p class="status-text">No draft picks found.</p>';
-    return;
+    if (!picks || picks.length === 0) {
+      container.innerHTML =
+        '<p class="status-text">No draft picks found.</p>';
+      return;
+    }
+
+    var picksByYear = {};
+
+    picks.forEach(function (pick) {
+      var year = Number(pick.year);
+
+      if (!picksByYear[year]) {
+        picksByYear[year] = [];
+      }
+
+      picksByYear[year].push(pick);
+    });
+
+    var years = Object.keys(picksByYear)
+      .map(Number)
+      .sort(function (a, b) {
+        return b - a;
+      });
+
+    container.innerHTML = years
+      .map(function (year) {
+        var yearPicks = picksByYear[year].slice();
+
+        /*
+         * Derive teams-per-round for this individual historical year.
+         * ESPN data may already provide roundPick, while Sleeper data
+         * needs it calculated using the number of Round 1 drafters.
+         */
+        var roundOneTeams = {};
+
+        yearPicks.forEach(function (pick) {
+          if (Number(pick.round) === 1 && pick.ownerKey) {
+            roundOneTeams[pick.ownerKey] = true;
+          }
+        });
+
+        var teamCount = Object.keys(roundOneTeams).length || 12;
+
+        /*
+         * Group the year's picks by round before ordering them. This means
+         * even rounds reverse independently and the final display matches
+         * a true snake board instead of simply reversing the entire draft.
+         */
+        var picksByRound = {};
+
+        yearPicks.forEach(function (pick) {
+          var round = Number(pick.round) || 0;
+
+          if (!picksByRound[round]) {
+            picksByRound[round] = [];
+          }
+
+          picksByRound[round].push(pick);
+        });
+
+        var snakePicks = [];
+
+        Object.keys(picksByRound)
+          .map(Number)
+          .sort(function (a, b) {
+            return a - b;
+          })
+          .forEach(function (round) {
+            var roundPicks = picksByRound[round].slice();
+
+            roundPicks.sort(function (a, b) {
+              return Number(a.pickNo || 0) - Number(b.pickNo || 0);
+            });
+
+            // Reverse even rounds for the snake visual layout.
+            if (round % 2 === 0) {
+              roundPicks.reverse();
+            }
+
+            snakePicks = snakePicks.concat(roundPicks);
+          });
+
+        var picksHtml = snakePicks
+          .map(function (pick) {
+            var round = Number(pick.round) || 0;
+
+            var roundPick =
+              pick.roundPick ||
+              (round && pick.pickNo
+                ? pick.pickNo - (round - 1) * teamCount
+                : null);
+
+            var pickLabel =
+              "Pick " +
+              (pick.pickNo || "-") +
+              (round
+                ? " (R" +
+                  round +
+                  (roundPick ? "." + roundPick : "") +
+                  ")"
+                : "");
+
+            /*
+             * Direction arrow is attached to each card:
+             * → for standard left-to-right rounds,
+             * ← for reversed right-to-left rounds.
+             */
+            var directionArrow =
+              round > 0 && round % 2 === 0 ? "←" : "→";
+
+            var directionText =
+              round > 0 && round % 2 === 0
+                ? "Even round: right to left"
+                : "Odd round: left to right";
+
+            var keeperTag = pick.isKeeper
+              ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
+              : "";
+
+            var metaLine = pick.position
+              ? escapeHtml(pick.position) +
+                (pick.nflTeam
+                  ? " - " + escapeHtml(pick.nflTeam)
+                  : "")
+              : "";
+
+            return (
+              '<div class="draft-pick draft-pick-snake">' +
+                '<div class="pick-num">' +
+                  pickLabel +
+                '</div>' +
+                '<div class="draft-direction" title="' +
+                  directionText +
+                  '" aria-label="' +
+                  directionText +
+                  '">' +
+                  directionArrow +
+                '</div>' +
+                '<div>' +
+                  escapeHtml(pick.playerName || "Unknown Player") +
+                '</div>' +
+                (metaLine
+                  ? '<div class="draft-meta">' + metaLine + "</div>"
+                  : "") +
+                '<div class="draft-owner">' +
+                  escapeHtml(pick.ownerName || "") +
+                "</div>" +
+                keeperTag +
+              "</div>"
+            );
+          })
+          .join("");
+
+        return (
+          '<h3 class="playoff-heading">' +
+            year +
+            ' Draft</h3>' +
+          '<div class="draft-board draft-board-snake">' +
+            picksHtml +
+          "</div>"
+        );
+      })
+      .join("");
   }
-
-  var byYear = {};
-  picks.forEach(function (p) {
-    if (!byYear[p.year]) byYear[p.year] = [];
-    byYear[p.year].push(p);
-  });
-
-  var years = Object.keys(byYear).map(Number).sort(function (a, b) { return b - a; });
-
-  container.innerHTML = years.map(function (year) {
-    var yearPicks = byYear[year].slice().sort(function (a, b) {
-      return (a.pickNo || 0) - (b.pickNo || 0);
-    });
-
-    // Derive teams-per-round for THIS year from the number of distinct
-    // owners who picked in round 1 - each year's league may have a
-    // different roster count (e.g. league size changed across seasons),
-    // so this must be computed per-year rather than once globally.
-    // ESPN-sourced years already carry roundPick directly; only Sleeper
-    // years need it derived from pickNo/round.
-    var round1Teams = {};
-    yearPicks.forEach(function (p) {
-      if (p.round === 1 && p.ownerKey) round1Teams[p.ownerKey] = true;
-    });
-    var teamCount = Object.keys(round1Teams).length || 12;
-
-    var picksHtml = yearPicks.map(function (p) {
-      var keeperTag = p.isKeeper
-        ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
-        : '';
-      var metaLine = p.position
-        ? escapeHtml(p.position) + (p.nflTeam ? ' - ' + escapeHtml(p.nflTeam) : '')
-        : '';
-      var roundPick = p.roundPick || (p.round && p.pickNo
-        ? p.pickNo - (p.round - 1) * teamCount
-        : null);
-      var pickLabel = 'Pick ' + (p.pickNo || '-') +
-        (p.round ? ' (R' + p.round + (roundPick ? '.' + roundPick : '') + ')' : '');
-      return (
-        '<div class="draft-pick">' +
-          '<div class="pick-num">' + pickLabel + '</div>' +
-          '<div>' + escapeHtml(p.playerName || 'Unknown Player') + '</div>' +
-          (metaLine ? '<div class="draft-meta">' + metaLine + '</div>' : '') +
-          '<div class="draft-owner">' + escapeHtml(p.ownerName || '') + '</div>' +
-          keeperTag +
-        '</div>'
-      );
-    }).join('');
-
-    return (
-      '<h3 class="playoff-heading">' + year + ' Draft</h3>' +
-      '<div class="draft-board">' + picksHtml + '</div>'
-    );
-  }).join('');
-}
 
   function renderAllTimeDraftFiltered() {
     if (!state.allTimeData) return;
