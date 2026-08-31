@@ -52,7 +52,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,51,5,3,Wearing Sperrys Popping Cherrys,Carson,4481,Willis McGahee,RB,DEN,No
 2012,52,5,4,Gotham City Rogues,Dan,12569,Percy Harvin,WR,MIN,No
 2012,53,5,5,The Elite Eli's,Gavin,8475,Vincent Jackson,WR,TB,No
-2012,54,5,6,Rapid City Monuments,Tsizz,-16033,Ravens D/ST,DEF,BAL,No
+2012,54,5,6,Rapid City Monuments,Tsizz,-16033,Ravens DEF,DEF,BAL,No
 2012,55,5,7,Team Charles,Charles,9588,Reggie Bush,RB,MIA,No
 2012,56,5,8,Former ShepaugTeacher,Spear,11754,BenJarvus Green-Ellis,RB,CIN,No
 2012,57,5,9,Salsa Dancing,Tom,5362,Antonio Gates,TE,LAC,No
@@ -97,7 +97,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,96,8,12,Team McFarland,Ken,14887,David Wilson,RB,NYG,No
 2012,97,9,1,Team McFarland,Ken,11282,Fred Davis,TE,WAS,No
 2012,98,9,2,Best Served Hot,Ed,11461,Peyton Hillis,RB,KC,No
-2012,99,9,3,Wearing Sperrys Popping Cherrys,Carson,-16025,49ers D/ST,DEF,SF,No
+2012,99,9,3,Wearing Sperrys Popping Cherrys,Carson,-16025,49ers DEF,DEF,SF,No
 2012,100,9,4,Gotham City Rogues,Dan,9307,Nate Washington,WR,TEN,No
 2012,101,9,5,The Elite Eli's,Gavin,4527,Jason Witten,TE,DAL,No
 2012,102,9,6,Rapid City Monuments,Tsizz,14012,Andy Dalton,QB,CIN,No
@@ -105,11 +105,11 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,104,9,8,Former ShepaugTeacher,Spear,13981,Mark Ingram,RB,NO,No
 2012,105,9,9,Salsa Dancing,Tom,14875,Robert Griffin III,QB,WAS,No
 2012,106,9,10,The Thirteenth District,James,4512,Anquan Boldin,WR,BAL,No
-2012,107,9,11,Eat The Sandwich,Spencer,-16034,Texans D/ST,DEF,HOU,No
+2012,107,9,11,Eat The Sandwich,Spencer,-16034,Texans DEF,DEF,HOU,No
 2012,108,9,12,Team No College Yet,Dylan,9400,Lance Moore,WR,NO,No
 2012,109,10,1,Team No College Yet,Dylan,13211,Toby Gerhart,RB,MIN,No
 2012,110,10,2,Eat The Sandwich,Spencer,9597,Jay Cutler,QB,CHI,No
-2012,111,10,3,The Thirteenth District,James,-16003,Bears D/ST,DEF,CHI,No
+2012,111,10,3,The Thirteenth District,James,-16003,Bears DEF,DEF,CHI,No
 2012,112,10,4,Salsa Dancing,Tom,12489,Donald Brown,RB,IND,No
 2012,113,10,5,Former ShepaugTeacher,Spear,12563,Michael Crabtree,WR,SF,No
 2012,114,10,6,Team Charles,Charles,14017,Shane Vereen,RB,NE,No
@@ -119,9 +119,9 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,118,10,10,Wearing Sperrys Popping Cherrys,Carson,11252,Joe Flacco,QB,BAL,No
 2012,119,10,11,Best Served Hot,Ed,12473,Josh Freeman,QB,TB,No
 2012,120,10,12,Team McFarland,Ken,9704,Stephen Gostkowski,K,NE,No
-2012,121,11,1,Team McFarland,Ken,-16001,Falcons D/ST,DEF,ATL,No
+2012,121,11,1,Team McFarland,Ken,-16001,Falcons DEF,DEF,ATL,No
 2012,122,11,2,Best Served Hot,Ed,10488,Sidney Rice,WR,SEA,No
-2012,123,11,3,Wearing Sperrys Popping Cherrys,Carson,-16019,Giants D/ST,DEF,NYG,No
+2012,123,11,3,Wearing Sperrys Popping Cherrys,Carson,-16019,Giants DEF,DEF,NYG,No
 2012,124,11,4,Gotham City Rogues,Dan,12537,Jared Cook,TE,TEN,No
 2012,125,11,5,The Elite Eli's,Gavin,8416,Alex Smith,QB,SF,No
 2012,126,11,6,Rapid City Monuments,Tsizz,12570,Darrius Heyward-Bey,WR,LV,No
@@ -139,26 +139,26 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,138,12,6,Team Charles,Charles,14021,Leonard Hankerson,WR,WAS,No
 2012,139,12,7,Rapid City Monuments,Tsizz,10605,Brent Celek,TE,PHI,No
 2012,140,12,8,The Elite Eli's,Gavin,12724,Bernard Scott,RB,CIN,No
-2012,141,12,9,Gotham City Rogues,Dan,-16021,Eagles D/ST,DEF,PHI,No
+2012,141,12,9,Gotham City Rogues,Dan,-16021,Eagles DEF,DEF,PHI,No
 2012,142,12,10,Wearing Sperrys Popping Cherrys,Carson,11543,Garrett Hartley,K,NO,No
 2012,143,12,11,Best Served Hot,Ed,10713,Pierre Thomas,RB,NO,No
 2012,144,12,12,Team McFarland,Ken,13986,Jon Baldwin,WR,KC,No
 2012,145,13,1,Team McFarland,Ken,11264,Dustin Keller,TE,NYJ,No
-2012,146,13,2,Best Served Hot,Ed,-16026,Seahawks D/ST,DEF,SEA,No
+2012,146,13,2,Best Served Hot,Ed,-16026,Seahawks DEF,DEF,SEA,No
 2012,147,13,3,Wearing Sperrys Popping Cherrys,Carson,4529,Nate Burleson,WR,DET,No
 2012,148,13,4,Gotham City Rogues,Dan,11122,Matt Prater,K,DEN,No
 2012,149,13,5,The Elite Eli's,Gavin,10519,Laurent Robinson,WR,JAX,No
 2012,150,13,6,Rapid City Monuments,Tsizz,9354,Robbie Gould,K,CHI,No
-2012,151,13,7,Team Charles,Charles,-16023,Steelers D/ST,DEF,PIT,No
-2012,152,13,8,Former ShepaugTeacher,Spear,-16020,Jets D/ST,DEF,NYJ,No
+2012,151,13,7,Team Charles,Charles,-16023,Steelers DEF,DEF,PIT,No
+2012,152,13,8,Former ShepaugTeacher,Spear,-16020,Jets DEF,DEF,NYJ,No
 2012,153,13,9,Salsa Dancing,Tom,13213,LeGarrette Blount,RB,TB,No
 2012,154,13,10,The Thirteenth District,James,14874,Andrew Luck,QB,IND,No
 2012,155,13,11,Eat The Sandwich,Spencer,11658,Mike Tolbert,RB,CAR,No
 2012,156,13,12,Team No College Yet,Dylan,13197,Sam Bradford,QB,LAR,No
 2012,157,14,1,Team No College Yet,Dylan,13489,Mike Williams,WR,TB,No
 2012,158,14,2,Eat The Sandwich,Spencer,14909,Kendall Wright,WR,TEN,No
-2012,159,14,3,The Thirteenth District,James,-16008,Lions D/ST,DEF,DET,No
-2012,160,14,4,Salsa Dancing,Tom,-16009,Packers D/ST,DEF,GB,No
+2012,159,14,3,The Thirteenth District,James,-16008,Lions DEF,DEF,DET,No
+2012,160,14,4,Salsa Dancing,Tom,-16009,Packers DEF,DEF,GB,No
 2012,161,14,5,Former ShepaugTeacher,Spear,8664,Ryan Fitzpatrick,QB,BUF,No
 2012,162,14,6,Team Charles,Charles,14322,Dan Bailey,K,DAL,No
 2012,163,14,7,Rapid City Monuments,Tsizz,8524,Brandon Jacobs,RB,SF,No
@@ -171,7 +171,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,170,15,2,Best Served Hot,Ed,13206,Jonathan Dwyer,RB,PIT,No
 2012,171,15,3,Wearing Sperrys Popping Cherrys,Carson,12576,Brandon LaFell,WR,CAR,No
 2012,172,15,4,Gotham City Rogues,Dan,8417,Ronnie Brown,RB,LAC,No
-2012,173,15,5,The Elite Eli's,Gavin,-16002,Bills D/ST,DEF,BUF,No
+2012,173,15,5,The Elite Eli's,Gavin,-16002,Bills DEF,DEF,BUF,No
 2012,174,15,6,Rapid City Monuments,Tsizz,10495,Steve Smith,WR,LAR,No
 2012,175,15,7,Team Charles,Charles,13214,James Starks,RB,GB,No
 2012,176,15,8,Former ShepaugTeacher,Spear,11295,Martellus Bennett,TE,NYG,No
@@ -179,7 +179,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2012,178,15,10,The Thirteenth District,James,8461,Mike Nugent,K,CIN,No
 2012,179,15,11,Eat The Sandwich,Spencer,14900,Coby Fleener,TE,IND,No
 2012,180,15,12,Team No College Yet,Dylan,4333,Matt Bryant,K,ATL,No
-2012,181,16,1,Team No College Yet,Dylan,-16006,Cowboys D/ST,DEF,DAL,No
+2012,181,16,1,Team No College Yet,Dylan,-16006,Cowboys DEF,DEF,DAL,No
 2012,182,16,2,Eat The Sandwich,Spencer,14077,Delone Carter,RB,IND,No
 2012,183,16,3,The Thirteenth District,James,14054,Kyle Rudolph,TE,MIN,No
 2012,184,16,4,Salsa Dancing,Tom,286,Jason Hanson,K,DET,No
@@ -265,7 +265,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,72,6,12,Caucasion Sasquatch,Ken,9592,Vernon Davis,TE,SF,No
 2013,73,7,1,Caucasion Sasquatch,Ken,9400,Lance Moore,WR,PIT,No
 2013,74,7,2,Team No College Yet,Dylan,5209,Tony Romo,QB,DAL,No
-2013,75,7,3,Rapid City Monuments,Tsizz,-16026,Seahawks D/ST,DEF,SEA,No
+2013,75,7,3,Rapid City Monuments,Tsizz,-16026,Seahawks DEF,DEF,SEA,No
 2013,76,7,4,The Elite Eli's,Gavin,10488,Sidney Rice,WR,SEA,No
 2013,77,7,5,Team Charles,Charles,4512,Anquan Boldin,WR,SF,No
 2013,78,7,6,Wearing Sperrys Popping Cherrys,Carson,9638,Greg Jennings,WR,MIN,No
@@ -277,7 +277,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,84,7,12,Eat The Sandwich,Spencer,14924,T.Y. Hilton,WR,IND,No
 2013,85,8,1,Eat The Sandwich,Spencer,14012,Andy Dalton,QB,CIN,No
 2013,86,8,2,Former ShepaugTeacher,Spear,11257,Rashard Mendenhall,RB,ARI,No
-2013,87,8,3,Gotham City Rogues,Dan,-16025,49ers D/ST,DEF,SF,No
+2013,87,8,3,Gotham City Rogues,Dan,-16025,49ers DEF,DEF,SF,No
 2013,88,8,4,The Thirteenth District,James,15111,Daryl Richardson,RB,LAR,No
 2013,89,8,5,Salsa Dancing,Tom,10475,Greg Olsen,TE,CAR,No
 2013,90,8,6,Best Served Hot,Ed,10147,Miles Austin,WR,DAL,No
@@ -287,15 +287,15 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,94,8,10,Rapid City Monuments,Tsizz,9684,Owen Daniels,TE,BAL,No
 2013,95,8,11,Team No College Yet,Dylan,14054,Kyle Rudolph,TE,MIN,No
 2013,96,8,12,Caucasion Sasquatch,Ken,5362,Antonio Gates,TE,LAC,No
-2013,97,9,1,Caucasion Sasquatch,Ken,-16023,Steelers D/ST,DEF,PIT,No
+2013,97,9,1,Caucasion Sasquatch,Ken,-16023,Steelers DEF,DEF,PIT,No
 2013,98,9,2,Team No College Yet,Dylan,14888,Isaiah Pead,RB,LAR,No
 2013,99,9,3,Rapid City Monuments,Tsizz,2549,Michael Vick,QB,NYJ,No
 2013,100,9,4,The Elite Eli's,Gavin,13981,Mark Ingram,RB,NO,No
 2013,101,9,5,Team Charles,Charles,13489,Mike Williams,WR,BUF,No
-2013,102,9,6,Wearing Sperrys Popping Cherrys,Carson,-16004,Bengals D/ST,DEF,CIN,No
-2013,103,9,7,Best Served Hot,Ed,-16003,Bears D/ST,DEF,CHI,No
+2013,102,9,6,Wearing Sperrys Popping Cherrys,Carson,-16004,Bengals DEF,DEF,CIN,No
+2013,103,9,7,Best Served Hot,Ed,-16003,Bears DEF,DEF,CHI,No
 2013,104,9,8,Salsa Dancing,Tom,5536,Ben Roethlisberger,QB,PIT,No
-2013,105,9,9,The Thirteenth District,James,-16034,Texans D/ST,DEF,HOU,No
+2013,105,9,9,The Thirteenth District,James,-16034,Texans DEF,DEF,HOU,No
 2013,106,9,10,Gotham City Rogues,Dan,11295,Martellus Bennett,TE,CHI,No
 2013,107,9,11,Former ShepaugTeacher,Spear,14898,Vick Ballard,RB,IND,No
 2013,108,9,12,Eat The Sandwich,Spencer,13295,Emmanuel Sanders,WR,DEN,No
@@ -307,7 +307,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,114,10,6,Best Served Hot,Ed,13210,Ben Tate,RB,CLE,No
 2013,115,10,7,Wearing Sperrys Popping Cherrys,Carson,13217,Golden Tate,WR,DET,No
 2013,116,10,8,Team Charles,Charles,12537,Jared Cook,TE,LAR,No
-2013,117,10,9,The Elite Eli's,Gavin,-16017,Patriots D/ST,DEF,GB,No
+2013,117,10,9,The Elite Eli's,Gavin,-16017,Patriots DEF,DEF,GB,No
 2013,118,10,10,Rapid City Monuments,Tsizz,12556,Kenny Britt,WR,LAR,No
 2013,119,10,11,Team No College Yet,Dylan,15825,Le'Veon Bell,RB,PIT,No
 2013,120,10,12,Caucasion Sasquatch,Ken,11252,Joe Flacco,QB,BAL,No
@@ -323,8 +323,8 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,130,11,10,Gotham City Rogues,Dan,14891,Bernard Pierce,RB,BAL,No
 2013,131,11,11,Former ShepaugTeacher,Spear,12898,Isaac Redman,RB,PIT,No
 2013,132,11,12,Eat The Sandwich,Spencer,15092,Bryce Brown,RB,PHI,No
-2013,133,12,1,Eat The Sandwich,Spencer,-16033,Ravens D/ST,DEF,BAL,No
-2013,134,12,2,Former ShepaugTeacher,Spear,-16007,Broncos D/ST,DEF,DEN,No
+2013,133,12,1,Eat The Sandwich,Spencer,-16033,Ravens DEF,DEF,BAL,No
+2013,134,12,2,Former ShepaugTeacher,Spear,-16007,Broncos DEF,DEF,DEN,No
 2013,135,12,3,Gotham City Rogues,Dan,9597,Jay Cutler,QB,CHI,No
 2013,136,12,4,The Thirteenth District,James,12549,Brandon Pettigrew,TE,DET,No
 2013,137,12,5,Salsa Dancing,Tom,11282,Fred Davis,TE,WAS,No
@@ -336,10 +336,10 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,143,12,11,Team No College Yet,Dylan,12500,Shonn Greene,RB,TEN,No
 2013,144,12,12,Caucasion Sasquatch,Ken,14909,Kendall Wright,WR,TEN,No
 2013,145,13,1,Caucasion Sasquatch,Ken,14901,Dwayne Allen,TE,IND,No
-2013,146,13,2,Team No College Yet,Dylan,-16009,Packers D/ST,DEF,GB,No
+2013,146,13,2,Team No College Yet,Dylan,-16009,Packers DEF,DEF,GB,No
 2013,147,13,3,Rapid City Monuments,Tsizz,15683,Justin Tucker,K,BAL,No
 2013,148,13,4,The Elite Eli's,Gavin,4333,Matt Bryant,K,ATL,No
-2013,149,13,5,Team Charles,Charles,-16014,Rams D/ST,DEF,LAR,No
+2013,149,13,5,Team Charles,Charles,-16014,Rams DEF,DEF,LAR,No
 2013,150,13,6,Wearing Sperrys Popping Cherrys,Carson,14895,Ronnie Hillman,RB,DEN,No
 2013,151,13,7,Best Served Hot,Ed,14192,Roy Helu,RB,WAS,No
 2013,152,13,8,Salsa Dancing,Tom,11788,Danny Woodhead,RB,LAC,No
@@ -351,7 +351,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2013,158,14,2,Former ShepaugTeacher,Spear,15091,Randy Bullock,K,HOU,No
 2013,159,14,3,Gotham City Rogues,Dan,10544,Michael Bush,RB,CHI,No
 2013,160,14,4,The Thirteenth District,James,4459,Carson Palmer,QB,ARI,No
-2013,161,14,5,Salsa Dancing,Tom,-16019,Giants D/ST,DEF,NYG,No
+2013,161,14,5,Salsa Dancing,Tom,-16019,Giants DEF,DEF,NYG,No
 2013,162,14,6,Best Served Hot,Ed,1440,Phil Dawson,K,SF,No
 2013,163,14,7,Wearing Sperrys Popping Cherrys,Carson,12490,Andre Brown,RB,HOU,No
 2013,164,14,8,Team Charles,Charles,11122,Matt Prater,K,DEN,No
@@ -477,7 +477,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,92,8,8,Caucasion Sasquatch,Ken,14184,Cecil Shorts III,WR,HOU,No
 2014,93,8,9,Salsa Dancing,Tom,11788,Danny Woodhead,RB,LAC,No
 2014,94,8,10,Johnny Clipboards,Gavin,15878,Terrance Williams,WR,DAL,No
-2014,95,8,11,Team Charles,Charles,-16026,Seahawks D/ST,DEF,SEA,No
+2014,95,8,11,Team Charles,Charles,-16026,Seahawks DEF,DEF,SEA,No
 2014,96,8,12,Team Foote Longs,Wes,2330,Tom Brady,QB,NE,No
 2014,97,9,1,Team Foote Longs,Wes,14054,Kyle Rudolph,TE,MIN,No
 2014,98,9,2,Team Charles,Charles,14886,Lamar Miller,RB,MIA,No
@@ -496,7 +496,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,111,10,3,Rapid City Monuments,Tsizz,4459,Carson Palmer,QB,ARI,No
 2014,112,10,4,Paper Thin Walls,Geoff,5536,Ben Roethlisberger,QB,PIT,No
 2014,113,10,5,The Thirteenth District,James,15845,Justin Hunter,WR,TEN,No
-2014,114,10,6,Brookfield Brawlers,Rob,-16029,Panthers D/ST,DEF,CAR,No
+2014,114,10,6,Brookfield Brawlers,Rob,-16029,Panthers DEF,DEF,CAR,No
 2014,115,10,7,Two First Names,Spear,15860,Jordan Reed,TE,WAS,No
 2014,116,10,8,Caucasion Sasquatch,Ken,5529,Philip Rivers,QB,LAC,No
 2014,117,10,9,Salsa Dancing,Tom,16737,Mike Evans,WR,TB,No
@@ -523,13 +523,13 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,138,12,6,Brookfield Brawlers,Rob,1097,Adam Vinatieri,K,IND,No
 2014,139,12,7,Two First Names,Spear,16787,Marqise Lee,WR,JAX,No
 2014,140,12,8,Caucasion Sasquatch,Ken,11122,Matt Prater,K,DET,No
-2014,141,12,9,Salsa Dancing,Tom,-16025,49ers D/ST,DEF,SF,No
+2014,141,12,9,Salsa Dancing,Tom,-16025,49ers DEF,DEF,SF,No
 2014,142,12,10,Johnny Clipboards,Gavin,14192,Roy Helu,RB,LV,No
 2014,143,12,11,Team Charles,Charles,16803,Jeremy Hill,RB,CIN,No
 2014,144,12,12,Team Foote Longs,Wes,13489,Mike Williams,WR,BUF,No
 2014,145,13,1,Team Foote Longs,Wes,15788,Tyler Eifert,TE,CIN,No
 2014,146,13,2,Team Charles,Charles,13214,James Starks,RB,GB,No
-2014,147,13,3,Johnny Clipboards,Gavin,-16014,Rams D/ST,DEF,LAR,No
+2014,147,13,3,Johnny Clipboards,Gavin,-16014,Rams DEF,DEF,LAR,No
 2014,148,13,4,Salsa Dancing,Tom,14904,Ladarius Green,TE,LAC,No
 2014,149,13,5,Caucasion Sasquatch,Ken,5362,Antonio Gates,TE,LAC,No
 2014,150,13,6,Two First Names,Spear,9704,Stephen Gostkowski,K,NE,No
@@ -538,11 +538,11 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,153,13,9,Paper Thin Walls,Geoff,16732,Eric Ebron,TE,DET,No
 2014,154,13,10,Rapid City Monuments,Tsizz,12576,Brandon LaFell,WR,NE,No
 2014,155,13,11,Gotham City Rogues,Dan,12537,Jared Cook,TE,LAR,No
-2014,156,13,12,Eat The Sandwich,Spencer,-16007,Broncos D/ST,DEF,DEN,No
+2014,156,13,12,Eat The Sandwich,Spencer,-16007,Broncos DEF,DEF,DEN,No
 2014,157,14,1,Eat The Sandwich,Spencer,16944,Devonta Freeman,RB,ATL,No
-2014,158,14,2,Gotham City Rogues,Dan,-16004,Bengals D/ST,DEF,CIN,No
+2014,158,14,2,Gotham City Rogues,Dan,-16004,Bengals DEF,DEF,CIN,No
 2014,159,14,3,Rapid City Monuments,Tsizz,1440,Phil Dawson,K,SF,No
-2014,160,14,4,Paper Thin Walls,Geoff,-16017,Patriots D/ST,DEF,NE,No
+2014,160,14,4,Paper Thin Walls,Geoff,-16017,Patriots DEF,DEF,NE,No
 2014,161,14,5,The Thirteenth District,James,15369,Lance Dunbar,RB,DAL,No
 2014,162,14,6,Brookfield Brawlers,Rob,16040,C.J. Anderson,RB,DEN,No
 2014,163,14,7,Two First Names,Spear,12568,Brian Hartline,WR,CLE,No
@@ -550,7 +550,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,165,14,9,Salsa Dancing,Tom,16889,Andre Williams,RB,NYG,No
 2014,166,14,10,Johnny Clipboards,Gavin,11247,Jonathan Stewart,RB,CAR,No
 2014,167,14,11,Team Charles,Charles,15832,Knile Davis,RB,KC,No
-2014,168,14,12,Team Foote Longs,Wes,-16022,Cardinals D/ST,DEF,ARI,No
+2014,168,14,12,Team Foote Longs,Wes,-16022,Cardinals DEF,DEF,ARI,No
 2014,169,15,1,Team Foote Longs,Wes,10693,Ahmad Bradshaw,RB,IND,No
 2014,170,15,2,Team Charles,Charles,9329,Nick Novak,K,LAC,No
 2014,171,15,3,Johnny Clipboards,Gavin,10636,Mason Crosby,K,GB,No
@@ -560,17 +560,17 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2014,175,15,7,Brookfield Brawlers,Rob,16784,Tre Mason,RB,LAR,No
 2014,176,15,8,The Thirteenth District,James,15058,Blair Walsh,K,MIN,No
 2014,177,15,9,Paper Thin Walls,Geoff,11923,Steven Hauschka,K,SEA,No
-2014,178,15,10,Rapid City Monuments,Tsizz,-16012,Chiefs D/ST,DEF,KC,No
+2014,178,15,10,Rapid City Monuments,Tsizz,-16012,Chiefs DEF,DEF,KC,No
 2014,179,15,11,Gotham City Rogues,Dan,13197,Sam Bradford,QB,PHI,No
 2014,180,15,12,Eat The Sandwich,Spencer,15683,Justin Tucker,K,BAL,No
 2014,181,16,1,Eat The Sandwich,Spencer,11318,Harry Douglas,WR,TEN,No
 2014,182,16,2,Gotham City Rogues,Dan,14993,Greg Zuerlein,K,LAR,No
 2014,183,16,3,Rapid City Monuments,Tsizz,13207,Dexter McCluster,WR,TEN,No
 2014,184,16,4,Paper Thin Walls,Geoff,5633,Jerricho Cotchery,WR,CAR,No
-2014,185,16,5,The Thirteenth District,James,-16005,Browns D/ST,DEF,CLE,No
+2014,185,16,5,The Thirteenth District,James,-16005,Browns DEF,DEF,CLE,No
 2014,186,16,6,Brookfield Brawlers,Rob,5526,Eli Manning,QB,NYG,No
-2014,187,16,7,Two First Names,Spear,-16028,Redskins D/ST,DEF,WAS,No
-2014,188,16,8,Caucasion Sasquatch,Ken,-16027,Buccaneers D/ST,DEF,TB,No
+2014,187,16,7,Two First Names,Spear,-16028,Redskins DEF,DEF,WAS,No
+2014,188,16,8,Caucasion Sasquatch,Ken,-16027,Buccaneers DEF,DEF,TB,No
 2014,189,16,9,Salsa Dancing,Tom,9354,Robbie Gould,K,CHI,No
 2014,190,16,10,Johnny Clipboards,Gavin,14900,Coby Fleener,TE,IND,No
 2014,191,16,11,Team Charles,Charles,14145,Charles Clay,TE,BUF,No
@@ -692,24 +692,24 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2015,115,10,7,Threat Level Midnight,Ken,2977609,Devin Funchess,WR,CAR,No
 2015,116,10,8,Gotham City Rogues,Dan,12576,Brandon LaFell,WR,CIN,No
 2015,117,10,9,LSC Stud Muffins,Dylan,16889,Andre Williams,RB,NYG,No
-2015,118,10,10,Reverend Payne,Rob,-16026,Seahawks D/ST,DEF,SEA,No
+2015,118,10,10,Reverend Payne,Rob,-16026,Seahawks DEF,DEF,SEA,No
 2015,119,10,11,Republic City Fire Ferrets,James,5526,Eli Manning,QB,NYG,No
 2015,120,10,12,Rapid City Monuments,Tsizz,14221,Doug Baldwin,WR,SEA,No
 2015,121,11,1,Rapid City Monuments,Tsizz,14877,Nick Foles,QB,LAR,No
 2015,122,11,2,Republic City Fire Ferrets,James,13553,Victor Cruz,WR,NYG,No
 2015,123,11,3,Reverend Payne,Rob,9704,Stephen Gostkowski,K,NE,No
 2015,124,11,4,LSC Stud Muffins,Dylan,16950,Lorenzo Taliaferro,RB,BAL,No
-2015,125,11,5,Gotham City Rogues,Dan,-16034,Texans D/ST,DEF,HOU,No
+2015,125,11,5,Gotham City Rogues,Dan,-16034,Texans DEF,DEF,HOU,No
 2015,126,11,6,Threat Level Midnight,Ken,15951,Denard Robinson,RB,JAX,No
 2015,127,11,7,Team Foote Longs,Wes,9684,Owen Daniels,TE,DEN,No
 2015,128,11,8,AutoDrafted Scrubs,Spear,10195,Fred Jackson,RB,SEA,No
 2015,129,11,9,The Buzzards,Tom,12483,Matthew Stafford,QB,DET,No
 2015,130,11,10,Johnny Man-Zeer,Gavin,2576303,David Cobb,RB,TEN,No
-2015,131,11,11,Paper Thin Walls,Geoff,-16002,Bills D/ST,DEF,BUF,No
+2015,131,11,11,Paper Thin Walls,Geoff,-16002,Bills DEF,DEF,BUF,No
 2015,132,11,12,Eat The Sandwich,Spencer,15823,Montee Ball,RB,NE,No
 2015,133,12,1,Eat The Sandwich,Spencer,9613,DeAngelo Williams,RB,PIT,No
 2015,134,12,2,Paper Thin Walls,Geoff,2972460,Breshad Perriman,WR,BAL,No
-2015,135,12,3,Johnny Man-Zeer,Gavin,-16014,Rams D/ST,DEF,LAR,No
+2015,135,12,3,Johnny Man-Zeer,Gavin,-16014,Rams DEF,DEF,LAR,No
 2015,136,12,4,The Buzzards,Tom,16795,Austin Seferian-Jenkins,TE,TB,No
 2015,137,12,5,AutoDrafted Scrubs,Spear,15832,Knile Davis,RB,KC,No
 2015,138,12,6,Team Foote Longs,Wes,16143,Josh Hill,TE,NO,No
@@ -726,32 +726,32 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2015,149,13,5,Gotham City Rogues,Dan,9597,Jay Cutler,QB,CHI,No
 2015,150,13,6,Threat Level Midnight,Ken,14001,Colin Kaepernick,QB,SF,No
 2015,151,13,7,Team Foote Longs,Wes,11458,Stevie Johnson,WR,LAC,No
-2015,152,13,8,AutoDrafted Scrubs,Spear,-16020,Jets D/ST,DEF,NYJ,No
+2015,152,13,8,AutoDrafted Scrubs,Spear,-16020,Jets DEF,DEF,NYJ,No
 2015,153,13,9,The Buzzards,Tom,14911,Rueben Randle,WR,PHI,No
 2015,154,13,10,Johnny Man-Zeer,Gavin,2508176,David Johnson,RB,ARI,No
 2015,155,13,11,Paper Thin Walls,Geoff,15364,Jonas Gray,RB,JAX,No
-2015,156,13,12,Eat The Sandwich,Spencer,-16007,Broncos D/ST,DEF,DEN,No
+2015,156,13,12,Eat The Sandwich,Spencer,-16007,Broncos DEF,DEF,DEN,No
 2015,157,14,1,Eat The Sandwich,Spencer,15994,Theo Riddick,RB,DET,No
 2015,158,14,2,Paper Thin Walls,Geoff,16782,Jerick McKinnon,RB,MIN,No
 2015,159,14,3,Johnny Man-Zeer,Gavin,9588,Reggie Bush,RB,SF,No
 2015,160,14,4,The Buzzards,Tom,2573300,Jay Ajayi,RB,MIA,No
 2015,161,14,5,AutoDrafted Scrubs,Spear,1097,Adam Vinatieri,K,IND,No
 2015,162,14,6,Team Foote Longs,Wes,12563,Michael Crabtree,WR,LV,No
-2015,163,14,7,Threat Level Midnight,Ken,-16017,Patriots D/ST,DEF,NE,No
+2015,163,14,7,Threat Level Midnight,Ken,-16017,Patriots DEF,DEF,NE,No
 2015,164,14,8,Gotham City Rogues,Dan,9592,Vernon Davis,TE,DEN,No
-2015,165,14,9,LSC Stud Muffins,Dylan,-16033,Ravens D/ST,DEF,BAL,No
+2015,165,14,9,LSC Stud Muffins,Dylan,-16033,Ravens DEF,DEF,BAL,No
 2015,166,14,10,Reverend Payne,Rob,15072,Marvin Jones,WR,DET,No
-2015,167,14,11,Republic City Fire Ferrets,James,-16022,Cardinals D/ST,DEF,ARI,No
+2015,167,14,11,Republic City Fire Ferrets,James,-16022,Cardinals DEF,DEF,ARI,No
 2015,168,14,12,Rapid City Monuments,Tsizz,11923,Steven Hauschka,K,SEA,No
-2015,169,15,1,Rapid City Monuments,Tsizz,-16015,Dolphins D/ST,DEF,MIA,No
+2015,169,15,1,Rapid City Monuments,Tsizz,-16015,Dolphins DEF,DEF,MIA,No
 2015,170,15,2,Republic City Fire Ferrets,James,14322,Dan Bailey,K,DAL,No
 2015,171,15,3,Reverend Payne,Rob,16913,James White,RB,NE,No
 2015,172,15,4,LSC Stud Muffins,Dylan,15683,Justin Tucker,K,BAL,No
 2015,173,15,5,Gotham City Rogues,Dan,14914,Brian Quick,WR,LAR,No
 2015,174,15,6,Threat Level Midnight,Ken,4333,Matt Bryant,K,ATL,No
-2015,175,15,7,Team Foote Longs,Wes,-16021,Eagles D/ST,DEF,PHI,No
+2015,175,15,7,Team Foote Longs,Wes,-16021,Eagles DEF,DEF,PHI,No
 2015,176,15,8,AutoDrafted Scrubs,Spear,15041,Daniel Herron,RB,IND,No
-2015,177,15,9,The Buzzards,Tom,-16008,Lions D/ST,DEF,DET,No
+2015,177,15,9,The Buzzards,Tom,-16008,Lions DEF,DEF,DET,No
 2015,178,15,10,Johnny Man-Zeer,Gavin,11122,Matt Prater,K,DET,No
 2015,179,15,11,Paper Thin Walls,Geoff,17082,Cody Parkey,K,PHI,No
 2015,180,15,12,Eat The Sandwich,Spencer,16339,Brandon McManus,K,DEN,No
@@ -882,7 +882,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2016,113,10,5,Johnny Man-Zeer,Gavin,16724,Blake Bortles,QB,JAX,No
 2016,114,10,6,To Me Those BallsArePerfect,Tsizz,2573300,Jay Ajayi,RB,MIA,No
 2016,115,10,7,Nothing to see Here,Ken,14163,Tyrod Taylor,QB,BUF,No
-2016,116,10,8,Eat The Sandwich,Spencer,-16026,Seahawks D/ST,DEF,SEA,No
+2016,116,10,8,Eat The Sandwich,Spencer,-16026,Seahawks DEF,DEF,SEA,No
 2016,117,10,9,Seabass and the Fellas,Geoff,12483,Matthew Stafford,QB,DET,No
 2016,118,10,10,Team Foote Longs,Wes,2977609,Devin Funchess,WR,CAR,No
 2016,119,10,11,WhenUrKickerIs YourBestPlayer,Spear,5362,Antonio Gates,TE,LAC,No
@@ -900,14 +900,14 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2016,131,11,11,Reverend Payne,Rob,1097,Adam Vinatieri,K,IND,No
 2016,132,11,12,Gotham City Rogues,Dan,11295,Martellus Bennett,TE,GB,No
 2016,133,12,1,Gotham City Rogues,Dan,14017,Shane Vereen,RB,NYG,No
-2016,134,12,2,Reverend Payne,Rob,-16029,Panthers D/ST,DEF,CAR,No
+2016,134,12,2,Reverend Payne,Rob,-16029,Panthers DEF,DEF,CAR,No
 2016,135,12,3,The Phenomenal Ones,Tom,14012,Andy Dalton,QB,CIN,No
 2016,136,12,4,Kirk's Sinking Enterprise,James,15855,Christine Michael,RB,GB,No
 2016,137,12,5,Johnny Man-Zeer,Gavin,14204,Julius Thomas,TE,MIA,No
 2016,138,12,6,To Me Those BallsArePerfect,Tsizz,16732,Eric Ebron,TE,DET,No
-2016,139,12,7,Nothing to see Here,Ken,-16022,Cardinals D/ST,DEF,ARI,No
+2016,139,12,7,Nothing to see Here,Ken,-16022,Cardinals DEF,DEF,ARI,No
 2016,140,12,8,Eat The Sandwich,Spencer,9704,Stephen Gostkowski,K,NE,No
-2016,141,12,9,Seabass and the Fellas,Geoff,-16007,Broncos D/ST,DEF,DEN,No
+2016,141,12,9,Seabass and the Fellas,Geoff,-16007,Broncos DEF,DEF,DEN,No
 2016,142,12,10,Team Foote Longs,Wes,2969939,Jameis Winston,QB,TB,No
 2016,143,12,11,WhenUrKickerIs YourBestPlayer,Spear,16782,Jerick McKinnon,RB,MIN,No
 2016,144,12,12,LSC Stud Muffins,Dylan,2579604,Phillip Dorsett,WR,IND,No
@@ -919,8 +919,8 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2016,150,13,6,Nothing to see Here,Ken,15683,Justin Tucker,K,BAL,No
 2016,151,13,7,To Me Those BallsArePerfect,Tsizz,16913,James White,RB,NE,No
 2016,152,13,8,Johnny Man-Zeer,Gavin,16946,Bruce Ellington,WR,SF,No
-2016,153,13,9,Kirk's Sinking Enterprise,James,-16012,Chiefs D/ST,DEF,KC,No
-2016,154,13,10,The Phenomenal Ones,Tom,-16034,Texans D/ST,DEF,HOU,No
+2016,153,13,9,Kirk's Sinking Enterprise,James,-16012,Chiefs DEF,DEF,KC,No
+2016,154,13,10,The Phenomenal Ones,Tom,-16034,Texans DEF,DEF,HOU,No
 2016,155,13,11,Reverend Payne,Rob,11674,Danny Amendola,WR,NE,No
 2016,156,13,12,Gotham City Rogues,Dan,14322,Dan Bailey,K,DAL,No
 2016,157,14,1,Gotham City Rogues,Dan,15102,Rishard Matthews,WR,TEN,No
@@ -933,20 +933,20 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2016,164,14,8,Eat The Sandwich,Spencer,11258,Chris Johnson,RB,ARI,No
 2016,165,14,9,Seabass and the Fellas,Geoff,3122866,Devontae Booker,RB,DEN,No
 2016,166,14,10,Team Foote Longs,Wes,2982828,Tajae Sharpe,WR,TEN,No
-2016,167,14,11,WhenUrKickerIs YourBestPlayer,Spear,-16009,Packers D/ST,DEF,GB,No
-2016,168,14,12,LSC Stud Muffins,Dylan,-16004,Bengals D/ST,DEF,CIN,No
+2016,167,14,11,WhenUrKickerIs YourBestPlayer,Spear,-16009,Packers DEF,DEF,GB,No
+2016,168,14,12,LSC Stud Muffins,Dylan,-16004,Bengals DEF,DEF,CIN,No
 2016,169,15,1,LSC Stud Muffins,Dylan,2577654,DeAndre Washington,RB,LV,No
 2016,170,15,2,WhenUrKickerIs YourBestPlayer,Spear,9588,Reggie Bush,RB,BUF,No
-2016,171,15,3,Team Foote Longs,Wes,-16016,Vikings D/ST,DEF,MIN,No
+2016,171,15,3,Team Foote Longs,Wes,-16016,Vikings DEF,DEF,MIN,No
 2016,172,15,4,Seabass and the Fellas,Geoff,14145,Charles Clay,TE,BUF,No
 2016,173,15,5,Eat The Sandwich,Spencer,2576019,Josh Doctson,WR,WAS,No
 2016,174,15,6,Nothing to see Here,Ken,2980148,C.J. Prosise,RB,SEA,No
-2016,175,15,7,To Me Those BallsArePerfect,Tsizz,-16013,Raiders D/ST,DEF,LV,No
-2016,176,15,8,Johnny Man-Zeer,Gavin,-16017,Patriots D/ST,DEF,NE,No
+2016,175,15,7,To Me Those BallsArePerfect,Tsizz,-16013,Raiders DEF,DEF,LV,No
+2016,176,15,8,Johnny Man-Zeer,Gavin,-16017,Patriots DEF,DEF,NE,No
 2016,177,15,9,Kirk's Sinking Enterprise,James,3060022,Jordan Howard,RB,CHI,No
 2016,178,15,10,The Phenomenal Ones,Tom,13553,Victor Cruz,WR,NYG,No
 2016,179,15,11,Reverend Payne,Rob,15349,Cole Beasley,WR,DAL,No
-2016,180,15,12,Gotham City Rogues,Dan,-16020,Jets D/ST,DEF,NYJ,No
+2016,180,15,12,Gotham City Rogues,Dan,-16020,Jets DEF,DEF,NYJ,No
 2016,181,16,1,Gotham City Rogues,Dan,14198,Dion Lewis,RB,NE,No
 2016,182,16,2,Reverend Payne,Rob,16783,Terrance West,RB,BAL,No
 2016,183,16,3,The Phenomenal Ones,Tom,12460,Graham Gano,K,CAR,No
@@ -1064,13 +1064,13 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2017,103,9,7,The J.O.B. Squad,Tom,2979477,Tevin Coleman,RB,ATL,No
 2017,104,9,8,Gotham City Rogues,Dan,2587819,Tyrell Williams,WR,LAC,No
 2017,105,9,9,Pray For Johnny Man-Zeer,Gavin,16763,Jordan Matthews,WR,NE,No
-2017,106,9,10,Reverend Payne,Rob,-16007,Broncos D/ST,DEF,DEN,No
+2017,106,9,10,Reverend Payne,Rob,-16007,Broncos DEF,DEF,DEN,No
 2017,107,9,11,Nothing to see Here,Ken,3046439,Hunter Henry,TE,LAC,No
 2017,108,9,12,LSC Stud Muffins,Dylan,10636,Mason Crosby,K,GB,No
-2017,109,10,1,LSC Stud Muffins,Dylan,-16023,Steelers D/ST,DEF,PIT,No
+2017,109,10,1,LSC Stud Muffins,Dylan,-16023,Steelers DEF,DEF,PIT,No
 2017,110,10,2,Nothing to see Here,Ken,15683,Justin Tucker,K,BAL,No
 2017,111,10,3,Reverend Payne,Rob,4333,Matt Bryant,K,ATL,No
-2017,112,10,4,Pray For Johnny Man-Zeer,Gavin,-16026,Seahawks D/ST,DEF,SEA,No
+2017,112,10,4,Pray For Johnny Man-Zeer,Gavin,-16026,Seahawks DEF,DEF,SEA,No
 2017,113,10,5,Gotham City Rogues,Dan,2969962,Duke Johnson Jr.,RB,CLE,No
 2017,114,10,6,The J.O.B. Squad,Tom,3042778,Corey Davis,WR,TEN,No
 2017,115,10,7,Captain Kirk's Enterprise,James,16504,Jack Doyle,TE,IND,No
@@ -1092,15 +1092,15 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2017,131,11,11,Nothing to see Here,Ken,14193,Jacquizz Rodgers,RB,TB,No
 2017,132,11,12,LSC Stud Muffins,Dylan,14922,Mohamed Sanu,WR,ATL,No
 2017,133,12,1,LSC Stud Muffins,Dylan,15826,Giovani Bernard,RB,CIN,No
-2017,134,12,2,Nothing to see Here,Ken,-16022,Cardinals D/ST,DEF,ARI,No
+2017,134,12,2,Nothing to see Here,Ken,-16022,Cardinals DEF,DEF,ARI,No
 2017,135,12,3,Reverend Payne,Rob,15102,Rishard Matthews,WR,TEN,No
 2017,136,12,4,Pray For Johnny Man-Zeer,Gavin,1097,Adam Vinatieri,K,IND,No
 2017,137,12,5,Gotham City Rogues,Dan,5526,Eli Manning,QB,NYG,No
 2017,138,12,6,The J.O.B. Squad,Tom,2978929,Corey Coleman,WR,CLE,No
 2017,139,12,7,Captain Kirk's Enterprise,James,2576237,Thomas Rawls,RB,NYJ,No
 2017,140,12,8,Eat The Sandwich,Spencer,8544,Darren Sproles,RB,PHI,No
-2017,141,12,9,Seabass and the Fellas,Geoff,-16012,Chiefs D/ST,DEF,KC,No
-2017,142,12,10,Thanks.,Tsizz,-16030,Jaguars D/ST,DEF,JAX,No
+2017,141,12,9,Seabass and the Fellas,Geoff,-16012,Chiefs DEF,DEF,KC,No
+2017,142,12,10,Thanks.,Tsizz,-16030,Jaguars DEF,DEF,JAX,No
 2017,143,12,11,Abdullah OBKongata,Spear,2576019,Josh Doctson,WR,WAS,No
 2017,144,12,12,Team Foote Longs,Wes,10453,Ted Ginn Jr.,WR,NO,No
 2017,145,13,1,Team Foote Longs,Wes,15920,Latavius Murray,RB,MIN,No
@@ -1108,9 +1108,9 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2017,147,13,3,Thanks.,Tsizz,12537,Jared Cook,TE,LV,No
 2017,148,13,4,Seabass and the Fellas,Geoff,9704,Stephen Gostkowski,K,NE,No
 2017,149,13,5,Eat The Sandwich,Spencer,2980148,C.J. Prosise,RB,SEA,No
-2017,150,13,6,Captain Kirk's Enterprise,James,-16016,Vikings D/ST,DEF,MIN,No
+2017,150,13,6,Captain Kirk's Enterprise,James,-16016,Vikings DEF,DEF,MIN,No
 2017,151,13,7,The J.O.B. Squad,Tom,3125116,D'Onta Foreman,RB,HOU,No
-2017,152,13,8,Gotham City Rogues,Dan,-16034,Texans D/ST,DEF,HOU,No
+2017,152,13,8,Gotham City Rogues,Dan,-16034,Texans DEF,DEF,HOU,No
 2017,153,13,9,Pray For Johnny Man-Zeer,Gavin,14032,Torrey Smith,WR,CAR,No
 2017,154,13,10,Reverend Payne,Rob,15966,Chris Thompson,RB,WAS,No
 2017,155,13,11,Nothing to see Here,Ken,2573079,Carson Wentz,QB,PHI,No
@@ -1120,15 +1120,15 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2017,159,14,3,Reverend Payne,Rob,14163,Tyrod Taylor,QB,CLE,No
 2017,160,14,4,Pray For Johnny Man-Zeer,Gavin,3051876,Evan Engram,TE,NYG,No
 2017,161,14,5,Gotham City Rogues,Dan,15965,Dustin Hopkins,K,WAS,No
-2017,162,14,6,The J.O.B. Squad,Tom,-16017,Patriots D/ST,DEF,NE,No
+2017,162,14,6,The J.O.B. Squad,Tom,-16017,Patriots DEF,DEF,NE,No
 2017,163,14,7,Captain Kirk's Enterprise,James,14322,Dan Bailey,K,DAL,No
-2017,164,14,8,Eat The Sandwich,Spencer,-16029,Panthers D/ST,DEF,CAR,No
+2017,164,14,8,Eat The Sandwich,Spencer,-16029,Panthers DEF,DEF,CAR,No
 2017,165,14,9,Seabass and the Fellas,Geoff,3054850,Alvin Kamara,RB,NO,No
 2017,166,14,10,Thanks.,Tsizz,2976516,T.J. Yeldon,RB,JAX,No
 2017,167,14,11,Abdullah OBKongata,Spear,11307,Jamaal Charles,RB,DEN,No
 2017,168,14,12,Team Foote Longs,Wes,3043275,Austin Hooper,TE,ATL,No
 2017,169,15,1,Team Foote Longs,Wes,11122,Matt Prater,K,DET,No
-2017,170,15,2,Abdullah OBKongata,Spear,-16004,Bengals D/ST,DEF,CIN,No
+2017,170,15,2,Abdullah OBKongata,Spear,-16004,Bengals DEF,DEF,CIN,No
 2017,171,15,3,Thanks.,Tsizz,15058,Blair Walsh,K,SEA,No
 2017,172,15,4,Seabass and the Fellas,Geoff,16749,Charles Sims,RB,TB,No
 2017,173,15,5,Eat The Sandwich,Spencer,14012,Andy Dalton,QB,CIN,No
@@ -1150,7 +1150,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2017,189,16,9,Seabass and the Fellas,Geoff,2577654,DeAndre Washington,RB,LV,No
 2017,190,16,10,Thanks.,Tsizz,15807,Cordarrelle Patterson,WR,NE,No
 2017,191,16,11,Abdullah OBKongata,Spear,2985659,Wil Lutz,K,NO,No
-2017,192,16,12,Team Foote Longs,Wes,-16019,Giants D/ST,DEF,NYG,No
+2017,192,16,12,Team Foote Longs,Wes,-16019,Giants DEF,DEF,NYG,No
 2018,1,1,1,Trust The Process,Tom,2977644,Todd Gurley II,RB,LAR,Yes
 2018,2,1,2,Team Foote Longs,Wes,3060022,Jordan Howard,RB,CHI,Yes
 2018,3,1,3,Spock's 1995 Toyota Camry,Tsizz,3116406,Tyreek Hill,WR,KC,Yes
@@ -1279,9 +1279,9 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2018,126,11,6,Gotham City Rogues,Dan,2974858,Kenny Golladay,WR,DET,No
 2018,127,11,7,SanchezIs MyKeeper,Spear,3071572,Keelan Cole,WR,JAX,No
 2018,128,11,8,Team To Be Named Later,James,3139477,Patrick Mahomes,QB,KC,No
-2018,129,11,9,Ez Win 4U,Ken,-16030,Jaguars D/ST,DEF,JAX,No
+2018,129,11,9,Ez Win 4U,Ken,-16030,Jaguars DEF,DEF,JAX,No
 2018,130,11,10,The Comeback of Johnny Man-Zeer,Gavin,2577327,Tyler Lockett,WR,SEA,No
-2018,131,11,11,Reverend Payne,Rob,-16021,Eagles D/ST,DEF,PHI,No
+2018,131,11,11,Reverend Payne,Rob,-16021,Eagles DEF,DEF,PHI,No
 2018,132,11,12,Seabass and the Fellas,Geoff,16781,Paul Richardson,WR,WAS,No
 2018,133,12,1,Seabass and the Fellas,Geoff,4036348,Michael Gallup,WR,DAL,No
 2018,134,12,2,Reverend Payne,Rob,2520698,Cameron Meredith,WR,NO,No
@@ -1291,15 +1291,15 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2018,138,12,6,SanchezIs MyKeeper,Spear,3116165,Chris Godwin,WR,TB,No
 2018,139,12,7,Gotham City Rogues,Dan,3042519,Aaron Jones,RB,GB,No
 2018,140,12,8,LSC Stud Muffins,Dylan,5362,Antonio Gates,TE,LAC,No
-2018,141,12,9,Eat The Sandwich,Spencer,-16016,Vikings D/ST,DEF,MIN,No
+2018,141,12,9,Eat The Sandwich,Spencer,-16016,Vikings DEF,DEF,MIN,No
 2018,142,12,10,Spock's 1995 Toyota Camry,Tsizz,16795,Austin Seferian-Jenkins,TE,JAX,No
 2018,143,12,11,Team Foote Longs,Wes,5557,Benjamin Watson,TE,NO,No
 2018,144,12,12,Trust The Process,Tom,3049916,Matt Breida,RB,SF,No
 2018,145,13,1,Trust The Process,Tom,3925357,Calvin Ridley,WR,ATL,No
 2018,146,13,2,Team Foote Longs,Wes,5529,Philip Rivers,QB,LAC,No
-2018,147,13,3,Spock's 1995 Toyota Camry,Tsizz,-16014,Rams D/ST,DEF,LAR,No
+2018,147,13,3,Spock's 1995 Toyota Camry,Tsizz,-16014,Rams DEF,DEF,LAR,No
 2018,148,13,4,Eat The Sandwich,Spencer,15102,Rishard Matthews,WR,NYJ,No
-2018,149,13,5,LSC Stud Muffins,Dylan,-16034,Texans D/ST,DEF,HOU,No
+2018,149,13,5,LSC Stud Muffins,Dylan,-16034,Texans DEF,DEF,HOU,No
 2018,150,13,6,Gotham City Rogues,Dan,9704,Stephen Gostkowski,K,NE,No
 2018,151,13,7,SanchezIs MyKeeper,Spear,3915416,DJ Moore,WR,CAR,No
 2018,152,13,8,Team To Be Named Later,James,3051891,Jordan Wilkins,RB,IND,No
@@ -1309,9 +1309,9 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2018,156,13,12,Seabass and the Fellas,Geoff,12601,Mike Wallace,WR,PHI,No
 2018,157,14,1,Seabass and the Fellas,Geoff,11283,DeSean Jackson,WR,TB,No
 2018,158,14,2,Reverend Payne,Rob,3115913,Geronimo Allison,WR,GB,No
-2018,159,14,3,The Comeback of Johnny Man-Zeer,Gavin,-16033,Ravens D/ST,DEF,BAL,No
+2018,159,14,3,The Comeback of Johnny Man-Zeer,Gavin,-16033,Ravens DEF,DEF,BAL,No
 2018,160,14,4,Ez Win 4U,Ken,2985659,Wil Lutz,K,NO,No
-2018,161,14,5,Team To Be Named Later,James,-16007,Broncos D/ST,DEF,DEN,No
+2018,161,14,5,Team To Be Named Later,James,-16007,Broncos DEF,DEF,DEN,No
 2018,162,14,6,SanchezIs MyKeeper,Spear,3040151,George Kittle,TE,SF,No
 2018,163,14,7,Gotham City Rogues,Dan,12537,Jared Cook,TE,LV,No
 2018,164,14,8,LSC Stud Muffins,Dylan,2148,Sebastian Janikowski,K,LV,No
@@ -1319,25 +1319,25 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2018,166,14,10,Spock's 1995 Toyota Camry,Tsizz,17372,Chris Boswell,K,PIT,No
 2018,167,14,11,Team Foote Longs,Wes,13213,LeGarrette Blount,RB,DET,No
 2018,168,14,12,Trust The Process,Tom,3116164,Mike Gesicki,TE,MIA,No
-2018,169,15,1,Trust The Process,Tom,-16024,Chargers D/ST,DEF,LAC,No
-2018,170,15,2,Team Foote Longs,Wes,-16017,Patriots D/ST,DEF,NE,No
+2018,169,15,1,Trust The Process,Tom,-16024,Chargers DEF,DEF,LAC,No
+2018,170,15,2,Team Foote Longs,Wes,-16017,Patriots DEF,DEF,NE,No
 2018,171,15,3,Spock's 1995 Toyota Camry,Tsizz,16803,Jeremy Hill,RB,NE,No
 2018,172,15,4,Eat The Sandwich,Spencer,3055899,Harrison Butker,K,KC,No
 2018,173,15,5,LSC Stud Muffins,Dylan,17258,Willie Snead IV,WR,BAL,No
 2018,174,15,6,Gotham City Rogues,Dan,3045147,James Conner,RB,PIT,No
-2018,175,15,7,SanchezIs MyKeeper,Spear,-16018,Saints D/ST,DEF,NO,No
+2018,175,15,7,SanchezIs MyKeeper,Spear,-16018,Saints DEF,DEF,NO,No
 2018,176,15,8,Team To Be Named Later,James,3050478,Jake Elliott,K,PHI,No
 2018,177,15,9,Ez Win 4U,Ken,9354,Robbie Gould,K,SF,No
 2018,178,15,10,The Comeback of Johnny Man-Zeer,Gavin,11122,Matt Prater,K,DET,No
 2018,179,15,11,Reverend Payne,Rob,1097,Adam Vinatieri,K,IND,No
-2018,180,15,12,Seabass and the Fellas,Geoff,-16010,Titans D/ST,DEF,TEN,No
+2018,180,15,12,Seabass and the Fellas,Geoff,-16010,Titans DEF,DEF,TEN,No
 2018,181,16,1,Seabass and the Fellas,Geoff,12460,Graham Gano,K,CAR,No
 2018,182,16,2,Reverend Payne,Rob,16791,Donte Moncrief,WR,JAX,No
 2018,183,16,3,The Comeback of Johnny Man-Zeer,Gavin,2576980,Marcus Mariota,QB,TEN,No
 2018,184,16,4,Ez Win 4U,Ken,3122449,James Washington,WR,PIT,No
 2018,185,16,5,Team To Be Named Later,James,17453,Cameron Brate,TE,TB,No
 2018,186,16,6,SanchezIs MyKeeper,Spear,12731,Ryan Succop,K,TEN,No
-2018,187,16,7,Gotham City Rogues,Dan,-16029,Panthers D/ST,DEF,CAR,No
+2018,187,16,7,Gotham City Rogues,Dan,-16029,Panthers DEF,DEF,CAR,No
 2018,188,16,8,LSC Stud Muffins,Dylan,15349,Cole Beasley,WR,DAL,No
 2018,189,16,9,Eat The Sandwich,Spencer,10453,Ted Ginn Jr.,WR,NO,No
 2018,190,16,10,Spock's 1995 Toyota Camry,Tsizz,16899,Quincy Enunwa,WR,NYJ,No
@@ -1446,13 +1446,13 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2019,101,9,5,Seabass and the Fellas,Geoff,3122672,Royce Freeman,RB,DEN,No
 2019,102,9,6,Eat The Sandwich,Spencer,15920,Latavius Murray,RB,NO,No
 2019,103,9,7,Trust The Process,Tom,3139925,Rashaad Penny,RB,SEA,No
-2019,104,9,8,Subverted Expectations,Tsizz,-16003,Bears D/ST,DEF,CHI,No
+2019,104,9,8,Subverted Expectations,Tsizz,-16003,Bears DEF,DEF,CHI,No
 2019,105,9,9,Gotham City Rogues,Dan,3122449,James Washington,WR,PIT,No
 2019,106,9,10,Reverend Payne,Rob,3128429,Courtland Sutton,WR,DEN,No
 2019,107,9,11,The Comeback of Johnny Man-Zeer,Gavin,16791,Donte Moncrief,WR,CAR,No
 2019,108,9,12,John Loves Dogs,James,3916430,Nyheim Hines,RB,IND,No
 2019,109,10,1,John Loves Dogs,James,3917315,Kyler Murray,QB,ARI,No
-2019,110,10,2,The Comeback of Johnny Man-Zeer,Gavin,-16030,Jaguars D/ST,DEF,JAX,No
+2019,110,10,2,The Comeback of Johnny Man-Zeer,Gavin,-16030,Jaguars DEF,DEF,JAX,No
 2019,111,10,3,Reverend Payne,Rob,4036348,Michael Gallup,WR,DAL,No
 2019,112,10,4,Gotham City Rogues,Dan,3060022,Jordan Howard,RB,PHI,No
 2019,113,10,5,Subverted Expectations,Tsizz,14993,Greg Zuerlein,K,LAR,No
@@ -1485,21 +1485,21 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2019,140,12,8,Seabass and the Fellas,Geoff,3039707,Mitchell Trubisky,QB,CHI,No
 2019,141,12,9,Clutch Gene,Spear,3050487,Anthony Miller,WR,CHI,No
 2019,142,12,10,Victim Complexes,Wes,16804,John Brown,WR,BUF,No
-2019,143,12,11,SCOTTS TOTS,Ken,-16002,Bills D/ST,DEF,BUF,No
-2019,144,12,12,LSC Stud Muffins,Dylan,-16014,Rams D/ST,DEF,LAR,No
+2019,143,12,11,SCOTTS TOTS,Ken,-16002,Bills DEF,DEF,BUF,No
+2019,144,12,12,LSC Stud Muffins,Dylan,-16014,Rams DEF,DEF,LAR,No
 2019,145,13,1,LSC Stud Muffins,Dylan,17051,Albert Wilson,WR,MIA,No
 2019,146,13,2,SCOTTS TOTS,Ken,16781,Paul Richardson Jr.,WR,WAS,No
 2019,147,13,3,Victim Complexes,Wes,3116365,Mark Andrews,TE,BAL,No
-2019,148,13,4,Clutch Gene,Spear,-16016,Vikings D/ST,DEF,MIN,No
-2019,149,13,5,Seabass and the Fellas,Geoff,-16005,Browns D/ST,DEF,CLE,No
+2019,148,13,4,Clutch Gene,Spear,-16016,Vikings DEF,DEF,MIN,No
+2019,149,13,5,Seabass and the Fellas,Geoff,-16005,Browns DEF,DEF,CLE,No
 2019,150,13,6,Eat The Sandwich,Spencer,16777,Carlos Hyde,RB,HOU,No
-2019,151,13,7,Trust The Process,Tom,-16024,Chargers D/ST,DEF,LAC,No
+2019,151,13,7,Trust The Process,Tom,-16024,Chargers DEF,DEF,LAC,No
 2019,152,13,8,Subverted Expectations,Tsizz,15826,Giovani Bernard,RB,CIN,No
-2019,153,13,9,Gotham City Rogues,Dan,-16021,Eagles D/ST,DEF,PHI,No
-2019,154,13,10,Reverend Payne,Rob,-16018,Saints D/ST,DEF,NO,No
+2019,153,13,9,Gotham City Rogues,Dan,-16021,Eagles DEF,DEF,PHI,No
+2019,154,13,10,Reverend Payne,Rob,-16018,Saints DEF,DEF,NO,No
 2019,155,13,11,The Comeback of Johnny Man-Zeer,Gavin,2985659,Wil Lutz,K,NO,No
 2019,156,13,12,John Loves Dogs,James,10475,Greg Olsen,TE,SEA,No
-2019,157,14,1,John Loves Dogs,James,-16017,Patriots D/ST,DEF,NE,No
+2019,157,14,1,John Loves Dogs,James,-16017,Patriots DEF,DEF,NE,No
 2019,158,14,2,The Comeback of Johnny Man-Zeer,Gavin,3057987,DaeSean Hamilton,WR,DEN,No
 2019,159,14,3,Reverend Payne,Rob,10453,Ted Ginn Jr.,WR,NO,No
 2019,160,14,4,Gotham City Rogues,Dan,2576623,DeVante Parker,WR,MIA,No
@@ -1509,21 +1509,21 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2019,164,14,8,Seabass and the Fellas,Geoff,15966,Chris Thompson,RB,WAS,No
 2019,165,14,9,Clutch Gene,Spear,2971573,Ka'imi Fairbairn,K,HOU,No
 2019,166,14,10,Victim Complexes,Wes,16732,Eric Ebron,TE,IND,No
-2019,167,14,11,SCOTTS TOTS,Ken,-16010,Titans D/ST,DEF,TEN,No
+2019,167,14,11,SCOTTS TOTS,Ken,-16010,Titans DEF,DEF,TEN,No
 2019,168,14,12,LSC Stud Muffins,Dylan,9354,Robbie Gould,K,SF,No
 2019,169,15,1,LSC Stud Muffins,Dylan,3123052,Michael Badgley,K,LAC,No
 2019,170,15,2,SCOTTS TOTS,Ken,3115394,DJ Chark Jr.,WR,JAX,No
 2019,171,15,3,Victim Complexes,Wes,5529,Philip Rivers,QB,LAC,No
 2019,172,15,4,Clutch Gene,Spear,16486,Brett Maher,K,DAL,No
 2019,173,15,5,Seabass and the Fellas,Geoff,4241372,Marquise Brown,WR,BAL,No
-2019,174,15,6,Eat The Sandwich,Spencer,-16033,Ravens D/ST,DEF,BAL,No
+2019,174,15,6,Eat The Sandwich,Spencer,-16033,Ravens DEF,DEF,BAL,No
 2019,175,15,7,Trust The Process,Tom,4036133,T.J. Hockenson,TE,DET,No
 2019,176,15,8,Subverted Expectations,Tsizz,2969939,Jameis Winston,QB,TB,No
 2019,177,15,9,Gotham City Rogues,Dan,4038441,Justice Hill,RB,BAL,No
 2019,178,15,10,Reverend Payne,Rob,3121422,Terry McLaurin,WR,WAS,No
 2019,179,15,11,The Comeback of Johnny Man-Zeer,Gavin,14054,Kyle Rudolph,TE,MIN,No
 2019,180,15,12,John Loves Dogs,James,3050478,Jake Elliott,K,PHI,No
-2019,181,16,1,John Loves Dogs,Wes,-16023,Steelers D/ST,K,PIT,No
+2019,181,16,1,John Loves Dogs,Wes,-16023,Steelers DEF,K,PIT,No
 2019,182,16,2,The Comeback of Johnny Man-Zeer,Gavin,2578533,Chris Conley,WR,JAX,No
 2019,183,16,3,Reverend Payne,Rob,14880,Kirk Cousins,QB,MIN,No
 2019,184,16,4,Gotham City Rogues,Dan,11122,Matt Prater,K,DET,No
@@ -1633,11 +1633,11 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2020,96,8,12,"Set, Hut!",Connor,3916945,Darius Slayton,WR,NYG,No
 2020,97,9,1,"Set, Hut!",Connor,3046439,Hunter Henry,TE,LAC,No
 2020,98,9,2,FightOwens Fight!,Spear,4035676,Zack Moss,RB,BUF,No
-2020,99,9,3,1-800-Miwacle,Rob,-16023,Steelers D/ST,DEF,PIT,No
+2020,99,9,3,1-800-Miwacle,Rob,-16023,Steelers DEF,DEF,PIT,No
 2020,100,9,4,Seabass and the Fellas,Geoff,4039359,Darrell Henderson Jr.,RB,LAR,No
 2020,101,9,5,Gotham City Rogues,Dan,2574808,Robby Anderson,WR,CAR,No
 2020,102,9,6,He's Still Alive,Ken,13217,Golden Tate,WR,NYG,No
-2020,103,9,7,"Make POs, Lose In QFs, Repeat",Tsizz,-16002,Bills D/ST,DEF,BUF,No
+2020,103,9,7,"Make POs, Lose In QFs, Repeat",Tsizz,-16002,Bills DEF,DEF,BUF,No
 2020,104,9,8,Eat The Sandwich,Spencer,2580,Drew Brees,QB,NO,No
 2020,105,9,9,John Loves Dogs,James,3924365,Hayden Hurst,TE,ATL,No
 2020,106,9,10,Wreck Everyone and Lose,Tom,4241389,CeeDee Lamb,WR,DAL,No
@@ -1678,7 +1678,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2020,141,12,9,Seabass and the Fellas,Geoff,3050487,Anthony Miller,WR,CHI,No
 2020,142,12,10,1-800-Miwacle,Rob,15966,Chris Thompson,RB,JAX,No
 2020,143,12,11,FightOwens Fight!,Spear,3916148,Tony Pollard,RB,DAL,No
-2020,144,12,12,"Set, Hut!",Connor,-16025,49ers D/ST,DEF,SF,No
+2020,144,12,12,"Set, Hut!",Connor,-16025,49ers DEF,DEF,SF,No
 2020,145,13,1,"Set, Hut!",Connor,3119195,Chase Edmonds,RB,ARI,No
 2020,146,13,2,FightOwens Fight!,Spear,3139605,Marlon Mack,RB,IND,No
 2020,147,13,3,1-800-Miwacle,Rob,3121410,Parris Campbell,WR,IND,No
@@ -1688,30 +1688,30 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2020,151,13,7,"Make POs, Lose In QFs, Repeat",Tsizz,14053,Randall Cobb,WR,HOU,No
 2020,152,13,8,Eat The Sandwich,Spencer,4035687,Michael Pittman Jr.,WR,IND,No
 2020,153,13,9,John Loves Dogs,James,3116136,Justin Jackson,RB,LAC,No
-2020,154,13,10,Wreck Everyone and Lose,Tom,-16033,Ravens D/ST,DEF,BAL,No
-2020,155,13,11,The Comeback of Johnny Man-Zeer,Gavin,-16017,Patriots D/ST,DEF,NE,No
+2020,154,13,10,Wreck Everyone and Lose,Tom,-16033,Ravens DEF,DEF,BAL,No
+2020,155,13,11,The Comeback of Johnny Man-Zeer,Gavin,-16017,Patriots DEF,DEF,NE,No
 2020,156,13,12,Victim Complexes,Wes,4241479,Tua Tagovailoa,QB,MIA,No
-2020,157,14,1,Victim Complexes,Wes,-16003,Bears D/ST,DEF,CHI,No
+2020,157,14,1,Victim Complexes,Wes,-16003,Bears DEF,DEF,CHI,No
 2020,158,14,2,The Comeback of Johnny Man-Zeer,Gavin,16504,Jack Doyle,TE,IND,No
 2020,159,14,3,Wreck Everyone and Lose,Tom,3915511,Joe Burrow,QB,CIN,No
 2020,160,14,4,John Loves Dogs,James,3925347,Damien Harris,RB,NE,No
 2020,161,14,5,Eat The Sandwich,Spencer,3115375,Darrel Williams,RB,KC,No
 2020,162,14,6,"Make POs, Lose In QFs, Repeat",Tsizz,16777,Carlos Hyde,RB,SEA,No
-2020,163,14,7,He's Still Alive,Ken,-16016,Vikings D/ST,DEF,MIN,No
-2020,164,14,8,Gotham City Rogues,Dan,-16011,Colts D/ST,DEF,IND,No
+2020,163,14,7,He's Still Alive,Ken,-16016,Vikings DEF,DEF,MIN,No
+2020,164,14,8,Gotham City Rogues,Dan,-16011,Colts DEF,DEF,IND,No
 2020,165,14,9,Seabass and the Fellas,Geoff,3699935,Devine Ozigbo,RB,JAX,No
 2020,166,14,10,1-800-Miwacle,Rob,16725,Sammy Watkins,WR,KC,No
 2020,167,14,11,FightOwens Fight!,Spear,4360438,Brandon Aiyuk,WR,SF,No
 2020,168,14,12,"Set, Hut!",Connor,15349,Cole Beasley,WR,BUF,No
 2020,169,15,1,"Set, Hut!",Connor,9354,Robbie Gould,K,SF,No
-2020,170,15,2,FightOwens Fight!,Spear,-16007,Broncos D/ST,DEF,DEN,No
+2020,170,15,2,FightOwens Fight!,Spear,-16007,Broncos DEF,DEF,DEN,No
 2020,171,15,3,1-800-Miwacle,Rob,3040569,Trent Taylor,WR,SF,No
-2020,172,15,4,Seabass and the Fellas,Geoff,-16018,Saints D/ST,DEF,NO,No
+2020,172,15,4,Seabass and the Fellas,Geoff,-16018,Saints DEF,DEF,NO,No
 2020,173,15,5,Gotham City Rogues,Dan,14993,Greg Zuerlein,K,DAL,No
 2020,174,15,6,He's Still Alive,Ken,5528,Larry Fitzgerald,WR,ARI,No
 2020,175,15,7,"Make POs, Lose In QFs, Repeat",Tsizz,14876,Ryan Tannehill,QB,TEN,No
-2020,176,15,8,Eat The Sandwich,Spencer,-16027,Buccaneers D/ST,DEF,TB,No
-2020,177,15,9,John Loves Dogs,James,-16024,Chargers D/ST,DEF,LAC,No
+2020,176,15,8,Eat The Sandwich,Spencer,-16027,Buccaneers DEF,DEF,TB,No
+2020,177,15,9,John Loves Dogs,James,-16024,Chargers DEF,DEF,LAC,No
 2020,178,15,10,Wreck Everyone and Lose,Tom,4241802,Jalen Reagor,WR,PHI,No
 2020,179,15,11,The Comeback of Johnny Man-Zeer,Gavin,3128390,Allen Lazard,WR,GB,No
 2020,180,15,12,Victim Complexes,Wes,4035403,Denzel Mims,WR,NYJ,No
@@ -1865,14 +1865,14 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2021,136,12,4,John Loves Dogs,James,4040655,Darnell Mooney,WR,CHI,No
 2021,137,12,5,Victim Complexes,Wes,5536,Ben Roethlisberger,QB,PIT,No
 2021,138,12,6,Ride of the Symphirrim,Tsizz,13295,Emmanuel Sanders,WR,BUF,No
-2021,139,12,7,The Best In The World,Tom,-16027,Buccaneers D/ST,DEF,TB,No
+2021,139,12,7,The Best In The World,Tom,-16027,Buccaneers DEF,DEF,TB,No
 2021,140,12,8,The Comeback of Johnny Man-Zeer,Gavin,4035004,Mecole Hardman,WR,KC,No
-2021,141,12,9,. Cush .,Connor,-16023,Steelers D/ST,DEF,PIT,No
-2021,142,12,10,Def Done After This Season,Ken,-16033,Ravens D/ST,DEF,BAL,No
+2021,141,12,9,. Cush .,Connor,-16023,Steelers DEF,DEF,PIT,No
+2021,142,12,10,Def Done After This Season,Ken,-16033,Ravens DEF,DEF,BAL,No
 2021,143,12,11,FightOwens Fight!,Spear,3121410,Parris Campbell,WR,IND,No
 2021,144,12,12,Eat The Sandwich,Spencer,2572861,J.D. McKissic,RB,WAS,No
 2021,145,13,1,Eat The Sandwich,Spencer,3046439,Hunter Henry,TE,NE,No
-2021,146,13,2,FightOwens Fight!,Spear,-16028,Commanders D/ST,DEF,WAS,No
+2021,146,13,2,FightOwens Fight!,Spear,-16028,Commanders DEF,DEF,WAS,No
 2021,147,13,3,Def Done After This Season,Ken,15683,Justin Tucker,K,BAL,No
 2021,148,13,4,. Cush .,Connor,15826,Giovani Bernard,RB,TB,No
 2021,149,13,5,The Comeback of Johnny Man-Zeer,Gavin,4372414,Elijah Moore,WR,NYJ,No
@@ -1883,7 +1883,7 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2021,154,13,10,Gotham City Rogues,Dan,4372485,Rondale Moore,WR,ARI,No
 2021,155,13,11,Seabass and the Fellas,Geoff,3052587,Baker Mayfield,QB,CLE,No
 2021,156,13,12,1-800-Miwacle,Rob,3055899,Harrison Butker,K,KC,No
-2021,157,14,1,1-800-Miwacle,Rob,-16002,Bills D/ST,DEF,BUF,No
+2021,157,14,1,1-800-Miwacle,Rob,-16002,Bills DEF,DEF,BUF,No
 2021,158,14,2,Seabass and the Fellas,Geoff,4241479,Tua Tagovailoa,QB,MIA,No
 2021,159,14,3,Gotham City Rogues,Dan,14924,T.Y. Hilton,WR,IND,No
 2021,160,14,4,John Loves Dogs,James,2979477,Tevin Coleman,RB,NYJ,No
@@ -1894,25 +1894,25 @@ Season,Overall Pick,Round,Round Pick,Team,Owner,Player ID,Player Name,Position,N
 2021,165,14,9,. Cush .,Connor,16339,Brandon McManus,K,DEN,No
 2021,166,14,10,Def Done After This Season,Ken,13983,A.J. Green,WR,ARI,No
 2021,167,14,11,FightOwens Fight!,Spear,4040980,Irv Smith Jr.,TE,MIN,No
-2021,168,14,12,Eat The Sandwich,Spencer,-16014,Rams D/ST,DEF,LAR,No
+2021,168,14,12,Eat The Sandwich,Spencer,-16014,Rams DEF,DEF,LAR,No
 2021,169,15,1,Eat The Sandwich,Spencer,4249087,Matt Gay,K,LAR,No
 2021,170,15,2,FightOwens Fight!,Spear,2570986,Malcolm Brown,RB,MIA,No
 2021,171,15,3,Def Done After This Season,Ken,4241464,Mac Jones,QB,NE,No
 2021,172,15,4,. Cush .,Connor,4038818,Bryan Edwards,WR,LV,No
-2021,173,15,5,The Comeback of Johnny Man-Zeer,Gavin,-16025,49ers D/ST,DEF,SF,No
+2021,173,15,5,The Comeback of Johnny Man-Zeer,Gavin,-16025,49ers DEF,DEF,SF,No
 2021,174,15,6,The Best In The World,Tom,4240600,Kadarius Toney,WR,NYG,No
 2021,175,15,7,Ride of the Symphirrim,Tsizz,12460,Graham Gano,K,NYG,No
-2021,176,15,8,Victim Complexes,Wes,-16017,Patriots D/ST,DEF,NE,No
-2021,177,15,9,John Loves Dogs,James,-16007,Broncos D/ST,DEF,DEN,No
-2021,178,15,10,Gotham City Rogues,Dan,-16016,Vikings D/ST,DEF,MIN,No
-2021,179,15,11,Seabass and the Fellas,Geoff,-16005,Browns D/ST,DEF,CLE,No
+2021,176,15,8,Victim Complexes,Wes,-16017,Patriots DEF,DEF,NE,No
+2021,177,15,9,John Loves Dogs,James,-16007,Broncos DEF,DEF,DEN,No
+2021,178,15,10,Gotham City Rogues,Dan,-16016,Vikings DEF,DEF,MIN,No
+2021,179,15,11,Seabass and the Fellas,Geoff,-16005,Browns DEF,DEF,CLE,No
 2021,180,15,12,1-800-Miwacle,Rob,4569173,Rhamondre Stevenson,RB,NE,No
 2021,181,16,1,1-800-Miwacle,Rob,4258595,Cole Kmet,TE,CHI,No
 2021,182,16,2,Seabass and the Fellas,Geoff,2473037,Jason Myers,K,SEA,No
 2021,183,16,3,Gotham City Rogues,Dan,3124679,Jason Sanders,K,MIA,No
 2021,184,16,4,John Loves Dogs,James,3049899,Younghoe Koo,K,ATL,No
 2021,185,16,5,Victim Complexes,Wes,2998120,Josh Lambo,K,JAX,No
-2021,186,16,6,Ride of the Symphirrim,Tsizz,-16003,Bears D/ST,DEF,CHI,No
+2021,186,16,6,Ride of the Symphirrim,Tsizz,-16003,Bears DEF,DEF,CHI,No
 2021,187,16,7,The Best In The World,Tom,3150744,Chase McLaughlin,K,CLE,No
 2021,188,16,8,The Comeback of Johnny Man-Zeer,Gavin,14993,Greg Zuerlein,K,DAL,No
 2021,189,16,9,. Cush .,Connor,4374302,Amon-Ra St. Brown,WR,DET,No
