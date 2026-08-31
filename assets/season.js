@@ -848,12 +848,22 @@
    * - Even rounds otherwise use ←.
    * - The final overall pick gets no arrow.
    */
-  function getSnakeArrow(round, pickWithinRound, isFinalPick) {
+    /**
+   * Gets the arrow for a visual snake-draft card.
+   *
+   * `isVisualLastPickInRound` is based on the already snake-ordered
+   * displayed row. Therefore:
+   *
+   * - Odd rounds: R#.12 is visually last and gets ↓.
+   * - Even rounds: R#.1 is visually last and gets ↓.
+   * - The true final card in the complete draft gets no arrow.
+   */
+  function getSnakeArrow(round, isVisualLastPickInRound, isFinalPick) {
     if (isFinalPick) {
       return "";
     }
 
-    if (Number(pickWithinRound) === 12) {
+    if (isVisualLastPickInRound) {
       return "↓";
     }
 
@@ -937,12 +947,21 @@
         "draft-pick draft-pick-snake" +
         (pick.isKeeper ? " is-keeper-pick" : "");
 
-      var round = Number(pick.round) || 0;
-      var pickWithinRound = Number(pick.roundPick) || 0;
+            var round = Number(pick.round) || 0;
+
+      /*
+       * snakePicks is already ordered visually. After the renderer
+       * reverses even rounds, the last card in this list for R16 is
+       * R16.1—not R16.12.
+       */
+      var nextPick = snakePicks[snakeIndex + 1];
+
+      var isVisualLastPickInRound =
+        !nextPick || Number(nextPick.round) !== round;
 
       var directionArrow = getSnakeArrow(
         round,
-        pickWithinRound,
+        isVisualLastPickInRound,
         snakeIndex === snakePicks.length - 1
       );
 
@@ -1156,13 +1175,18 @@
 
       var round = Number(pick.round) || 0;
 
-      var pickWithinRound = round
-        ? Number(pick.pickNo) - (round - 1) * teamCount
-        : 0;
+      /*
+       * Use the next visible snake-ordered pick to detect the turn.
+       * This makes R16.1 the down-arrow card in an even round.
+       */
+      var nextPick = snakePicks[snakeIndex + 1];
+
+      var isVisualLastPickInRound =
+        !nextPick || Number(nextPick.round) !== round;
 
       var directionArrow = getSnakeArrow(
         round,
-        pickWithinRound,
+        isVisualLastPickInRound,
         snakeIndex === snakePicks.length - 1
       );
 
@@ -2791,22 +2815,29 @@
              * its visual grid position: the board reverses even rounds,
              * but the #12 pick of every round should always get ↓.
              */
-            var pickWithinRound =
-              pick.roundPick ||
-              (round && pick.pickNo
-                ? pick.pickNo - (round - 1) * teamCount
-                : null);
+                      /*
+             * Determine the turn from the visual snake ordering, not from
+             * the raw ".12" pick number. `snakePicks` has already reversed
+             * even rounds:
+             *
+             * R15 displays R15.1 through R15.12, so R15.12 gets ↓.
+             * R16 displays R16.12 through R16.1, so R16.1 gets ↓.
+             *
+             * Only the actual final card in the year's complete draft has
+             * no arrow at all.
+             */
+            var nextPick = snakePicks[snakeIndex + 1];
+
+            var isVisualLastPickInRound =
+              !nextPick || Number(nextPick.round) !== round;
 
             var isFinalPickInYear =
               snakeIndex === snakePicks.length - 1;
 
-            var isTwelfthPickOfRound =
-              Number(pickWithinRound) === 12;
-
             var directionArrow = "";
 
             if (!isFinalPickInYear) {
-              if (isTwelfthPickOfRound) {
+              if (isVisualLastPickInRound) {
                 directionArrow = "↓";
               } else if (round % 2 === 0) {
                 directionArrow = "←";
