@@ -972,14 +972,18 @@
        * selected, other teams' intervening picks are hidden, so suppress
        * the path indicators entirely.
        */
-      var directionArrow = selectedTeam
-        ? ""
-        : getSnakeArrow(
-            round,
-            pickWithinRound,
-            12,
-            snakeIndex === snakePicks.length - 1
-          );
+     var maxOverallPick = Math.max.apply(
+      null,
+      snakePicks.map(function (p) {
+        return Number(p.overallPick) || 0;
+       })
+      );
+
+    var isFinalPick = Number(pick.overallPick) === maxOverallPick;
+
+    var directionArrow = selectedTeam
+      ? ""
+      : getSnakeArrow(round, pickWithinRound, 12, isFinalPick);
 
       var directionText = getSnakeArrowText(directionArrow);
 
@@ -1203,14 +1207,18 @@ var pickWithinRound =
  * Hide arrows for a filtered single-team view because the picks
  * between that team's selections are not shown.
  */
+var maxPickNo = Math.max.apply(
+  null,
+  snakePicks.map(function (p) {
+    return Number(p.pickNo) || 0;
+  })
+);
+
+var isFinalPick = Number(pick.pickNo) === maxPickNo;
+
 var directionArrow = selectedRosterId
   ? ""
-  : getSnakeArrow(
-      round,
-      pickWithinRound,
-      teamCount,
-      snakeIndex === snakePicks.length - 1
-    );
+  : getSnakeArrow(round, pickWithinRound, teamCount, isFinalPick);
 
       var directionText = getSnakeArrowText(directionArrow);
 
@@ -2863,11 +2871,20 @@ var directionArrow = selectedRosterId
              * while the last displayed item of an even row is R#.1.
              * That final displayed item gets the downward turn arrow.
              */
+            var maxPickNoForYear = Math.max.apply(
+              null,
+              snakePicks.map(function (p) {
+                return Number(p.pickNo) || 0;
+              })
+            );
+            
+            var isFinalPick = Number(pick.pickNo) === maxPickNoForYear;
+            
             var directionArrow = getSnakeArrow(
               round,
               pickWithinRound,
               teamCount,
-              snakeIndex === snakePicks.length - 1
+              isFinalPick
             );
 
             var directionText = "";
