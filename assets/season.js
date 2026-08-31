@@ -1229,9 +1229,10 @@
         ? ""
         : getSnakeArrow(
             round,
-            isVisualLastPickInRound,
+            pickWithinRound,
+            teamCount,
             snakeIndex === snakePicks.length - 1
-          );
+        );
 
       var directionText = getSnakeArrowText(directionArrow);
 
