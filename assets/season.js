@@ -933,7 +933,9 @@
 
     snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
-      div.className = "draft-pick draft-pick-snake";
+      div.className =
+        "draft-pick draft-pick-snake" +
+        (pick.isKeeper ? " is-keeper-pick" : "");
 
       var round = Number(pick.round) || 0;
       var pickWithinRound = Number(pick.roundPick) || 0;
@@ -965,9 +967,7 @@
         (pick.position && pick.nflTeam ? " - " : "") +
         (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
 
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
-        : "";
+      var keeperTag = "";
 
       div.innerHTML =
         '<div class="pick-num">Pick ' +
@@ -1150,7 +1150,9 @@
 
     snakePicks.forEach(function (pick, snakeIndex) {
       var div = document.createElement("div");
-      div.className = "draft-pick draft-pick-snake";
+      div.className =
+        "draft-pick draft-pick-snake" +
+        (pick.isKeeper ? " is-keeper-pick" : "");
 
       var round = Number(pick.round) || 0;
 
@@ -1190,9 +1192,7 @@
           (pick.nflTeam ? escapeHtml(pick.nflTeam) : "")
         : "";
 
-      var keeperTag = pick.isKeeper
-        ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
-        : "";
+      var keeperTag = "";
 
       var pickLabel =
         "Pick " +
@@ -2825,9 +2825,7 @@
               directionText = "Next round";
             }
 
-            var keeperTag = pick.isKeeper
-              ? '<div class="draft-owner draft-keeper-tag">KEEPER</div>'
-              : "";
+            var keeperTag = "";
 
             var metaLine = pick.position
               ? escapeHtml(pick.position) +
@@ -2847,7 +2845,7 @@
               : "";
 
             return (
-              '<div class="draft-pick draft-pick-snake">' +
+              '<div class="draft-pick draft-pick-snake' +   (pick.isKeeper ? ' is-keeper-pick' : '') +   '">' +
                 '<div class="pick-num">' +
                   pickLabel +
                 "</div>" +
