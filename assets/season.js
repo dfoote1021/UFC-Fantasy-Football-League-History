@@ -2870,11 +2870,12 @@
              * Only the actual final card in the year's complete draft has
              * no arrow at all.
              */
-            var pickWithinRound =
+            var pickWithinRound = Number(
               pick.roundPick ||
               (round && pick.pickNo
-                ? pick.pickNo - (round - 1) * teamCount
-                : null);
+              ? pick.pickNo - (round - 1) * teamCount
+              : 0)
+            );
 
             /*
              * The board has already been put in snake display order:
