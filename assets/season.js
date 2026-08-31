@@ -800,11 +800,55 @@
     select.value = seen[previousValue] ? previousValue : "";
     select.onchange = renderDraftBoardFilteredEspn;
   }
-
   /**
-   * Renders the ESPN draft board filtered to the currently-selected team
+   * Returns picks grouped by round in snake-display order.
+   *
+   * Odd-numbered rounds render left-to-right in ascending pick order.
+   * Even-numbered rounds render left-to-right in descending pick order,
+   * so the board visually reads as a conventional snake draft.
+   *
+   * The original pick objects are not changed. Only their display order
+   * changes, so Pick # and round labels stay historically accurate.
+   */
+  function getSnakeDisplayPicks(picks, getRound, getPickNumber) {
+    var byRound = {};
+
+    (picks || []).forEach(function (pick) {
+      var round = Number(getRound(pick)) || 0;
+      if (!byRound[round]) {
+        byRound[round] = [];
+      }
+      byRound[round].push(pick);
+    });
+
+    return Object.keys(byRound)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .reduce(function (result, round) {
+        var roundPicks = byRound[round].slice().sort(function (a, b) {
+          return Number(getPickNumber(a)) - Number(getPickNumber(b));
+        });
+
+        // Reverse even-numbered rounds for visual snake-board order.
+        if (round % 2 === 0) {
+          roundPicks.reverse();
+        }
+
+        return result.concat(roundPicks);
+      }, []);
+  }
+   /**
+   * Renders the ESPN draft board filtered to the currently selected team
    * (or all teams), plus the By Position / By NFL Team breakdown for
    * whichever picks are currently visible.
+   *
+   * The board is displayed in snake order:
+   * - Odd rounds: left to right, ascending pick number.
+   * - Even rounds: right to left, descending pick number.
+   *
+   * Actual historical pick labels are unchanged.
    */
   function renderDraftBoardFilteredEspn() {
     var board = byId("draft-board");
@@ -824,26 +868,83 @@
       return;
     }
 
-    board.innerHTML = "";
+    /*
+     * Group selected picks by round so we can reverse only even-numbered
+     * rounds. Sorting each group by actual overall pick ensures the board
+     * remains correct even if the CSV/API data arrives out of order.
+     */
+    var picksByRound = {};
+
     picks.forEach(function (pick) {
+      var round = Number(pick.round) || 0;
+
+      if (!picksByRound[round]) {
+        picksByRound[round] = [];
+      }
+
+      picksByRound[round].push(pick);
+    });
+
+    var snakePicks = [];
+
+    Object.keys(picksByRound)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      })
+      .forEach(function (round) {
+        var roundPicks = picksByRound[round].slice();
+
+        roundPicks.sort(function (a, b) {
+          return Number(a.overallPick) - Number(b.overallPick);
+        });
+
+        // Conventional snake draft display reverses every even round.
+        if (round % 2 === 0) {
+          roundPicks.reverse();
+        }
+
+        snakePicks = snakePicks.concat(roundPicks);
+      });
+
+    board.innerHTML = "";
+
+    snakePicks.forEach(function (pick) {
       var div = document.createElement("div");
       div.className = "draft-pick";
+
       var teamLabel = pick.owner
         ? escapeHtml(pick.team) + " (" + escapeHtml(pick.owner) + ")"
         : escapeHtml(pick.team);
+
       var metaLine =
         (pick.position ? escapeHtml(pick.position) : "") +
         (pick.position && pick.nflTeam ? " - " : "") +
         (pick.nflTeam ? escapeHtml(pick.nflTeam) : "");
+
       var keeperTag = pick.isKeeper
         ? '<div class="draft-owner" style="color:#ffd25c">KEEPER</div>'
         : "";
+
       div.innerHTML =
-        '<div class="pick-num">Pick ' + pick.overallPick + " (R" + pick.round + "." + pick.roundPick + ")</div>" +
-        "<div>" + escapeHtml(pick.playerName) + "</div>" +
-        (metaLine ? '<div class="draft-meta">' + metaLine + "</div>" : "") +
-        '<div class="draft-owner">' + teamLabel + "</div>" +
+        '<div class="pick-num">Pick ' +
+        pick.overallPick +
+        " (R" +
+        pick.round +
+        "." +
+        pick.roundPick +
+        ")</div>" +
+        "<div>" +
+        escapeHtml(pick.playerName) +
+        "</div>" +
+        (metaLine
+          ? '<div class="draft-meta">' + metaLine + "</div>"
+          : "") +
+        '<div class="draft-owner">' +
+        teamLabel +
+        "</div>" +
         keeperTag;
+
       board.appendChild(div);
     });
   }
