@@ -887,24 +887,7 @@
    * - Even rounds: R#.1 is visually last and gets ↓.
    * - The true final card in the complete draft gets no arrow.
    */
-  function getSnakeArrow(round, isVisualLastPickInRound, isFinalPick) {
-    if (isFinalPick) {
-      return "";
-    }
-
-    if (isVisualLastPickInRound) {
-      return "↓";
-    }
-
-    return Number(round) % 2 === 0 ? "←" : "→";
-  }
-
-  function getSnakeArrowText(arrow) {
-    if (arrow === "→") return "Next pick to the right";
-    if (arrow === "←") return "Next pick to the left";
-    if (arrow === "↓") return "Next round";
-    return "";
-  }
+  
    /**
    * Renders the ESPN draft board filtered to the currently selected team
    * (or all teams), plus the By Position / By NFL Team breakdown for
@@ -979,16 +962,12 @@
             var round = Number(pick.round) || 0;
 
       /*
-       * snakePicks is already ordered visually. After the renderer
-       * reverses even rounds, the last card in this list for R16 is
-       * R16.1—not R16.12.
+       * Use the pick's actual position within its round (1-12), not its
+       * visual position in the reversed-for-display even rounds.
        */
-      var nextPick = snakePicks[snakeIndex + 1];
+      var pickWithinRound = Number(pick.roundPick) || 0;
 
-      var isVisualLastPickInRound =
-        !nextPick || Number(nextPick.round) !== round;
-
-            /*
+      /*
        * Arrows are only meaningful on the complete board. When a team is
        * selected, other teams' intervening picks are hidden, so suppress
        * the path indicators entirely.
@@ -997,7 +976,8 @@
         ? ""
         : getSnakeArrow(
             round,
-            isVisualLastPickInRound,
+            pickWithinRound,
+            12,
             snakeIndex === snakePicks.length - 1
           );
 
