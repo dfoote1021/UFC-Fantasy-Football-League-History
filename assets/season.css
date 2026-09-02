@@ -568,6 +568,26 @@ color: var(--text-dim);
 margin-top: 4px;
 }
 
+.txn-trade-side {
+  margin-top: 6px;
+  padding-left: 4px;
+}
+
+.txn-trade-side-header {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.txn-trade-item {
+  padding-left: 12px;
+  font-size: 0.92rem;
+}
+
+.txn-trade-empty {
+  opacity: 0.6;
+  font-style: italic;
+}
+
 .txn-detail-row .add-tag { color: var(--win); }
 .txn-detail-row .drop-tag { color: var(--live); }
 
