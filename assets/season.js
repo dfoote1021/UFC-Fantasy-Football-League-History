@@ -2125,7 +2125,7 @@ var directionArrow = selectedRosterId
       return;
     }
 
-    list.innerHTML = "";
+        list.innerHTML = "";
     txns.forEach(function (txn) {
       var detail = SleeperAPI.resolveTransactionDetail(txn, state.rosterMap, state.playersMap);
       var li = document.createElement("li");
@@ -2142,41 +2142,99 @@ var directionArrow = selectedRosterId
         '<div class="txn-detail-row">' + new Date(detail.statusUpdated).toLocaleString() +
         (txn._week ? " — Week " + txn._week : "") + "</div>";
 
-      var addsHtml = detail.adds.length
-        ? detail.adds.map(function (a) {
-            var teamLabel = a.teamWithOwner || a.team;
-            return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
-              escapeHtml(a.player) + " → " + escapeHtml(teamLabel) + "</div>";
-          }).join("")
-        : "";
+      var bodyHtml;
 
-      var dropsHtml = detail.drops.length
-        ? detail.drops.map(function (d) {
-            var teamLabel = d.teamWithOwner || d.team;
-            return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
-              escapeHtml(d.player) + " from " + escapeHtml(teamLabel) + "</div>";
-          }).join("")
-        : "";
+      if (detail.type === "trade") {
+        /*
+         * Group everything each roster GAINED (players + draft picks) so
+         * a trade reads as two clear "received" lists instead of a flat
+         * mixed feed of separate ADD/DROP lines.
+         */
+        var receivedByRoster = {};
 
-      var picksHtml = detail.draftPicks.length
-        ? detail.draftPicks.map(function (dp) {
-            return '<div class="txn-detail-row">Draft pick: ' + dp.season + " Round " + dp.round +
-              " (" + escapeHtml(dp.from) + " → " + escapeHtml(dp.to) + ")</div>";
-          }).join("")
-        : "";
+        detail.rosterIds.forEach(function (rid) {
+          receivedByRoster[rid] = { players: [], picks: [] };
+        });
 
-      var faabHtml =
-        detail.faab && detail.faab.length
-          ? detail.faab.map(function (f) {
-              return '<div class="txn-detail-row">FAAB: $' + f.amount +
-                " (" + escapeHtml(f.from) + " → " + escapeHtml(f.to) + ")</div>";
+        detail.adds.forEach(function (a) {
+          if (!receivedByRoster[a.rosterId]) {
+            receivedByRoster[a.rosterId] = { players: [], picks: [] };
+          }
+          receivedByRoster[a.rosterId].players.push(a.player);
+        });
+
+        (txn.draft_picks || []).forEach(function (dp) {
+          var toRosterId = dp.owner_id;
+          if (!receivedByRoster[toRosterId]) {
+            receivedByRoster[toRosterId] = { players: [], picks: [] };
+          }
+          receivedByRoster[toRosterId].picks.push(
+            dp.season + " Round " + dp.round + " Pick"
+          );
+        });
+
+        bodyHtml = detail.rosterIds.map(function (rid) {
+          var side = receivedByRoster[rid] || { players: [], picks: [] };
+          var teamLabel =
+            detail.teamsWithOwners[detail.rosterIds.indexOf(rid)] ||
+            detail.teams[detail.rosterIds.indexOf(rid)];
+
+          var itemsHtml = side.players
+            .concat(side.picks)
+            .map(function (item) {
+              return '<div class="txn-trade-item">' + escapeHtml(item) + "</div>";
+            })
+            .join("");
+
+          if (!itemsHtml) {
+            itemsHtml = '<div class="txn-trade-item txn-trade-empty">Nothing (sent only)</div>';
+          }
+
+          return (
+            '<div class="txn-trade-side">' +
+              '<div class="txn-trade-side-header">' + escapeHtml(teamLabel) + " received:</div>" +
+              itemsHtml +
+            "</div>"
+          );
+        }).join("");
+      } else {
+        var addsHtml = detail.adds.length
+          ? detail.adds.map(function (a) {
+              var teamLabel = a.teamWithOwner || a.team;
+              return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
+                escapeHtml(a.player) + " → " + escapeHtml(teamLabel) + "</div>";
             }).join("")
           : "";
 
-      li.innerHTML = headerHtml + dateHtml + addsHtml + dropsHtml + picksHtml + faabHtml;
+        var dropsHtml = detail.drops.length
+          ? detail.drops.map(function (d) {
+              var teamLabel = d.teamWithOwner || d.team;
+              return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
+                escapeHtml(d.player) + " from " + escapeHtml(teamLabel) + "</div>";
+            }).join("")
+          : "";
+
+        var picksHtml = detail.draftPicks.length
+          ? detail.draftPicks.map(function (dp) {
+              return '<div class="txn-detail-row">Draft pick: ' + dp.season + " Round " + dp.round +
+                " (" + escapeHtml(dp.from) + " → " + escapeHtml(dp.to) + ")</div>";
+            }).join("")
+          : "";
+
+        var faabHtml =
+          detail.faab && detail.faab.length
+            ? detail.faab.map(function (f) {
+                return '<div class="txn-detail-row">FAAB: $' + f.amount +
+                  " (" + escapeHtml(f.from) + " → " + escapeHtml(f.to) + ")</div>";
+              }).join("")
+            : "";
+
+        bodyHtml = addsHtml + dropsHtml + picksHtml + faabHtml;
+      }
+
+      li.innerHTML = headerHtml + dateHtml + bodyHtml;
       list.appendChild(li);
     });
-  }
 
   function renderLeagueInfoRaw() {
     var el = byId("league-info-raw");
