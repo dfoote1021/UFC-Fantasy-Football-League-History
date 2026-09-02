@@ -2235,6 +2235,7 @@ var directionArrow = selectedRosterId
       li.innerHTML = headerHtml + dateHtml + bodyHtml;
       list.appendChild(li);
     });
+  }
 
   function renderLeagueInfoRaw() {
     var el = byId("league-info-raw");
