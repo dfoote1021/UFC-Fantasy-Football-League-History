@@ -111,42 +111,11 @@
 
 
 
-  /**
-   * Returns { playerId: teamAbbreviation } for every player who has a
-   * real stat line in the given season, as of the moment they earned it.
-   *
-   * WHY THIS EXISTS: SleeperAPI.getPlayersMap() (see /players/nfl above)
-   * is a single always-current snapshot - Sleeper overwrites each
-   * player's `team` field in place whenever they're traded/signed/cut,
-   * with no per-season history. That makes past-season rosters and
-   * transactions silently show a player's CURRENT team instead of the
-   * team they were actually on that season.
-   *
-   * This uses Sleeper's stats endpoint (api.sleeper.com/stats/nfl/...),
-   * which returns real per-week stat lines INCLUDING each player's team
-   * at the time, for a specific season. Combining every week of a
-   * season yields an accurate season-scoped team lookup with no manual
-   * data entry required, and it stays correct forever as new seasons
-   * are played - nothing here needs updating by hand.
-   *
-   * NOTE: this endpoint lives on a different host (api.sleeper.com, not
-   * api.sleeper.app) and is not part of Sleeper's officially documented
-   * API, so it is called defensively: any failure silently falls back
-   * to an empty map, and callers already fall back to the live
-   * /players/nfl team field when a player isn't found here.
-   *
-   * Cached in localStorage per season, same 24h pattern as
-   * getPlayersMap(), so once a season is viewed it works even if this
-   * endpoint later changes or becomes unavailable.
-   */
   var _historicalTeamsPromises = {};
 
   function getHistoricalPlayerTeams(season) {
     var seasonKey = String(season);
-
-    if (_historicalTeamsPromises[seasonKey]) {
-      return _historicalTeamsPromises[seasonKey];
-    }
+    if (_historicalTeamsPromises[seasonKey]) return _historicalTeamsPromises[seasonKey];
 
     var cacheKey = "sleeper_historical_teams_cache_v1_" + seasonKey;
     var cacheTimeKey = "sleeper_historical_teams_cache_time_v1_" + seasonKey;
@@ -161,8 +130,7 @@
       }
     }
 
-    var statsUrl =
-      "https://api.sleeper.com/stats/nfl/" + seasonKey + "?season_type=regular";
+    var statsUrl = "https://api.sleeper.com/stats/nfl/" + seasonKey + "?season_type=regular";
 
     _historicalTeamsPromises[seasonKey] = fetch(statsUrl)
       .then(function (res) {
@@ -171,35 +139,20 @@
       })
       .then(function (statsRows) {
         var teamsByPlayer = {};
-
         (statsRows || []).forEach(function (row) {
           var playerId = row.player_id;
           var team = row.team;
           if (!playerId || !team) return;
-          /*
-           * Later weeks overwrite earlier ones, so a mid-season trade
-           * ends up reflecting the player's LATEST team that season -
-           * matching how the site already displays "team as of end of
-           * season" everywhere else (e.g. ESPN final rosters).
-           */
           teamsByPlayer[playerId] = team;
         });
-
         try {
           localStorage.setItem(cacheKey, JSON.stringify(teamsByPlayer));
           localStorage.setItem(cacheTimeKey, String(Date.now()));
-        } catch (e) {
-          /* Safe to ignore: falls back to in-memory value this session. */
-        }
-
+        } catch (e) {}
         return teamsByPlayer;
       })
       .catch(function (err) {
-        console.warn(
-          "Could not load historical player-team data for " + seasonKey +
-          " (falling back to each player's current team). Details: " +
-          (err && err.message ? err.message : err)
-        );
+        console.warn("Could not load historical player-team data for " + seasonKey, err);
         return {};
       });
 
@@ -401,19 +354,7 @@
     var playerPoints = teamSide.players_points || {};
     var roster = (teamSide.players || []).map(function (playerId) {
       var meta = (playersMap && playersMap[playerId]) || {};
-
-      /*
-       * Prefer the season-scoped historical team (see
-       * getHistoricalPlayerTeams above) over the live /players/nfl
-       * team field, so past seasons show the team a player was
-       * actually on that year instead of wherever they play now.
-       * Falls back to the live map when historical data has no entry
-       * for this player (e.g. they had no stat line that season).
-       */
-      var historicalTeam =
-        historicalTeamsMap && historicalTeamsMap[playerId]
-          ? historicalTeamsMap[playerId]
-          : null;
+      var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
 
       return {
         playerId: playerId,
@@ -957,26 +898,10 @@
   function resolveTransactionDetail(txn, rosterMap, playersMap, historicalTeamsMap) {
     function playerLabel(playerId) {
       var meta = (playersMap && playersMap[playerId]) || {};
-      var name =
-        meta.full_name ||
-        (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
-
-      /*
-       * Prefer the season-scoped historical team over the live
-       * /players/nfl team field - see getHistoricalPlayerTeams above.
-       * Falls back to the live map when this player has no historical
-       * entry for the season this transaction happened in.
-       */
-      var historicalTeam =
-        historicalTeamsMap && historicalTeamsMap[playerId]
-          ? historicalTeamsMap[playerId]
-          : null;
+      var name = meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
+      var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
       var teamAbbrev = historicalTeam || meta.team;
-
-      var position = meta.position
-        ? " (" + meta.position + (teamAbbrev ? " " + teamAbbrev : "") + ")"
-        : "";
-
+      var position = meta.position ? " (" + meta.position + (teamAbbrev ? " " + teamAbbrev : "") + ")" : "";
       return name + position;
     }
 
@@ -1005,6 +930,7 @@
           owner: ownerLabel(txn.adds[playerId]),
           teamWithOwner: teamWithOwnerLabel(txn.adds[playerId]),
           rosterId: txn.adds[playerId],
+          playerId: playerId,
         });
       });
     }
@@ -1018,6 +944,7 @@
           owner: ownerLabel(txn.drops[playerId]),
           teamWithOwner: teamWithOwnerLabel(txn.drops[playerId]),
           rosterId: txn.drops[playerId],
+          playerId: playerId,
         });
       });
     }
@@ -1034,27 +961,17 @@
     var faab = null;
     if (txn.waiver_budget && txn.waiver_budget.length) {
       faab = txn.waiver_budget.map(function (waiver) {
-        return {
-          amount: waiver.amount,
-          from: teamLabel(waiver.sender),
-          to: teamLabel(waiver.receiver),
-        };
+        return { amount: waiver.amount, from: teamLabel(waiver.sender), to: teamLabel(waiver.receiver) };
       });
     }
 
-        /*
-     * A waiver claim's bid amount lives at txn.settings.waiver_bid.
-     * This exists on BOTH successful ("complete") and unsuccessful
-     * ("failed") waiver claims, so this captures every bid made,
-     * not only the ones that won.
-     */
     var waiverBidAmount =
       txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
         ? txn.settings.waiver_bid
         : null;
-
-    var bidRosterId =
-      (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+    var bidRosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+    var waiverBidPlayerId = txn.adds && Object.keys(txn.adds).length ? Object.keys(txn.adds)[0] : null;
+    var waiverBidPlayer = waiverBidPlayerId !== null ? playerLabel(waiverBidPlayerId) : null;
 
     return {
       type: txn.type,
@@ -1072,6 +989,9 @@
       waiverBidTeam: bidRosterId !== null ? teamLabel(bidRosterId) : null,
       waiverBidTeamWithOwner: bidRosterId !== null ? teamWithOwnerLabel(bidRosterId) : null,
       waiverBidWon: txn.type === "waiver" && txn.status === "complete",
+      waiverBidPlayer: waiverBidPlayer,
+      waiverBidPlayerId: waiverBidPlayerId,
+      waiverBidRosterId: bidRosterId,
     };
   }
 
@@ -1098,7 +1018,61 @@
     txn.roster_ids.forEach(function (rid) {
       counts[rid] = (counts[rid] || 0) + 1;
     });
-  });
+  }
+
+  function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
+    function playerName(playerId) {
+      var meta = (playersMap && playersMap[playerId]) || {};
+      return meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
+    }
+    function teamLabel(rosterId) {
+      var team = rosterMap[rosterId];
+      return team ? team.teamName : "Roster " + rosterId;
+    }
+    function ownerLabel(rosterId) {
+      var team = rosterMap[rosterId];
+      return team ? team.displayName : "Unknown";
+    }
+
+    var byPlayer = {};
+
+    (allTransactions || []).forEach(function (txn) {
+      var isWonWaiver = txn.type === "waiver" && txn.status === "complete";
+      if (!isWonWaiver) return;
+
+      var amount =
+        txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
+          ? txn.settings.waiver_bid
+          : null;
+      if (amount === null) return;
+
+      var playerId = txn.adds && Object.keys(txn.adds).length ? Object.keys(txn.adds)[0] : null;
+      if (!playerId) return;
+
+      var rosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+
+      if (!byPlayer[playerId]) {
+        byPlayer[playerId] = { playerId: playerId, playerName: playerName(playerId), totalSpent: 0, timesWon: 0, bids: [] };
+      }
+
+      var entry = byPlayer[playerId];
+      entry.totalSpent += amount;
+      entry.timesWon += 1;
+      entry.bids.push({
+        amount: amount,
+        rosterId: rosterId,
+        teamName: rosterId !== null ? teamLabel(rosterId) : "Unknown",
+        ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
+        week: txn._week || null,
+        date: txn.status_updated || null,
+      });
+    });
+
+    return Object.keys(byPlayer)
+      .map(function (playerId) { return byPlayer[playerId]; })
+      .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+  }
+);
 
   return counts;
 }
@@ -1191,7 +1165,6 @@
   }
 
   window.SleeperAPI = {
-    getHistoricalPlayerTeams: getHistoricalPlayerTeams,
     SLEEPER_SEASONS: SLEEPER_SEASONS,
     CURRENT_LIVE_SEASON: CURRENT_LIVE_SEASON,
     MAX_SLEEPER_WEEK: MAX_SLEEPER_WEEK,
@@ -1228,6 +1201,8 @@
     buildDraftBoard: buildDraftBoard,
     resolveTransactionDetail: resolveTransactionDetail,
     countTransactionsByRoster: countTransactionsByRoster,
+    buildFaabSpendByPlayer: buildFaabSpendByPlayer,
+    getHistoricalPlayerTeams: getHistoricalPlayerTeams,
     buildSeasonSnapshot: buildSeasonSnapshot,
     downloadJSON: downloadJSON,
   };
