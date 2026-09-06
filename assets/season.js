@@ -2229,7 +2229,19 @@ var directionArrow = selectedRosterId
               }).join("")
             : "";
 
-        bodyHtml = addsHtml + dropsHtml + picksHtml + faabHtml;
+        var waiverBidHtml = "";
+        if (detail.waiverBidAmount !== null && detail.waiverBidAmount !== undefined) {
+          var bidLabel = detail.waiverBidWon
+            ? '<span class="add-tag">WON</span>'
+            : '<span class="drop-tag">LOST</span>';
+          waiverBidHtml =
+            '<div class="txn-detail-row">' + bidLabel + " Bid: $" +
+            detail.waiverBidAmount + " by " +
+            escapeHtml(detail.waiverBidTeamWithOwner || detail.waiverBidTeam) +
+            "</div>";
+        }
+
+        bodyHtml = waiverBidHtml + addsHtml + dropsHtml + picksHtml + faabHtml;
       }
 
       li.innerHTML = headerHtml + dateHtml + bodyHtml;
