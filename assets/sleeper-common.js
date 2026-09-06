@@ -109,6 +109,104 @@
     return _playersMapPromise;
   }
 
+
+
+  /**
+   * Returns { playerId: teamAbbreviation } for every player who has a
+   * real stat line in the given season, as of the moment they earned it.
+   *
+   * WHY THIS EXISTS: SleeperAPI.getPlayersMap() (see /players/nfl above)
+   * is a single always-current snapshot - Sleeper overwrites each
+   * player's `team` field in place whenever they're traded/signed/cut,
+   * with no per-season history. That makes past-season rosters and
+   * transactions silently show a player's CURRENT team instead of the
+   * team they were actually on that season.
+   *
+   * This uses Sleeper's stats endpoint (api.sleeper.com/stats/nfl/...),
+   * which returns real per-week stat lines INCLUDING each player's team
+   * at the time, for a specific season. Combining every week of a
+   * season yields an accurate season-scoped team lookup with no manual
+   * data entry required, and it stays correct forever as new seasons
+   * are played - nothing here needs updating by hand.
+   *
+   * NOTE: this endpoint lives on a different host (api.sleeper.com, not
+   * api.sleeper.app) and is not part of Sleeper's officially documented
+   * API, so it is called defensively: any failure silently falls back
+   * to an empty map, and callers already fall back to the live
+   * /players/nfl team field when a player isn't found here.
+   *
+   * Cached in localStorage per season, same 24h pattern as
+   * getPlayersMap(), so once a season is viewed it works even if this
+   * endpoint later changes or becomes unavailable.
+   */
+  var _historicalTeamsPromises = {};
+
+  function getHistoricalPlayerTeams(season) {
+    var seasonKey = String(season);
+
+    if (_historicalTeamsPromises[seasonKey]) {
+      return _historicalTeamsPromises[seasonKey];
+    }
+
+    var cacheKey = "sleeper_historical_teams_cache_v1_" + seasonKey;
+    var cacheTimeKey = "sleeper_historical_teams_cache_time_v1_" + seasonKey;
+    var oneDayMs = 24 * 60 * 60 * 1000;
+    var cachedTime = localStorage.getItem(cacheTimeKey);
+
+    if (cachedTime && Date.now() - Number(cachedTime) < oneDayMs) {
+      var cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        _historicalTeamsPromises[seasonKey] = Promise.resolve(JSON.parse(cached));
+        return _historicalTeamsPromises[seasonKey];
+      }
+    }
+
+    var statsUrl =
+      "https://api.sleeper.com/stats/nfl/" + seasonKey + "?season_type=regular";
+
+    _historicalTeamsPromises[seasonKey] = fetch(statsUrl)
+      .then(function (res) {
+        if (!res.ok) throw new Error("Historical stats error " + res.status);
+        return res.json();
+      })
+      .then(function (statsRows) {
+        var teamsByPlayer = {};
+
+        (statsRows || []).forEach(function (row) {
+          var playerId = row.player_id;
+          var team = row.team;
+          if (!playerId || !team) return;
+          /*
+           * Later weeks overwrite earlier ones, so a mid-season trade
+           * ends up reflecting the player's LATEST team that season -
+           * matching how the site already displays "team as of end of
+           * season" everywhere else (e.g. ESPN final rosters).
+           */
+          teamsByPlayer[playerId] = team;
+        });
+
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(teamsByPlayer));
+          localStorage.setItem(cacheTimeKey, String(Date.now()));
+        } catch (e) {
+          /* Safe to ignore: falls back to in-memory value this session. */
+        }
+
+        return teamsByPlayer;
+      })
+      .catch(function (err) {
+        console.warn(
+          "Could not load historical player-team data for " + seasonKey +
+          " (falling back to each player's current team). Details: " +
+          (err && err.message ? err.message : err)
+        );
+        return {};
+      });
+
+    return _historicalTeamsPromises[seasonKey];
+  }
+
+
   function resolveDisplayName(user) {
     var raw = user.display_name || "Unknown Owner";
 
@@ -292,7 +390,7 @@
     });
   }
 
-  function resolveMatchupRoster(teamSide, playersMap) {
+  function resolveMatchupRoster(teamSide, playersMap, historicalTeamsMap) {
     if (!teamSide) return [];
 
     var starterSet = {};
@@ -304,13 +402,26 @@
     var roster = (teamSide.players || []).map(function (playerId) {
       var meta = (playersMap && playersMap[playerId]) || {};
 
+      /*
+       * Prefer the season-scoped historical team (see
+       * getHistoricalPlayerTeams above) over the live /players/nfl
+       * team field, so past seasons show the team a player was
+       * actually on that year instead of wherever they play now.
+       * Falls back to the live map when historical data has no entry
+       * for this player (e.g. they had no stat line that season).
+       */
+      var historicalTeam =
+        historicalTeamsMap && historicalTeamsMap[playerId]
+          ? historicalTeamsMap[playerId]
+          : null;
+
       return {
         playerId: playerId,
         name:
           meta.full_name ||
           (meta.first_name ? meta.first_name + " " + meta.last_name : playerId),
         position: meta.position || "",
-        team: meta.team || "FA",
+        team: historicalTeam || meta.team || "FA",
         isStarter: !!starterSet[playerId],
         points:
           playerPoints[playerId] !== undefined
@@ -843,14 +954,27 @@
       });
   }
 
-  function resolveTransactionDetail(txn, rosterMap, playersMap) {
+  function resolveTransactionDetail(txn, rosterMap, playersMap, historicalTeamsMap) {
     function playerLabel(playerId) {
       var meta = (playersMap && playersMap[playerId]) || {};
       var name =
         meta.full_name ||
         (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
+
+      /*
+       * Prefer the season-scoped historical team over the live
+       * /players/nfl team field - see getHistoricalPlayerTeams above.
+       * Falls back to the live map when this player has no historical
+       * entry for the season this transaction happened in.
+       */
+      var historicalTeam =
+        historicalTeamsMap && historicalTeamsMap[playerId]
+          ? historicalTeamsMap[playerId]
+          : null;
+      var teamAbbrev = historicalTeam || meta.team;
+
       var position = meta.position
-        ? " (" + meta.position + (meta.team ? " " + meta.team : "") + ")"
+        ? " (" + meta.position + (teamAbbrev ? " " + teamAbbrev : "") + ")"
         : "";
 
       return name + position;
@@ -1067,6 +1191,7 @@
   }
 
   window.SleeperAPI = {
+    getHistoricalPlayerTeams: getHistoricalPlayerTeams,
     SLEEPER_SEASONS: SLEEPER_SEASONS,
     CURRENT_LIVE_SEASON: CURRENT_LIVE_SEASON,
     MAX_SLEEPER_WEEK: MAX_SLEEPER_WEEK,
