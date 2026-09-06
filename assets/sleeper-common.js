@@ -949,6 +949,7 @@
       waiverBidTeamWithOwner: bidRosterId !== null ? teamWithOwnerLabel(bidRosterId) : null,
       waiverBidWon: txn.type === "waiver" && txn.status === "complete",
     };
+  }
 
   function countTransactionsByRoster(allTransactions) {
   var counts = {};
