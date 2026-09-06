@@ -1018,6 +1018,9 @@
     txn.roster_ids.forEach(function (rid) {
       counts[rid] = (counts[rid] || 0) + 1;
     });
+  });
+
+  return counts;
   }
 
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
@@ -1072,10 +1075,6 @@
       .map(function (playerId) { return byPlayer[playerId]; })
       .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
   }
-);
-
-  return counts;
-}
 
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
