@@ -918,6 +918,20 @@
       });
     }
 
+        /*
+     * A waiver claim's bid amount lives at txn.settings.waiver_bid.
+     * This exists on BOTH successful ("complete") and unsuccessful
+     * ("failed") waiver claims, so this captures every bid made,
+     * not only the ones that won.
+     */
+    var waiverBidAmount =
+      txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
+        ? txn.settings.waiver_bid
+        : null;
+
+    var bidRosterId =
+      (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+
     return {
       type: txn.type,
       status: txn.status,
@@ -930,8 +944,11 @@
       drops: drops,
       draftPicks: draftPicks,
       faab: faab,
+      waiverBidAmount: waiverBidAmount,
+      waiverBidTeam: bidRosterId !== null ? teamLabel(bidRosterId) : null,
+      waiverBidTeamWithOwner: bidRosterId !== null ? teamWithOwnerLabel(bidRosterId) : null,
+      waiverBidWon: txn.type === "waiver" && txn.status === "complete",
     };
-  }
 
   function countTransactionsByRoster(allTransactions) {
   var counts = {};
