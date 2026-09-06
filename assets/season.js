@@ -77,6 +77,7 @@
 
     // All-Time view state.
     allTimeData: null,
+    allTimeFaabRows: null,
     careerSplit: "combined",
     careerSort: "championships",
     recordsView: "master",
@@ -1345,12 +1346,6 @@ var directionArrow = selectedRosterId
     return state.allWeeksMatchups;
   }
 
-  /**
-   * Lazily fetches and caches this season's historical player-team
-   * data (see SleeperAPI.getHistoricalPlayerTeams). Scoped per-season
-   * on state.historicalTeamsMap, cleared automatically by loadSeason()
-   * the same way state.playersMap and other season-scoped caches are.
-   */
   async function ensureHistoricalTeamsMap() {
     if (state.dataSource !== "sleeper") return {};
     if (state.historicalTeamsMap) return state.historicalTeamsMap;
@@ -2222,7 +2217,9 @@ var directionArrow = selectedRosterId
           );
         }).join("");
       } else {
-        var addsHtml = detail.adds.length
+        var isFailedWaiver = detail.type === "waiver" && detail.status === "failed";
+
+        var addsHtml = detail.adds.length && !isFailedWaiver
           ? detail.adds.map(function (a) {
               var teamLabel = a.teamWithOwner || a.team;
               return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
@@ -2230,7 +2227,7 @@ var directionArrow = selectedRosterId
             }).join("")
           : "";
 
-        var dropsHtml = detail.drops.length
+        var dropsHtml = detail.drops.length && !isFailedWaiver
           ? detail.drops.map(function (d) {
               var teamLabel = d.teamWithOwner || d.team;
               return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
@@ -2253,12 +2250,90 @@ var directionArrow = selectedRosterId
               }).join("")
             : "";
 
-        bodyHtml = addsHtml + dropsHtml + picksHtml + faabHtml;
+        var waiverBidHtml = "";
+        if (detail.waiverBidAmount !== null && detail.waiverBidAmount !== undefined) {
+          var bidLabel = detail.waiverBidWon
+            ? '<span class="add-tag">WON</span>'
+            : '<span class="drop-tag">LOST</span>';
+          var bidPlayerText = detail.waiverBidPlayer ? " on " + escapeHtml(detail.waiverBidPlayer) : "";
+          waiverBidHtml =
+            '<div class="txn-detail-row">' + bidLabel + " Bid: $" + detail.waiverBidAmount + bidPlayerText +
+            " by " + escapeHtml(detail.waiverBidTeamWithOwner || detail.waiverBidTeam) + "</div>";
+        }
+
+        bodyHtml = waiverBidHtml + addsHtml + dropsHtml + picksHtml + faabHtml;
       }
 
       li.innerHTML = headerHtml + dateHtml + bodyHtml;
       list.appendChild(li);
     });
+
+    renderFaabSpendByPlayerSeason();
+  }
+
+  async function renderFaabSpendByPlayerSeason() {
+    if (state.dataSource !== "sleeper") return;
+
+    var container = byId("faab-by-player-season");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "faab-by-player-season";
+      var list = byId("transactions-list");
+      if (list && list.parentElement) {
+        list.parentElement.appendChild(container);
+      } else {
+        return;
+      }
+    }
+
+    await ensureAllTransactions();
+
+    var rows = SleeperAPI.buildFaabSpendByPlayer(
+      state.allTransactionsFlat || [],
+      state.rosterMap,
+      state.playersMap,
+      state.historicalTeamsMap || {}
+    );
+
+    renderFaabByPlayerRows(container, rows, String(state.season));
+  }
+
+  function renderFaabByPlayerRows(container, rows, labelSuffix) {
+    if (!rows.length) {
+      container.innerHTML =
+        '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
+        "<p>No winning FAAB bids found.</p>";
+      return;
+    }
+
+    var rowsHtml = rows
+      .map(function (r) {
+        var bidsHtml = r.bids
+          .map(function (b) {
+            var teamOwnerLabel =
+              b.ownerName && b.ownerName !== b.teamName ? b.teamName + " (" + b.ownerName + ")" : b.teamName;
+            var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Week " + b.week : "");
+            return (
+              '<div class="txn-detail-row">$' + b.amount + " by " + escapeHtml(teamOwnerLabel) +
+              (yearWeek ? " (" + escapeHtml(yearWeek) + ")" : "") + "</div>"
+            );
+          })
+          .join("");
+
+        return (
+          '<div class="draft-pick draft-pick-snake">' +
+            '<div class="pick-num">' + escapeHtml(r.playerName) + "</div>" +
+            '<div class="draft-meta">Total: $' + r.totalSpent + " across " + r.timesWon +
+            (r.timesWon === 1 ? " win" : " wins") + "</div>" +
+            bidsHtml +
+          "</div>"
+        );
+      })
+      .join("");
+
+    container.innerHTML =
+      '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
+      '<div class="draft-board draft-board-snake">' + rowsHtml + "</div>";
   }
 
   function renderLeagueInfoRaw() {
@@ -2602,6 +2677,7 @@ var directionArrow = selectedRosterId
       populateRecordsMemberSelector(state.allTimeData);
       populateAllTimeDraftOwnerFilter(state.allTimeData);
       renderAllTimeDraftFiltered();
+      renderFaabSpendByPlayerAllTime();
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
       return;
@@ -2619,12 +2695,111 @@ var directionArrow = selectedRosterId
       populateRecordsMemberSelector(allSeasonsData);
       populateAllTimeDraftOwnerFilter(allSeasonsData);
       renderAllTimeDraftFiltered();
+      renderFaabSpendByPlayerAllTime();
       byId("alltime-loading").hidden = true;
       byId("alltime-content").hidden = false;
     } catch (err) {
       console.error("Failed to load all-time data", err);
       byId("alltime-loading").textContent =
         "Could not load all-time data. Details: " + (err && err.message ? err.message : err);
+    }
+  }
+
+  async function renderFaabSpendByPlayerAllTime() {
+    var container = byId("faab-by-player-alltime");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "faab-by-player-alltime";
+      var draftBoard = byId("alltime-draft-board");
+      var anchor = (draftBoard && draftBoard.parentElement) || byId("alltime-content");
+      if (anchor) {
+        anchor.appendChild(container);
+      } else {
+        return;
+      }
+    }
+
+    if (state.allTimeFaabRows) {
+      renderFaabByPlayerRows(container, state.allTimeFaabRows, "All-Time");
+      return;
+    }
+
+    container.innerHTML = "<p>Loading FAAB history…</p>";
+
+    try {
+      var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
+      var allTxns = [];
+      var mergedPlayersMap = state.playersMap || (await SleeperAPI.getPlayersMap());
+
+      for (var i = 0; i < sleeperYears.length; i++) {
+        var year = sleeperYears[i];
+        var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
+        if (!leagueId) continue;
+
+        try {
+          var users = await SleeperAPI.getUsers(leagueId);
+          var rosters = await SleeperAPI.getRosters(leagueId);
+          var rosterMap = SleeperAPI.buildRosterMap(users, rosters);
+          var historicalTeams = await SleeperAPI.getHistoricalPlayerTeams(year).catch(function () {
+            return {};
+          });
+
+          var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
+          for (var w = 1; w <= maxWeek; w++) {
+            try {
+              var weekTxns = await SleeperAPI.getTransactions(leagueId, w);
+              (weekTxns || []).forEach(function (t) {
+                t._week = w;
+                t._year = year;
+                t._rosterMap = rosterMap;
+                t._historicalTeams = historicalTeams;
+                allTxns.push(t);
+              });
+            } catch (e) {}
+          }
+        } catch (e) {
+          console.warn("All-Time FAAB: could not load season " + year, e);
+        }
+      }
+
+      var byYear = {};
+      allTxns.forEach(function (t) {
+        if (!byYear[t._year]) byYear[t._year] = [];
+        byYear[t._year].push(t);
+      });
+
+      var combined = {};
+      Object.keys(byYear).forEach(function (year) {
+        var yearTxns = byYear[year];
+        var rosterMapForYear = yearTxns.length ? yearTxns[0]._rosterMap : {};
+        var historicalTeamsForYear = yearTxns.length ? yearTxns[0]._historicalTeams : {};
+
+        var yearRows = SleeperAPI.buildFaabSpendByPlayer(
+          yearTxns, rosterMapForYear, mergedPlayersMap, historicalTeamsForYear
+        );
+
+        yearRows.forEach(function (row) {
+          if (!combined[row.playerId]) {
+            combined[row.playerId] = { playerId: row.playerId, playerName: row.playerName, totalSpent: 0, timesWon: 0, bids: [] };
+          }
+          var entry = combined[row.playerId];
+          entry.totalSpent += row.totalSpent;
+          entry.timesWon += row.timesWon;
+          row.bids.forEach(function (b) {
+            entry.bids.push({ amount: b.amount, teamName: b.teamName, ownerName: b.ownerName, week: b.week, year: year });
+          });
+        });
+      });
+
+      var rows = Object.keys(combined)
+        .map(function (pid) { return combined[pid]; })
+        .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+
+      state.allTimeFaabRows = rows;
+      renderFaabByPlayerRows(container, rows, "All-Time");
+    } catch (err) {
+      console.error("Failed to build all-time FAAB data", err);
+      container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
     }
   }
 
