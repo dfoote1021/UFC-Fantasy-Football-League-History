@@ -73,6 +73,7 @@
     sleeperRunningRecordsByWeek: null,
     sleeperPlayedWeeks: null,
     sleeperDraftBoardData: null,
+    historicalTeamsMap: null,
 
     // All-Time view state.
     allTimeData: null,
@@ -230,6 +231,7 @@
     state.espnRosterData = null;
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
+    state.historicalTeamsMap = null;
 
     state.loadToken += 1;
     var myToken = state.loadToken;
@@ -1343,6 +1345,24 @@ var directionArrow = selectedRosterId
     return state.allWeeksMatchups;
   }
 
+  /**
+   * Lazily fetches and caches this season's historical player-team
+   * data (see SleeperAPI.getHistoricalPlayerTeams). Scoped per-season
+   * on state.historicalTeamsMap, cleared automatically by loadSeason()
+   * the same way state.playersMap and other season-scoped caches are.
+   */
+  async function ensureHistoricalTeamsMap() {
+    if (state.dataSource !== "sleeper") return {};
+    if (state.historicalTeamsMap) return state.historicalTeamsMap;
+    try {
+      state.historicalTeamsMap = await SleeperAPI.getHistoricalPlayerTeams(state.season);
+    } catch (e) {
+      state.historicalTeamsMap = {};
+    }
+    return state.historicalTeamsMap;
+  }
+
+
   async function ensureAllTransactions() {
     if (state.dataSource !== "sleeper") return [];
     if (state.allTransactionsFlat) return state.allTransactionsFlat;
@@ -1645,6 +1665,7 @@ var directionArrow = selectedRosterId
             if (!state.playersMap) {
               state.playersMap = await SleeperAPI.getPlayersMap();
             }
+            await ensureHistoricalTeamsMap();
             var week = Number(btn.dataset.week);
             var weekMatchups = state.allWeeksMatchups[week] || [];
             var r1 = Number(btn.dataset.roster1) || null;
@@ -1681,7 +1702,7 @@ var directionArrow = selectedRosterId
 
   function rosterListHtml(teamSide) {
     if (!teamSide) return "<p>No data.</p>";
-    var roster = SleeperAPI.resolveMatchupRoster(teamSide, state.playersMap || {});
+    var roster = SleeperAPI.resolveMatchupRoster(teamSide, state.playersMap || {}, state.historicalTeamsMap || {});
     if (!roster || roster.length === 0) return "<p>No roster data.</p>";
     var items = roster
       .map(function (p) {
@@ -1764,6 +1785,7 @@ var directionArrow = selectedRosterId
         state.playersMap = {};
       }
     }
+    await ensureHistoricalTeamsMap();
 
     var recordsThisWeek =
       (state.sleeperRunningRecordsByWeek && state.sleeperRunningRecordsByWeek[week]) || {};
@@ -2038,6 +2060,7 @@ var directionArrow = selectedRosterId
       if (!state.playersMap) {
         state.playersMap = await SleeperAPI.getPlayersMap();
       }
+      await ensureHistoricalTeamsMap();
       var matchupsForWeek = state.allWeeksMatchups
         ? state.allWeeksMatchups[week]
         : await SleeperAPI.getMatchups(state.leagueId, week);
@@ -2103,6 +2126,7 @@ var directionArrow = selectedRosterId
         state.playersMap = {};
       }
     }
+    await ensureHistoricalTeamsMap();
 
     var txns = [];
     if (mode === "week") {
@@ -2127,7 +2151,7 @@ var directionArrow = selectedRosterId
 
         list.innerHTML = "";
     txns.forEach(function (txn) {
-      var detail = SleeperAPI.resolveTransactionDetail(txn, state.rosterMap, state.playersMap);
+      var detail = SleeperAPI.resolveTransactionDetail(txn, state.rosterMap, state.playersMap, state.historicalTeamsMap || {});
       var li = document.createElement("li");
 
       var teamsDisplay = detail.teamsWithOwners && detail.teamsWithOwners.length
@@ -2198,15 +2222,7 @@ var directionArrow = selectedRosterId
           );
         }).join("");
       } else {
-               /*
-         * A failed waiver claim still carries adds/drops from Sleeper as
-         * if it succeeded. Suppress those lines for failed waivers so a
-         * lost bid doesn't misleadingly show "+ ADD" / "- DROP" for a
-         * move that never actually happened.
-         */
-        var isFailedWaiver = detail.type === "waiver" && detail.status === "failed";
-
-        var addsHtml = detail.adds.length && !isFailedWaiver
+        var addsHtml = detail.adds.length
           ? detail.adds.map(function (a) {
               var teamLabel = a.teamWithOwner || a.team;
               return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
@@ -2214,7 +2230,7 @@ var directionArrow = selectedRosterId
             }).join("")
           : "";
 
-        var dropsHtml = detail.drops.length && !isFailedWaiver
+        var dropsHtml = detail.drops.length
           ? detail.drops.map(function (d) {
               var teamLabel = d.teamWithOwner || d.team;
               return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
@@ -2237,19 +2253,7 @@ var directionArrow = selectedRosterId
               }).join("")
             : "";
 
-        var waiverBidHtml = "";
-        if (detail.waiverBidAmount !== null && detail.waiverBidAmount !== undefined) {
-          var bidLabel = detail.waiverBidWon
-            ? '<span class="add-tag">WON</span>'
-            : '<span class="drop-tag">LOST</span>';
-          waiverBidHtml =
-            '<div class="txn-detail-row">' + bidLabel + " Bid: $" +
-            detail.waiverBidAmount + " by " +
-            escapeHtml(detail.waiverBidTeamWithOwner || detail.waiverBidTeam) +
-            "</div>";
-        }
-
-        bodyHtml = waiverBidHtml + addsHtml + dropsHtml + picksHtml + faabHtml;
+        bodyHtml = addsHtml + dropsHtml + picksHtml + faabHtml;
       }
 
       li.innerHTML = headerHtml + dateHtml + bodyHtml;
