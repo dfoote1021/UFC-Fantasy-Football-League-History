@@ -2198,7 +2198,15 @@ var directionArrow = selectedRosterId
           );
         }).join("");
       } else {
-        var addsHtml = detail.adds.length
+               /*
+         * A failed waiver claim still carries adds/drops from Sleeper as
+         * if it succeeded. Suppress those lines for failed waivers so a
+         * lost bid doesn't misleadingly show "+ ADD" / "- DROP" for a
+         * move that never actually happened.
+         */
+        var isFailedWaiver = detail.type === "waiver" && detail.status === "failed";
+
+        var addsHtml = detail.adds.length && !isFailedWaiver
           ? detail.adds.map(function (a) {
               var teamLabel = a.teamWithOwner || a.team;
               return '<div class="txn-detail-row"><span class="add-tag">+ ADD</span> ' +
@@ -2206,7 +2214,7 @@ var directionArrow = selectedRosterId
             }).join("")
           : "";
 
-        var dropsHtml = detail.drops.length
+        var dropsHtml = detail.drops.length && !isFailedWaiver
           ? detail.drops.map(function (d) {
               var teamLabel = d.teamWithOwner || d.team;
               return '<div class="txn-detail-row"><span class="drop-tag">- DROP</span> ' +
