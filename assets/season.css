@@ -921,6 +921,87 @@ display: none !important;
   font-weight: 700;
 }
 
+/*
+ * Add this CSS anywhere in season.css. These are new classes used by
+ * the "FAAB Spend by Player" section (season and all-time views) â€” no
+ * existing rules are modified, so this is safe to append.
+ */
+
+.faab-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.faab-owner-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.faab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.faab-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.faab-player-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.faab-total {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+
+.faab-bid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.faab-bid-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.88rem;
+  flex-wrap: wrap;
+}
+
+.faab-bid-amount {
+  font-weight: 700;
+  color: #7fd88f;
+  min-width: 42px;
+}
+
+.faab-bid-owner {
+  font-weight: 500;
+}
+
+.faab-bid-meta {
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+.faab-empty {
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 700px) {
   main {
     padding: 16px;
