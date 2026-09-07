@@ -2316,8 +2316,12 @@ var directionArrow = selectedRosterId
           var bidsHtml = r.bids
             .map(function (b) {
               var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Week " + b.week : "");
+              var statusTag = b.won
+                ? '<span class="faab-bid-status faab-won">WON</span>'
+                : '<span class="faab-bid-status faab-lost">LOST</span>';
               return (
                 '<div class="faab-bid-row">' +
+                  statusTag +
                   '<span class="faab-bid-amount">$' + b.amount + "</span>" +
                   '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
                   (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
@@ -2326,11 +2330,15 @@ var directionArrow = selectedRosterId
             })
             .join("");
 
+          var totalBids = r.timesWon + r.timesLost;
+
           return (
             '<div class="faab-card">' +
               '<div class="faab-player-name">' + escapeHtml(r.playerName) + "</div>" +
-              '<div class="faab-total">Total: $' + r.totalSpent + " across " + r.timesWon +
-              (r.timesWon === 1 ? " win" : " wins") + "</div>" +
+              '<div class="faab-total">Total: $' + r.totalSpent + " across " + totalBids +
+              (totalBids === 1 ? " bid" : " bids") +
+              " (" + r.timesWon + (r.timesWon === 1 ? " win" : " wins") +
+              ", " + r.timesLost + (r.timesLost === 1 ? " loss" : " losses") + ")</div>" +
               '<div class="faab-bid-list">' + bidsHtml + "</div>" +
             "</div>"
           );
@@ -2340,17 +2348,6 @@ var directionArrow = selectedRosterId
     );
   }
 
-  /**
-   * Renders a full "FAAB Spend by Player" section (heading, owner
-   * filter dropdown, and result cards) into the given container.
-   *
-   * The dropdown is populated from every distinct owner who appears in
-   * ANY bid across the unfiltered rows, so it works identically for the
-   * season-scoped view and the all-time view. Selecting an owner
-   * filters both which players show (only ones that owner won a bid on)
-   * and which bids show under each player (only that owner's bids), all
-   * done client-side from the already-fetched rows - no re-fetching.
-   */
   function renderFaabSection(container, allRows, labelSuffix, selectId) {
     var owners = [];
     var seenOwners = {};
@@ -2403,11 +2400,14 @@ var directionArrow = selectedRosterId
             return b.ownerName === ownerFilter;
           });
           if (!matchingBids.length) return null;
+          var wonCount = matchingBids.filter(function (b) { return b.won; }).length;
+          var lostCount = matchingBids.length - wonCount;
           return {
             playerId: r.playerId,
             playerName: r.playerName,
             totalSpent: matchingBids.reduce(function (sum, b) { return sum + b.amount; }, 0),
-            timesWon: matchingBids.length,
+            timesWon: wonCount,
+            timesLost: lostCount,
             bids: matchingBids,
           };
         })
