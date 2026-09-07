@@ -1021,8 +1021,15 @@
   });
 
   return counts;
-  }
+}
 
+  /**
+   * Aggregates FAAB spend by player from a flat list of raw Sleeper
+   * transactions. totalSpent includes EVERY bid placed on that player -
+   * both won AND lost - since a lost bid still represents FAAB that
+   * owner committed while chasing that player. timesWon/timesLost are
+   * tracked separately so callers can still show win/loss context.
+   */
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
     function playerName(playerId) {
       var meta = (playersMap && playersMap[playerId]) || {};
@@ -1040,8 +1047,12 @@
     var byPlayer = {};
 
     (allTransactions || []).forEach(function (txn) {
-      var isWonWaiver = txn.type === "waiver" && txn.status === "complete";
-      if (!isWonWaiver) return;
+      var isWaiverClaim = txn.type === "waiver";
+      if (!isWaiverClaim) return;
+
+      var isWon = txn.status === "complete";
+      var isLost = txn.status === "failed";
+      if (!isWon && !isLost) return;
 
       var amount =
         txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
@@ -1055,12 +1066,21 @@
       var rosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
 
       if (!byPlayer[playerId]) {
-        byPlayer[playerId] = { playerId: playerId, playerName: playerName(playerId), totalSpent: 0, timesWon: 0, bids: [] };
+        byPlayer[playerId] = {
+          playerId: playerId,
+          playerName: playerName(playerId),
+          totalSpent: 0,
+          timesWon: 0,
+          timesLost: 0,
+          bids: [],
+        };
       }
 
       var entry = byPlayer[playerId];
       entry.totalSpent += amount;
-      entry.timesWon += 1;
+      if (isWon) entry.timesWon += 1;
+      if (isLost) entry.timesLost += 1;
+
       entry.bids.push({
         amount: amount,
         rosterId: rosterId,
@@ -1068,6 +1088,7 @@
         ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
         week: txn._week || null,
         date: txn.status_updated || null,
+        won: isWon,
       });
     });
 
@@ -1075,6 +1096,7 @@
       .map(function (playerId) { return byPlayer[playerId]; })
       .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
   }
+
 
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
