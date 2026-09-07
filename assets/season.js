@@ -74,6 +74,7 @@
     sleeperPlayedWeeks: null,
     sleeperDraftBoardData: null,
     historicalTeamsMap: null,
+    seasonFaabRows: null,
 
     // All-Time view state.
     allTimeData: null,
@@ -233,6 +234,7 @@
     state.sleeperRunningRecordsByWeek = null;
     state.sleeperPlayedWeeks = null;
     state.historicalTeamsMap = null;
+    state.seasonFaabRows = null;
 
     state.loadToken += 1;
     var myToken = state.loadToken;
@@ -2288,52 +2290,136 @@ var directionArrow = selectedRosterId
 
     await ensureAllTransactions();
 
-    var rows = SleeperAPI.buildFaabSpendByPlayer(
+    state.seasonFaabRows = SleeperAPI.buildFaabSpendByPlayer(
       state.allTransactionsFlat || [],
       state.rosterMap,
       state.playersMap,
       state.historicalTeamsMap || {}
     );
 
-    renderFaabByPlayerRows(container, rows, String(state.season));
+    renderFaabSection(container, state.seasonFaabRows, String(state.season), "faab-season-owner-filter");
   }
 
-  function renderFaabByPlayerRows(container, rows, labelSuffix) {
+  function faabCardsHtml(rows) {
     if (!rows.length) {
-      container.innerHTML =
-        '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
-        "<p>No winning FAAB bids found.</p>";
-      return;
+      return (
+        '<p class="faab-empty">No FAAB bids found for this scope. ' +
+        "If this is a season before your league switched to FAAB waivers, " +
+        "this section will always be empty for that year.</p>"
+      );
     }
 
-    var rowsHtml = rows
-      .map(function (r) {
-        var bidsHtml = r.bids
-          .map(function (b) {
-            var teamOwnerLabel =
-              b.ownerName && b.ownerName !== b.teamName ? b.teamName + " (" + b.ownerName + ")" : b.teamName;
-            var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Week " + b.week : "");
-            return (
-              '<div class="txn-detail-row">$' + b.amount + " by " + escapeHtml(teamOwnerLabel) +
-              (yearWeek ? " (" + escapeHtml(yearWeek) + ")" : "") + "</div>"
-            );
-          })
-          .join("");
+    return (
+      '<div class="faab-grid">' +
+      rows
+        .map(function (r) {
+          var bidsHtml = r.bids
+            .map(function (b) {
+              var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Week " + b.week : "");
+              return (
+                '<div class="faab-bid-row">' +
+                  '<span class="faab-bid-amount">$' + b.amount + "</span>" +
+                  '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
+                  (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
+                "</div>"
+              );
+            })
+            .join("");
 
-        return (
-          '<div class="draft-pick draft-pick-snake">' +
-            '<div class="pick-num">' + escapeHtml(r.playerName) + "</div>" +
-            '<div class="draft-meta">Total: $' + r.totalSpent + " across " + r.timesWon +
-            (r.timesWon === 1 ? " win" : " wins") + "</div>" +
-            bidsHtml +
-          "</div>"
-        );
-      })
-      .join("");
+          return (
+            '<div class="faab-card">' +
+              '<div class="faab-player-name">' + escapeHtml(r.playerName) + "</div>" +
+              '<div class="faab-total">Total: $' + r.totalSpent + " across " + r.timesWon +
+              (r.timesWon === 1 ? " win" : " wins") + "</div>" +
+              '<div class="faab-bid-list">' + bidsHtml + "</div>" +
+            "</div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  /**
+   * Renders a full "FAAB Spend by Player" section (heading, owner
+   * filter dropdown, and result cards) into the given container.
+   *
+   * The dropdown is populated from every distinct owner who appears in
+   * ANY bid across the unfiltered rows, so it works identically for the
+   * season-scoped view and the all-time view. Selecting an owner
+   * filters both which players show (only ones that owner won a bid on)
+   * and which bids show under each player (only that owner's bids), all
+   * done client-side from the already-fetched rows - no re-fetching.
+   */
+  function renderFaabSection(container, allRows, labelSuffix, selectId) {
+    var owners = [];
+    var seenOwners = {};
+    allRows.forEach(function (r) {
+      r.bids.forEach(function (b) {
+        if (!seenOwners[b.ownerName]) {
+          seenOwners[b.ownerName] = true;
+          owners.push(b.ownerName);
+        }
+      });
+    });
+    owners.sort();
+
+    var previousValue = "";
+    var existingSelect = byId(selectId);
+    if (existingSelect) previousValue = existingSelect.value;
+
+    var optionsHtml =
+      '<option value="">All Owners</option>' +
+      owners
+        .map(function (name) {
+          return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>";
+        })
+        .join("");
 
     container.innerHTML =
-      '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
-      '<div class="draft-board draft-board-snake">' + rowsHtml + "</div>";
+      '<div class="faab-section-header">' +
+        '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
+        '<select id="' + selectId + '" class="faab-owner-select">' + optionsHtml + "</select>" +
+      "</div>" +
+      '<div class="faab-results">' + faabCardsHtml(allRows) + "</div>";
+
+    var select = byId(selectId);
+    if (previousValue && owners.indexOf(previousValue) !== -1) {
+      select.value = previousValue;
+    }
+
+    select.onchange = function () {
+      var ownerFilter = select.value;
+      var resultsEl = container.querySelector(".faab-results");
+
+      if (!ownerFilter) {
+        resultsEl.innerHTML = faabCardsHtml(allRows);
+        return;
+      }
+
+      var filteredRows = allRows
+        .map(function (r) {
+          var matchingBids = r.bids.filter(function (b) {
+            return b.ownerName === ownerFilter;
+          });
+          if (!matchingBids.length) return null;
+          return {
+            playerId: r.playerId,
+            playerName: r.playerName,
+            totalSpent: matchingBids.reduce(function (sum, b) { return sum + b.amount; }, 0),
+            timesWon: matchingBids.length,
+            bids: matchingBids,
+          };
+        })
+        .filter(function (r) {
+          return r !== null;
+        })
+        .sort(function (a, b) {
+          return b.totalSpent - a.totalSpent;
+        });
+
+      resultsEl.innerHTML = faabCardsHtml(filteredRows);
+    };
   }
 
   function renderLeagueInfoRaw() {
@@ -2720,7 +2806,7 @@ var directionArrow = selectedRosterId
     }
 
     if (state.allTimeFaabRows) {
-      renderFaabByPlayerRows(container, state.allTimeFaabRows, "All-Time");
+      renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime-owner-filter");
       return;
     }
 
@@ -2796,7 +2882,7 @@ var directionArrow = selectedRosterId
         .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
 
       state.allTimeFaabRows = rows;
-      renderFaabByPlayerRows(container, rows, "All-Time");
+      renderFaabSection(container, rows, "All-Time", "faab-alltime-owner-filter");
     } catch (err) {
       console.error("Failed to build all-time FAAB data", err);
       container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
