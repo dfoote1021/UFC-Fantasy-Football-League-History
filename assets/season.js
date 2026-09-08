@@ -2359,7 +2359,7 @@ function faabCardsHtml(rows) {
             return (
               '<div class="faab-bid-row">' +
               resultTag + " " +
-              '<span class="faab-bid-amount">$' + b.amount + "</span>" +
+              '<span class="faab-bid-amount' + (won ? "" : " faab-bid-lost") + '">$' + b.amount + "</span>" +
               '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
               (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
               "</div>"
