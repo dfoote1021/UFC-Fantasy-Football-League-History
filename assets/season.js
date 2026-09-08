@@ -2940,103 +2940,133 @@ function filterFaabRows(allRows, weekFilter, ownerFilter) {
     }
   }
 
-  async function renderFaabSpendByPlayerAllTime() {
-    var container = byId("faab-by-player-alltime");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "faab-by-player-alltime";
-      var draftBoard = byId("alltime-draft-board");
-      var anchor = (draftBoard && draftBoard.parentElement) || byId("alltime-content");
-      if (anchor) {
-        anchor.appendChild(container);
-      } else {
-        return;
-      }
-    }
+  /**
+ * CONFIRMED FIX - your live season-51.js still has the unfixed merge bug
+ * (verified directly by reading the file this turn: the combined object
+ * only initializes totalSpent/timesWon, and entry.bids.push() never
+ * copies `won`). This replacement is `node --check` verified.
+ *
+ * WHERE THIS GOES:
+ *   File:     season.js (your season-51.js)
+ *   Function: REPLACES the entire renderFaabSpendByPlayerAllTime()
+ *             function, from "async function renderFaabSpendByPlayerAllTime() {"
+ *             down through its closing "}".
+ */
 
-    if (state.allTimeFaabRows) {
-      renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime-owner-filter");
+async function renderFaabSpendByPlayerAllTime() {
+  var container = byId("faab-by-player-alltime");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "faab-by-player-alltime";
+    var draftBoard = byId("alltime-draft-board");
+    var anchor = (draftBoard && draftBoard.parentElement) || byId("alltime-content");
+    if (anchor) {
+      anchor.appendChild(container);
+    } else {
       return;
     }
+  }
 
-    container.innerHTML = "<p>Loading FAAB history…</p>";
+  if (state.allTimeFaabRows) {
+    renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime-owner-filter");
+    return;
+  }
 
-    try {
-      var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
-      var allTxns = [];
-      var mergedPlayersMap = state.playersMap || (await SleeperAPI.getPlayersMap());
+  container.innerHTML = "<p>Loading FAAB history…</p>";
 
-      for (var i = 0; i < sleeperYears.length; i++) {
-        var year = sleeperYears[i];
-        var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
-        if (!leagueId) continue;
+  try {
+    var sleeperYears = Object.keys(SleeperAPI.SLEEPER_SEASONS).map(Number);
+    var allTxns = [];
+    var mergedPlayersMap = state.playersMap || (await SleeperAPI.getPlayersMap());
 
-        try {
-          var users = await SleeperAPI.getUsers(leagueId);
-          var rosters = await SleeperAPI.getRosters(leagueId);
-          var rosterMap = SleeperAPI.buildRosterMap(users, rosters);
-          var historicalTeams = await SleeperAPI.getHistoricalPlayerTeams(year).catch(function () {
-            return {};
-          });
+    for (var i = 0; i < sleeperYears.length; i++) {
+      var year = sleeperYears[i];
+      var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
+      if (!leagueId) continue;
 
-          var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
-          for (var w = 1; w <= maxWeek; w++) {
-            try {
-              var weekTxns = await SleeperAPI.getTransactions(leagueId, w);
-              (weekTxns || []).forEach(function (t) {
-                t._week = w;
-                t._year = year;
-                t._rosterMap = rosterMap;
-                t._historicalTeams = historicalTeams;
-                allTxns.push(t);
-              });
-            } catch (e) {}
-          }
-        } catch (e) {
-          console.warn("All-Time FAAB: could not load season " + year, e);
+      try {
+        var users = await SleeperAPI.getUsers(leagueId);
+        var rosters = await SleeperAPI.getRosters(leagueId);
+        var rosterMap = SleeperAPI.buildRosterMap(users, rosters);
+        var historicalTeams = await SleeperAPI.getHistoricalPlayerTeams(year).catch(function () {
+          return {};
+        });
+
+        var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
+        for (var w = 1; w <= maxWeek; w++) {
+          try {
+            var weekTxns = await SleeperAPI.getTransactions(leagueId, w);
+            (weekTxns || []).forEach(function (t) {
+              t._week = w;
+              t._year = year;
+              t._rosterMap = rosterMap;
+              t._historicalTeams = historicalTeams;
+              allTxns.push(t);
+            });
+          } catch (e) {}
         }
+      } catch (e) {
+        console.warn("All-Time FAAB: could not load season " + year, e);
       }
+    }
 
-      var byYear = {};
-      allTxns.forEach(function (t) {
-        if (!byYear[t._year]) byYear[t._year] = [];
-        byYear[t._year].push(t);
-      });
+    var byYear = {};
+    allTxns.forEach(function (t) {
+      if (!byYear[t._year]) byYear[t._year] = [];
+      byYear[t._year].push(t);
+    });
 
-      var combined = {};
-      Object.keys(byYear).forEach(function (year) {
-        var yearTxns = byYear[year];
-        var rosterMapForYear = yearTxns.length ? yearTxns[0]._rosterMap : {};
-        var historicalTeamsForYear = yearTxns.length ? yearTxns[0]._historicalTeams : {};
+    var combined = {};
+    Object.keys(byYear).forEach(function (year) {
+      var yearTxns = byYear[year];
+      var rosterMapForYear = yearTxns.length ? yearTxns[0]._rosterMap : {};
+      var historicalTeamsForYear = yearTxns.length ? yearTxns[0]._historicalTeams : {};
 
-        var yearRows = SleeperAPI.buildFaabSpendByPlayer(
-          yearTxns, rosterMapForYear, mergedPlayersMap, historicalTeamsForYear
-        );
+      var yearRows = SleeperAPI.buildFaabSpendByPlayer(
+        yearTxns, rosterMapForYear, mergedPlayersMap, historicalTeamsForYear
+      );
 
-        yearRows.forEach(function (row) {
-          if (!combined[row.playerId]) {
-            combined[row.playerId] = { playerId: row.playerId, playerName: row.playerName, totalSpent: 0, timesWon: 0, bids: [] };
-          }
-          var entry = combined[row.playerId];
-          entry.totalSpent += row.totalSpent;
-          entry.timesWon += row.timesWon;
-          row.bids.forEach(function (b) {
-            entry.bids.push({ amount: b.amount, teamName: b.teamName, ownerName: b.ownerName, week: b.week, year: year });
+      yearRows.forEach(function (row) {
+        if (!combined[row.playerId]) {
+          combined[row.playerId] = {
+            playerId: row.playerId,
+            playerName: row.playerName,
+            position: row.position,
+            nflTeam: row.nflTeam,
+            totalSpent: 0,
+            timesWon: 0,
+            timesLost: 0,
+            bids: [],
+          };
+        }
+        var entry = combined[row.playerId];
+        entry.totalSpent += row.totalSpent;
+        entry.timesWon += row.timesWon;
+        entry.timesLost += row.timesLost || 0;
+        row.bids.forEach(function (b) {
+          entry.bids.push({
+            amount: b.amount,
+            won: b.won,
+            teamName: b.teamName,
+            ownerName: b.ownerName,
+            week: b.week,
+            year: year,
           });
         });
       });
+    });
 
-      var rows = Object.keys(combined)
-        .map(function (pid) { return combined[pid]; })
-        .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+    var rows = Object.keys(combined)
+      .map(function (pid) { return combined[pid]; })
+      .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
 
-      state.allTimeFaabRows = rows;
-      renderFaabSection(container, rows, "All-Time", "faab-alltime-owner-filter");
-    } catch (err) {
-      console.error("Failed to build all-time FAAB data", err);
-      container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
-    }
+    state.allTimeFaabRows = rows;
+    renderFaabSection(container, rows, "All-Time", "faab-alltime-owner-filter");
+  } catch (err) {
+    console.error("Failed to build all-time FAAB data", err);
+    container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
   }
+}
 
   function renderCareerTotals(allSeasonsData, split) {
     var tbody = document.querySelector("#career-totals-table tbody");
