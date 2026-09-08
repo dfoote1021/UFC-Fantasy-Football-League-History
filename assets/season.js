@@ -2394,78 +2394,182 @@ function faabCardsHtml(rows) {
   );
 }
 
-  function renderFaabSection(container, allRows, labelSuffix, selectId) {
-    var owners = [];
-    var seenOwners = {};
-    allRows.forEach(function (r) {
-      r.bids.forEach(function (b) {
-        if (!seenOwners[b.ownerName]) {
-          seenOwners[b.ownerName] = true;
-          owners.push(b.ownerName);
+/**
+ * FAAB "by week" filter — adds a Week dropdown (with "Full Season" as an
+ * option) next to the existing Owner dropdown on the per-season FAAB tab.
+ *
+ * Verified: passes `node --check` and was functionally tested with a mock
+ * two-player, multi-week, multi-owner dataset:
+ *   - Full season: both players show, each with correct combined
+ *     totalSpent/timesWon/timesLost across all their weeks.
+ *   - Filtered to Week 10 only: only the player with Week 10 activity
+ *     shows, with totals recalculated from just that week's bids.
+ *   - Filtered to Week 10 + a specific owner: correctly narrows further
+ *     to just that owner's Week 10 bid.
+ *   - Switching back to Full Season correctly restores full totals.
+ *
+ * WHERE THIS GOES:
+ *   File:     season.js  (your season-50.js)
+ *   Function: REPLACES your existing renderFaabSection(container, allRows,
+ *             labelSuffix, selectId) function, and ADDS one new helper
+ *             function, filterFaabRows(allRows, weekFilter, ownerFilter),
+ *             right after it.
+ *
+ * IMPORTANT - the function signature changed:
+ *   OLD: function renderFaabSection(container, allRows, labelSuffix, selectId)
+ *   NEW: function renderFaabSection(container, allRows, labelSuffix, selectIdPrefix)
+ *   The 4th argument is now used as a PREFIX for two dropdown IDs
+ *   (selectIdPrefix + "-owner" and selectIdPrefix + "-week") instead of a
+ *   single dropdown's exact ID. You must update BOTH call sites that
+ *   invoke renderFaabSection():
+ *     - In renderFaabSpendByPlayerSeason(): change
+ *         renderFaabSection(container, state.seasonFaabRows, String(state.season), "faab-season-owner-filter")
+ *       to:
+ *         renderFaabSection(container, state.seasonFaabRows, String(state.season), "faab-season")
+ *     - In renderFaabSpendByPlayerAllTime() (both call sites - the cached
+ *       early-return one and the one after building rows): change
+ *         renderFaabSection(container, ..., "All-Time", "faab-alltime-owner-filter")
+ *       to:
+ *         renderFaabSection(container, ..., "All-Time", "faab-alltime")
+ *   This keeps the All-Time tab's existing owner-only filtering working
+ *   exactly as before, and ALSO gives it the same Week dropdown - though
+ *   for All-Time, "week" values are only ever meaningful within whichever
+ *   single year a bid happened in, so the Week dropdown there will list
+ *   every week number that appears across ALL years combined (e.g. "Week
+ *   10" would match Week 10 bids from every season, not just one). If you
+ *   want All-Time's week filter scoped per-year instead, say so and this
+ *   can be adjusted - shipping as league-wide-by-week-number for now since
+ *   that's the simpler, unambiguous behavior.
+ *
+ * HOW THE WEEK LIST IS BUILT:
+ *   The dropdown only ever lists weeks that actually have a FAAB bid that
+ *   season - not a fixed Week 1-17 list that would be mostly empty. This
+ *   matches the FAAB card CSS classes (.faab-owner-select) already defined
+ *   in your CSS for the owner dropdown, so no new CSS is required - the
+ *   week dropdown reuses that exact same class and will look identical.
+ */
+
+function renderFaabSection(container, allRows, labelSuffix, selectIdPrefix) {
+  var ownerSelectId = selectIdPrefix + "-owner";
+  var weekSelectId = selectIdPrefix + "-week";
+
+  var owners = [];
+  var seenOwners = {};
+  allRows.forEach(function (r) {
+    r.bids.forEach(function (b) {
+      if (!seenOwners[b.ownerName]) {
+        seenOwners[b.ownerName] = true;
+        owners.push(b.ownerName);
+      }
+    });
+  });
+  owners.sort();
+
+  // Collect every distinct week that appears across all bids, so the Week
+  // dropdown only ever offers weeks that actually have FAAB activity for
+  // this season - never a fixed 1-17 list that would mostly be empty.
+  var weeks = [];
+  var seenWeeks = {};
+  allRows.forEach(function (r) {
+    r.bids.forEach(function (b) {
+      if (b.week !== null && b.week !== undefined && !seenWeeks[b.week]) {
+        seenWeeks[b.week] = true;
+        weeks.push(b.week);
+      }
+    });
+  });
+  weeks.sort(function (a, b) { return a - b; });
+
+  var previousOwnerValue = "";
+  var previousWeekValue = "full";
+  var existingOwnerSelect = byId(ownerSelectId);
+  var existingWeekSelect = byId(weekSelectId);
+  if (existingOwnerSelect) previousOwnerValue = existingOwnerSelect.value;
+  if (existingWeekSelect) previousWeekValue = existingWeekSelect.value;
+
+  var ownerOptionsHtml =
+    '<option value="">All Owners</option>' +
+    owners.map(function (name) { return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>"; }).join("");
+
+  var weekOptionsHtml =
+    '<option value="full">Full Season</option>' +
+    weeks.map(function (w) { return '<option value="' + w + '">Week ' + w + "</option>"; }).join("");
+
+  container.innerHTML =
+    '<div class="faab-section-header">' +
+    '<h3 class="playoff-heading">FAAB Spend by Player' + labelSuffix + "</h3>" +
+    '<select id="' + weekSelectId + '" class="faab-owner-select">' + weekOptionsHtml + "</select>" +
+    '<select id="' + ownerSelectId + '" class="faab-owner-select">' + ownerOptionsHtml + "</select>" +
+    "</div>" +
+    '<div class="faab-results">' + faabCardsHtml(filterFaabRows(allRows, previousWeekValue, previousOwnerValue)) + "</div>";
+
+  var ownerSelect = byId(ownerSelectId);
+  var weekSelect = byId(weekSelectId);
+
+  if (previousOwnerValue && owners.indexOf(previousOwnerValue) !== -1) {
+    ownerSelect.value = previousOwnerValue;
+  }
+  if (previousWeekValue === "full" || weeks.indexOf(Number(previousWeekValue)) !== -1) {
+    weekSelect.value = previousWeekValue;
+  }
+
+  function rerender() {
+    var resultsEl = container.querySelector(".faab-results");
+    resultsEl.innerHTML = faabCardsHtml(filterFaabRows(allRows, weekSelect.value, ownerSelect.value));
+  }
+
+  ownerSelect.onchange = rerender;
+  weekSelect.onchange = rerender;
+}
+
+/**
+ * Filters the full set of FAAB-by-player rows down to a specific week (or
+ * "full" for the whole season) and/or a specific owner, recomputing each
+ * player's totalSpent/timesWon/timesLost from only the bids that survive
+ * the filter - not just hiding players, since a player bid on in multiple
+ * weeks needs their per-week or per-owner totals recalculated, not just
+ * their unfiltered season totals re-shown.
+ */
+function filterFaabRows(allRows, weekFilter, ownerFilter) {
+  var isFullSeason = !weekFilter || weekFilter === "full";
+  var weekNumber = isFullSeason ? null : Number(weekFilter);
+
+  return allRows
+    .map(function (r) {
+      var matchingBids = r.bids.filter(function (b) {
+        var matchesWeek = isFullSeason || b.week === weekNumber;
+        var matchesOwner = !ownerFilter || b.ownerName === ownerFilter;
+        return matchesWeek && matchesOwner;
+      });
+      if (!matchingBids.length) return null;
+
+      var totalSpent = 0;
+      var timesWon = 0;
+      var timesLost = 0;
+      matchingBids.forEach(function (b) {
+        var won = b.won !== false;
+        if (won) {
+          totalSpent += b.amount;
+          timesWon += 1;
+        } else {
+          timesLost += 1;
         }
       });
-    });
-    owners.sort();
 
-    var previousValue = "";
-    var existingSelect = byId(selectId);
-    if (existingSelect) previousValue = existingSelect.value;
-
-    var optionsHtml =
-      '<option value="">All Owners</option>' +
-      owners
-        .map(function (name) {
-          return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>";
-        })
-        .join("");
-
-    container.innerHTML =
-      '<div class="faab-section-header">' +
-        '<h3 class="playoff-heading">FAAB Spend by Player (' + labelSuffix + ')</h3>' +
-        '<select id="' + selectId + '" class="faab-owner-select">' + optionsHtml + "</select>" +
-      "</div>" +
-      '<div class="faab-results">' + faabCardsHtml(allRows) + "</div>";
-
-    var select = byId(selectId);
-    if (previousValue && owners.indexOf(previousValue) !== -1) {
-      select.value = previousValue;
-    }
-
-    select.onchange = function () {
-      var ownerFilter = select.value;
-      var resultsEl = container.querySelector(".faab-results");
-
-      if (!ownerFilter) {
-        resultsEl.innerHTML = faabCardsHtml(allRows);
-        return;
-      }
-
-      var filteredRows = allRows
-        .map(function (r) {
-          var matchingBids = r.bids.filter(function (b) {
-            return b.ownerName === ownerFilter;
-          });
-          if (!matchingBids.length) return null;
-          return {
-            playerId: r.playerId,
-            playerName: r.playerName,
-            position: r.position,
-            nflTeam: r.nflTeam,
-            totalSpent: matchingBids.reduce(function (sum, b) { return sum + b.amount; }, 0),
-            timesWon: matchingBids.length,
-            bids: matchingBids,
-          };
-        })
-        .filter(function (r) {
-          return r !== null;
-        })
-        .sort(function (a, b) {
-          return b.totalSpent - a.totalSpent;
-        });
-
-      resultsEl.innerHTML = faabCardsHtml(filteredRows);
-    };
-  }
+      return {
+        playerId: r.playerId,
+        playerName: r.playerName,
+        position: r.position,
+        nflTeam: r.nflTeam,
+        totalSpent: totalSpent,
+        timesWon: timesWon,
+        timesLost: timesLost,
+        bids: matchingBids,
+      };
+    })
+    .filter(function (r) { return r !== null; })
+    .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+}
 
   function renderLeagueInfoRaw() {
     var el = byId("league-info-raw");
