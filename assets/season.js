@@ -2332,9 +2332,18 @@ var directionArrow = selectedRosterId
 
           var totalBids = r.timesWon + r.timesLost;
 
+          var posTeamText = "";
+          if (r.position || r.nflTeam) {
+            posTeamText =
+              " (" + (r.position ? escapeHtml(r.position) : "") +
+              (r.position && r.nflTeam ? " " : "") +
+              (r.nflTeam ? escapeHtml(r.nflTeam) : "") + ")";
+          }
+
           return (
             '<div class="faab-card">' +
-              '<div class="faab-player-name">' + escapeHtml(r.playerName) + "</div>" +
+              '<div class="faab-player-name">' + escapeHtml(r.playerName) +
+              '<span class="faab-player-meta">' + posTeamText + "</span></div>" +
               '<div class="faab-total">Total: $' + r.totalSpent + " across " + totalBids +
               (totalBids === 1 ? " bid" : " bids") +
               " (" + r.timesWon + (r.timesWon === 1 ? " win" : " wins") +
@@ -2405,6 +2414,8 @@ var directionArrow = selectedRosterId
           return {
             playerId: r.playerId,
             playerName: r.playerName,
+            position: r.position,
+            nflTeam: r.nflTeam,
             totalSpent: matchingBids.reduce(function (sum, b) { return sum + b.amount; }, 0),
             timesWon: wonCount,
             timesLost: lostCount,
