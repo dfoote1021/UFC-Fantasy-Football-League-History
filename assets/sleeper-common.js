@@ -896,8 +896,12 @@
   }
 
   function resolveTransactionDetail(txn, rosterMap, playersMap, historicalTeamsMap) {
+    function playerMeta(playerId) {
+      return (playersMap && playersMap[playerId]) || {};
+    }
+
     function playerLabel(playerId) {
-      var meta = (playersMap && playersMap[playerId]) || {};
+      var meta = playerMeta(playerId);
       var name = meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
       var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
       var teamAbbrev = historicalTeam || meta.team;
@@ -973,6 +977,16 @@
     var waiverBidPlayerId = txn.adds && Object.keys(txn.adds).length ? Object.keys(txn.adds)[0] : null;
     var waiverBidPlayer = waiverBidPlayerId !== null ? playerLabel(waiverBidPlayerId) : null;
 
+    var waiverBidPosition = null;
+    var waiverBidNflTeam = null;
+    if (waiverBidPlayerId !== null) {
+      var bidMeta = playerMeta(waiverBidPlayerId);
+      waiverBidPosition = bidMeta.position || null;
+      var bidHistoricalTeam =
+        historicalTeamsMap && historicalTeamsMap[waiverBidPlayerId] ? historicalTeamsMap[waiverBidPlayerId] : null;
+      waiverBidNflTeam = bidHistoricalTeam || bidMeta.team || null;
+    }
+
     return {
       type: txn.type,
       status: txn.status,
@@ -992,6 +1006,8 @@
       waiverBidPlayer: waiverBidPlayer,
       waiverBidPlayerId: waiverBidPlayerId,
       waiverBidRosterId: bidRosterId,
+      waiverBidPosition: waiverBidPosition,
+      waiverBidNflTeam: waiverBidNflTeam,
     };
   }
 
@@ -1026,14 +1042,26 @@
   /**
    * Aggregates FAAB spend by player from a flat list of raw Sleeper
    * transactions. totalSpent includes EVERY bid placed on that player -
-   * both won AND lost - since a lost bid still represents FAAB that
-   * owner committed while chasing that player. timesWon/timesLost are
-   * tracked separately so callers can still show win/loss context.
+   * both won AND lost. Also carries position/nflTeam (using the
+   * season-scoped historical team when available) so callers can show
+   * that context without a separate lookup.
    */
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
+    function playerMeta(playerId) {
+      return (playersMap && playersMap[playerId]) || {};
+    }
     function playerName(playerId) {
-      var meta = (playersMap && playersMap[playerId]) || {};
+      var meta = playerMeta(playerId);
       return meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
+    }
+    function playerPosition(playerId) {
+      var meta = playerMeta(playerId);
+      return meta.position || null;
+    }
+    function playerNflTeam(playerId) {
+      var meta = playerMeta(playerId);
+      var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
+      return historicalTeam || meta.team || null;
     }
     function teamLabel(rosterId) {
       var team = rosterMap[rosterId];
@@ -1069,6 +1097,8 @@
         byPlayer[playerId] = {
           playerId: playerId,
           playerName: playerName(playerId),
+          position: playerPosition(playerId),
+          nflTeam: playerNflTeam(playerId),
           totalSpent: 0,
           timesWon: 0,
           timesLost: 0,
