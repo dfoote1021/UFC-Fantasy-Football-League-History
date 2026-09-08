@@ -1041,10 +1041,17 @@
 
   /**
    * Aggregates FAAB spend by player from a flat list of raw Sleeper
-   * transactions. totalSpent includes EVERY bid placed on that player -
-   * both won AND lost. Also carries position/nflTeam (using the
-   * season-scoped historical team when available) so callers can show
-   * that context without a separate lookup.
+   * transactions.
+   *
+   * IMPORTANT: Sleeper's public, league-wide transactions endpoint only
+   * ever returns a manager's OWN failed waiver claims to that manager
+   * specifically - other managers' failed bids are not visible via this
+   * public API at all (this is confirmed Sleeper behavior, not a bug in
+   * this code). That means this data source can only reliably report
+   * WON waiver claims league-wide. Every bid counted here is a won
+   * claim; there is no trustworthy "lost bid" data available from this
+   * endpoint, so this only tracks and totals successful (status
+   * "complete") claims.
    */
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
     function playerMeta(playerId) {
@@ -1075,12 +1082,8 @@
     var byPlayer = {};
 
     (allTransactions || []).forEach(function (txn) {
-      var isWaiverClaim = txn.type === "waiver";
-      if (!isWaiverClaim) return;
-
-      var isWon = txn.status === "complete";
-      var isLost = txn.status === "failed";
-      if (!isWon && !isLost) return;
+      if (txn.type !== "waiver") return;
+      if (txn.status !== "complete") return;
 
       var amount =
         txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
@@ -1101,15 +1104,13 @@
           nflTeam: playerNflTeam(playerId),
           totalSpent: 0,
           timesWon: 0,
-          timesLost: 0,
           bids: [],
         };
       }
 
       var entry = byPlayer[playerId];
       entry.totalSpent += amount;
-      if (isWon) entry.timesWon += 1;
-      if (isLost) entry.timesLost += 1;
+      entry.timesWon += 1;
 
       entry.bids.push({
         amount: amount,
@@ -1118,7 +1119,6 @@
         ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
         week: txn._week || null,
         date: txn.status_updated || null,
-        won: isWon,
       });
     });
 
