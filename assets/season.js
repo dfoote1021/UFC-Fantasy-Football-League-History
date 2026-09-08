@@ -2315,13 +2315,9 @@ var directionArrow = selectedRosterId
         .map(function (r) {
           var bidsHtml = r.bids
             .map(function (b) {
-              var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Week " + b.week : "");
-              var statusTag = b.won
-                ? '<span class="faab-bid-status faab-won">WON</span>'
-                : '<span class="faab-bid-status faab-lost">LOST</span>';
+              var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Wk " + b.week : "");
               return (
                 '<div class="faab-bid-row">' +
-                  statusTag +
                   '<span class="faab-bid-amount">$' + b.amount + "</span>" +
                   '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
                   (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
@@ -2330,24 +2326,22 @@ var directionArrow = selectedRosterId
             })
             .join("");
 
-          var totalBids = r.timesWon + r.timesLost;
-
           var posTeamText = "";
           if (r.position || r.nflTeam) {
             posTeamText =
-              " (" + (r.position ? escapeHtml(r.position) : "") +
+              (r.position ? escapeHtml(r.position) : "") +
               (r.position && r.nflTeam ? " " : "") +
-              (r.nflTeam ? escapeHtml(r.nflTeam) : "") + ")";
+              (r.nflTeam ? escapeHtml(r.nflTeam) : "");
           }
 
           return (
             '<div class="faab-card">' +
-              '<div class="faab-player-name">' + escapeHtml(r.playerName) +
-              '<span class="faab-player-meta">' + posTeamText + "</span></div>" +
-              '<div class="faab-total">Total: $' + r.totalSpent + " across " + totalBids +
-              (totalBids === 1 ? " bid" : " bids") +
-              " (" + r.timesWon + (r.timesWon === 1 ? " win" : " wins") +
-              ", " + r.timesLost + (r.timesLost === 1 ? " loss" : " losses") + ")</div>" +
+              '<div class="faab-card-head">' +
+                '<span class="faab-player-name">' + escapeHtml(r.playerName) + "</span>" +
+                (posTeamText ? '<span class="faab-player-meta">' + posTeamText + "</span>" : "") +
+              "</div>" +
+              '<div class="faab-total">$' + r.totalSpent + " total &middot; " + r.timesWon +
+              (r.timesWon === 1 ? " win" : " wins") + "</div>" +
               '<div class="faab-bid-list">' + bidsHtml + "</div>" +
             "</div>"
           );
@@ -2409,16 +2403,13 @@ var directionArrow = selectedRosterId
             return b.ownerName === ownerFilter;
           });
           if (!matchingBids.length) return null;
-          var wonCount = matchingBids.filter(function (b) { return b.won; }).length;
-          var lostCount = matchingBids.length - wonCount;
           return {
             playerId: r.playerId,
             playerName: r.playerName,
             position: r.position,
             nflTeam: r.nflTeam,
             totalSpent: matchingBids.reduce(function (sum, b) { return sum + b.amount; }, 0),
-            timesWon: wonCount,
-            timesLost: lostCount,
+            timesWon: matchingBids.length,
             bids: matchingBids,
           };
         })
