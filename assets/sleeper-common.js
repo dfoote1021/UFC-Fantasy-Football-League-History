@@ -1076,10 +1076,16 @@
     }
 
     function playerNflTeam(playerId) {
-      var meta = playerMeta(playerId);
-      var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
-      return historicalTeam || meta.team || null;
-    }
+  // Only trust historicalTeamsMap for the NFL team a player was on THAT
+  // season. Falling back to the live players map's current team is what
+  // caused old FAAB bids to show a player's present-day team instead of
+  // the team they were actually on when the bid happened - e.g. a player
+  // who has since been traded/signed elsewhere showed their new team on
+  // an old bid. If historicalTeamsMap has no entry for this player that
+  // year (can happen for players with very limited stats that season),
+  // return null rather than guessing with a wrong current team.
+  return (historicalTeamsMap && historicalTeamsMap[playerId]) || null;
+}
 
     function teamLabel(rosterId) {
       var team = rosterMap[rosterId];
