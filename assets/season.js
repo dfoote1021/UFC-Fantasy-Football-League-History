@@ -2145,6 +2145,7 @@ var directionArrow = selectedRosterId
       list.innerHTML = "<li>No transactions found.</li>";
       return;
     }
+    console.log(JSON.stringify(txns.filter(function (t) { return t.type === "waiver"; }).slice(0, 6), null, 2));
 
         list.innerHTML = "";
     txns.forEach(function (txn) {
