@@ -1001,6 +1001,10 @@ display: none !important;
   min-width: 34px;
 }
 
+.faab-bid-amount.faab-bid-lost {
+  color: var(--live);
+}
+
 .faab-bid-owner {
   font-weight: 500;
 }
