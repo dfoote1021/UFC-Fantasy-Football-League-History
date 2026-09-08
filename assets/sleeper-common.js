@@ -109,8 +109,6 @@
     return _playersMapPromise;
   }
 
-
-
   var _historicalTeamsPromises = {};
 
   function getHistoricalPlayerTeams(season) {
@@ -158,7 +156,6 @@
 
     return _historicalTeamsPromises[seasonKey];
   }
-
 
   function resolveDisplayName(user) {
     var raw = user.display_name || "Unknown Owner";
@@ -307,7 +304,6 @@
 
   function pairMatchups(matchups, rosterMap) {
     var grouped = {};
-
     matchups.forEach(function (matchup) {
       if (!grouped[matchup.matchup_id]) grouped[matchup.matchup_id] = [];
       grouped[matchup.matchup_id].push(matchup);
@@ -987,6 +983,17 @@
       waiverBidNflTeam = bidHistoricalTeam || bidMeta.team || null;
     }
 
+    // Only a "waiver" transaction with an actual bid amount is a FAAB bid at
+    // all - trades, free-agent adds, and commissioner moves are never
+    // "won"/"lost" bids, so they must never get a WON/LOST tag regardless of
+    // their status string. Sleeper's public transactions endpoint has only
+    // ever been observed returning status "complete" for a successful bid;
+    // any other status on a real waiver-with-bid transaction is treated as
+    // not-won (displayed as LOST) but this is best-effort - Sleeper may not
+    // surface every losing bid from other managers via this endpoint at all.
+    var isRealWaiverBid = txn.type === "waiver" && waiverBidAmount !== null;
+    var waiverBidWon = isRealWaiverBid ? txn.status === "complete" : null;
+
     return {
       type: txn.type,
       status: txn.status,
@@ -1002,7 +1009,7 @@
       waiverBidAmount: waiverBidAmount,
       waiverBidTeam: bidRosterId !== null ? teamLabel(bidRosterId) : null,
       waiverBidTeamWithOwner: bidRosterId !== null ? teamWithOwnerLabel(bidRosterId) : null,
-      waiverBidWon: txn.type === "waiver" && txn.status === "complete",
+      waiverBidWon: waiverBidWon,
       waiverBidPlayer: waiverBidPlayer,
       waiverBidPlayerId: waiverBidPlayerId,
       waiverBidRosterId: bidRosterId,
@@ -1012,68 +1019,73 @@
   }
 
   function countTransactionsByRoster(allTransactions) {
-  var counts = {};
+    var counts = {};
 
-  allTransactions.forEach(function (txn) {
-    var isCompleted = txn.status === "complete";
+    allTransactions.forEach(function (txn) {
+      var isCompleted = txn.status === "complete";
 
-    var isPlayerMove =
-      txn.type === "waiver" ||
-      txn.type === "free_agent" ||
-      txn.type === "trade";
+      var isPlayerMove =
+        txn.type === "waiver" ||
+        txn.type === "free_agent" ||
+        txn.type === "trade";
 
-    var isCommissionerMove =
-      txn.type === "commissioner" ||
-      txn.type === "commissioner_update" ||
-      txn.creator === null;
+      var isCommissionerMove =
+        txn.type === "commissioner" ||
+        txn.type === "commissioner_update" ||
+        txn.creator === null;
 
-    if (!isCompleted || !isPlayerMove || isCommissionerMove || !txn.roster_ids) {
-      return;
-    }
+      if (!isCompleted || !isPlayerMove || isCommissionerMove || !txn.roster_ids) {
+        return;
+      }
 
-    txn.roster_ids.forEach(function (rid) {
-      counts[rid] = (counts[rid] || 0) + 1;
+      txn.roster_ids.forEach(function (rid) {
+        counts[rid] = (counts[rid] || 0) + 1;
+      });
     });
-  });
 
-  return counts;
-}
+    return counts;
+  }
 
   /**
    * Aggregates FAAB spend by player from a flat list of raw Sleeper
    * transactions.
    *
-   * IMPORTANT: Sleeper's public, league-wide transactions endpoint only
-   * ever returns a manager's OWN failed waiver claims to that manager
-   * specifically - other managers' failed bids are not visible via this
-   * public API at all (this is confirmed Sleeper behavior, not a bug in
-   * this code). That means this data source can only reliably report
-   * WON waiver claims league-wide. Every bid counted here is a won
-   * claim; there is no trustworthy "lost bid" data available from this
-   * endpoint, so this only tracks and totals successful (status
-   * "complete") claims.
+   * Every waiver transaction that actually carries a FAAB bid amount is
+   * included here, whether it won or lost - not just "complete" ones.
+   * Sleeper's public transactions endpoint appears to only ever expose
+   * OTHER managers' bids once they resolve to "complete" (a win); a
+   * manager's own losing bids come through as other status values. This
+   * function surfaces whatever the API actually returns rather than
+   * silently dropping anything that isn't a win, so losing bids show up
+   * wherever Sleeper does return them. totalSpent only ever sums WON bids,
+   * since a losing bid never actually costs any FAAB budget.
    */
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
     function playerMeta(playerId) {
       return (playersMap && playersMap[playerId]) || {};
     }
+
     function playerName(playerId) {
       var meta = playerMeta(playerId);
       return meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
     }
+
     function playerPosition(playerId) {
       var meta = playerMeta(playerId);
       return meta.position || null;
     }
+
     function playerNflTeam(playerId) {
       var meta = playerMeta(playerId);
       var historicalTeam = historicalTeamsMap && historicalTeamsMap[playerId] ? historicalTeamsMap[playerId] : null;
       return historicalTeam || meta.team || null;
     }
+
     function teamLabel(rosterId) {
       var team = rosterMap[rosterId];
       return team ? team.teamName : "Roster " + rosterId;
     }
+
     function ownerLabel(rosterId) {
       var team = rosterMap[rosterId];
       return team ? team.displayName : "Unknown";
@@ -1083,7 +1095,6 @@
 
     (allTransactions || []).forEach(function (txn) {
       if (txn.type !== "waiver") return;
-      if (txn.status !== "complete") return;
 
       var amount =
         txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
@@ -1095,6 +1106,7 @@
       if (!playerId) return;
 
       var rosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+      var won = txn.status === "complete";
 
       if (!byPlayer[playerId]) {
         byPlayer[playerId] = {
@@ -1104,16 +1116,24 @@
           nflTeam: playerNflTeam(playerId),
           totalSpent: 0,
           timesWon: 0,
+          timesLost: 0,
           bids: [],
         };
       }
 
       var entry = byPlayer[playerId];
-      entry.totalSpent += amount;
-      entry.timesWon += 1;
+      // Only WON bids count toward total FAAB actually spent - a losing bid
+      // never costs any budget, so it must not add to totalSpent.
+      if (won) {
+        entry.totalSpent += amount;
+        entry.timesWon += 1;
+      } else {
+        entry.timesLost += 1;
+      }
 
       entry.bids.push({
         amount: amount,
+        won: won,
         rosterId: rosterId,
         teamName: rosterId !== null ? teamLabel(rosterId) : "Unknown",
         ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
@@ -1126,7 +1146,6 @@
       .map(function (playerId) { return byPlayer[playerId]; })
       .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
   }
-
 
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
