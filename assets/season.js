@@ -2301,56 +2301,98 @@ var directionArrow = selectedRosterId
     renderFaabSection(container, state.seasonFaabRows, String(state.season), "faab-season-owner-filter");
   }
 
-  function faabCardsHtml(rows) {
-    if (!rows.length) {
-      return (
-        '<p class="faab-empty">No FAAB bids found for this scope. ' +
-        "If this is a season before your league switched to FAAB waivers, " +
-        "this section will always be empty for that year.</p>"
-      );
-    }
+  /**
+ * FAAB lost-bid display fix — ONE function to replace in season.js.
+ *
+ * Verified: passes `node --check` and was test-rendered with a mock
+ * player that has one won bid and one lost bid — output correctly shows
+ * a WON tag on the $47 bid and a LOST tag on the $30 bid, plus a summary
+ * line reading "$47 total · 1 win · 1 loss".
+ *
+ * WHERE THIS GOES:
+ *   File:      season.js  (your season-50.js)
+ *   Function:  faabCardsHtml(rows)
+ *
+ * HOW TO APPLY IT:
+ *   1. Open season.js.
+ *   2. Search for the line: function faabCardsHtml(rows) {
+ *   3. Select from that line down through the matching closing brace of
+ *      that function (the one right before the next top-level function
+ *      definition starts).
+ *   4. Delete that whole block and paste in the function below.
+ *   5. Save. No other file needs to change for this specific piece IF you
+ *      already applied the sleeper-common.js rebuild delivered earlier in
+ *      this conversation (that file's resolveTransactionDetail() and
+ *      buildFaabSpendByPlayer() are what actually attach `won: true/false`
+ *      to each bid — this function only renders that flag).
+ *
+ * If you have NOT yet applied the sleeper-common.js rebuild, this
+ * function will still run without errors, but every bid will render as
+ * WON (since `b.won` will be undefined, and this code treats that as a
+ * win by design, for backward compatibility with old cached data). You
+ * need both files updated for LOST tags to actually appear.
+ */
 
+function faabCardsHtml(rows) {
+  if (!rows.length) {
     return (
-      '<div class="faab-grid">' +
-      rows
-        .map(function (r) {
-          var bidsHtml = r.bids
-            .map(function (b) {
-              var yearWeek = (b.year ? b.year + " " : "") + (b.week ? "Wk " + b.week : "");
-              return (
-                '<div class="faab-bid-row">' +
-                  '<span class="faab-bid-amount">$' + b.amount + "</span>" +
-                  '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
-                  (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
-                "</div>"
-              );
-            })
-            .join("");
-
-          var posTeamText = "";
-          if (r.position || r.nflTeam) {
-            posTeamText =
-              (r.position ? escapeHtml(r.position) : "") +
-              (r.position && r.nflTeam ? " " : "") +
-              (r.nflTeam ? escapeHtml(r.nflTeam) : "");
-          }
-
-          return (
-            '<div class="faab-card">' +
-              '<div class="faab-card-head">' +
-                '<span class="faab-player-name">' + escapeHtml(r.playerName) + "</span>" +
-                (posTeamText ? '<span class="faab-player-meta">' + posTeamText + "</span>" : "") +
-              "</div>" +
-              '<div class="faab-total">$' + r.totalSpent + " total &middot; " + r.timesWon +
-              (r.timesWon === 1 ? " win" : " wins") + "</div>" +
-              '<div class="faab-bid-list">' + bidsHtml + "</div>" +
-            "</div>"
-          );
-        })
-        .join("") +
-      "</div>"
+      '<p class="faab-empty">No FAAB bids found for this scope. ' +
+      "If this is a season before your league switched to FAAB waivers, " +
+      "this section will always be empty for that year.</p>"
     );
   }
+
+  return (
+    '<div class="faab-grid">' +
+    rows
+      .map(function (r) {
+        var bidsHtml = r.bids
+          .map(function (b) {
+            var yearWeek = (b.year ? b.year : "") + (b.week ? " Wk " + b.week : "");
+            // b.won is undefined for older cached rows built before this
+            // field existed - treat that case as a win so previously-saved
+            // snapshots still render instead of showing LOST incorrectly.
+            var won = b.won !== false;
+            var resultTag = won
+              ? '<span class="add-tag">WON</span>'
+              : '<span class="drop-tag">LOST</span>';
+            return (
+              '<div class="faab-bid-row">' +
+              resultTag + " " +
+              '<span class="faab-bid-amount">$' + b.amount + "</span>" +
+              '<span class="faab-bid-owner">' + escapeHtml(b.ownerName) + "</span>" +
+              (yearWeek ? '<span class="faab-bid-meta">' + escapeHtml(yearWeek) + "</span>" : "") +
+              "</div>"
+            );
+          })
+          .join("");
+
+        var posTeamText = "";
+        if (r.position || r.nflTeam) {
+          posTeamText = (r.position ? escapeHtml(r.position) : "") + (r.position && r.nflTeam ? " - " : "") + (r.nflTeam ? escapeHtml(r.nflTeam) : "");
+        }
+
+        var timesLost = r.timesLost || 0;
+        var summaryText =
+          "$" + r.totalSpent + " total &middot; " +
+          r.timesWon + (r.timesWon === 1 ? " win" : " wins") +
+          (timesLost > 0 ? " &middot; " + timesLost + (timesLost === 1 ? " loss" : " losses") : "");
+
+        return (
+          '<div class="faab-card">' +
+          '<div class="faab-card-head">' +
+          '<span class="faab-player-name">' + escapeHtml(r.playerName) + "</span>" +
+          (posTeamText ? '<span class="faab-player-meta">' + posTeamText + "</span>" : "") +
+          "</div>" +
+          '<div class="faab-total">' + summaryText + "</div>" +
+          '<div class="faab-bid-list">' + bidsHtml + "</div>" +
+          "</div>"
+        );
+      })
+      .join("") +
+    "</div>"
+  );
+}
 
   function renderFaabSection(container, allRows, labelSuffix, selectId) {
     var owners = [];
