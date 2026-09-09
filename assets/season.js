@@ -1426,6 +1426,27 @@ var directionArrow = selectedRosterId
     state.dataSource === "espn" ? window.EspnLoader.sortStandings : SleeperAPI.sortStandings;
   var standings = info ? info.standings : sortFn(state.rosterMap);
 
+  if (!info && state.standingsSort) {
+    standings = standings.slice().sort(function (a, b) {
+      var sortBy = state.standingsSort;
+      if (sortBy === "pf") return b.fpts - a.fpts;
+      if (sortBy === "pa") return b.fptsAgainst - a.fptsAgainst;
+      if (sortBy === "pfg") {
+        var pfgA = pfAverage(a.fpts, a.wins, a.losses, a.ties) || 0;
+        var pfgB = pfAverage(b.fpts, b.wins, b.losses, b.ties) || 0;
+        return pfgB - pfgA;
+      }
+      if (sortBy === "pag") {
+        var pagA = paAverage(a.fptsAgainst, a.wins, a.losses, a.ties) || 0;
+        var pagB = paAverage(b.fptsAgainst, b.wins, b.losses, b.ties) || 0;
+        return pagA - pagB;
+      }
+      if (sortBy === "wins") return b.wins - a.wins;
+      if (sortBy === "losses") return b.losses - a.losses;
+      return b.wins - a.wins;
+    });
+  }
+
   standings.forEach(function (team, idx) {
     var tr = document.createElement("tr");
     var isChamp = info && info.champion && info.champion.rosterId === team.rosterId;
@@ -1439,6 +1460,8 @@ var directionArrow = selectedRosterId
 
     var pfAvg = pfAverage(team.fpts, team.wins, team.losses, team.ties);
     var pfAvgText = pfAvg !== null ? pfAvg.toFixed(2) : "-";
+    var paAvg = paAverage(team.fptsAgainst, team.wins, team.losses, team.ties);
+    var paAvgText = paAvg !== null ? paAvg.toFixed(2) : "-";
 
     tr.innerHTML =
       "<td>" + (idx + 1) + "</td>" +
@@ -1450,10 +1473,35 @@ var directionArrow = selectedRosterId
       "<td>" + team.fpts.toFixed(2) + "</td>" +
       "<td>" + pfAvgText + "</td>" +
       "<td>" + team.fptsAgainst.toFixed(2) + "</td>" +
+      "<td>" + paAvgText + "</td>" +
       "<td>" + resultTag + "</td>";
     tbody.appendChild(tr);
   });
+
+  syncStandingsSortHeaders();
 }
+
+  function setupStandingsSort() {
+  document.querySelectorAll("#standings-table th.sortable-col").forEach(function (th) {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", function () {
+      state.standingsSort = th.dataset.sort;
+      syncStandingsSortHeaders();
+      renderStandings();
+    });
+  });
+}
+
+function syncStandingsSortHeaders() {
+  document.querySelectorAll("#standings-table th.sortable-col").forEach(function (th) {
+    if (th.dataset.sort === state.standingsSort) {
+      th.classList.add("sort-active");
+    } else {
+      th.classList.remove("sort-active");
+    }
+  });
+}
+
 
   function renderDivisionStandings() {
     var wrap = byId("division-standings-wrap");
@@ -2622,6 +2670,12 @@ function filterFaabRows(allRows, weekFilter, ownerFilter) {
   if (games === 0) return null;
   return pointsFor / games;
 }
+
+function paAverage(pointsAgainst, wins, losses, ties) {
+  var games = (wins || 0) + (losses || 0) + (ties || 0);
+  if (games === 0) return null;
+  return pointsAgainst / games;
+}
   
   // Label a team with its owner when the two differ (e.g. "Spencer's Team (Spencer)").
   function teamWithOwner(teamName, ownerName) {
@@ -3100,10 +3154,24 @@ async function renderFaabSpendByPlayerAllTime() {
       return recB.wins - recA.wins;
     }
 
+    if (sortBy === "pfg") {
+      var pfgA = pfAverage(recA.pointsFor, recA.wins, recA.losses, recA.ties) || 0;
+      var pfgB = pfAverage(recB.pointsFor, recB.wins, recB.losses, recB.ties) || 0;
+      if (pfgB !== pfgA) return pfgB - pfgA;
+      return recB.wins - recA.wins;
+    }
+
     if (sortBy === "pa") {
       if (recA.pointsAgainst !== recB.pointsAgainst) {
         return recA.pointsAgainst - recB.pointsAgainst;
       }
+      return recB.wins - recA.wins;
+    }
+
+    if (sortBy === "pag") {
+      var pagA = paAverage(recA.pointsAgainst, recA.wins, recA.losses, recA.ties) || 0;
+      var pagB = paAverage(recB.pointsAgainst, recB.wins, recB.losses, recB.ties) || 0;
+      if (pagA !== pagB) return pagA - pagB;
       return recB.wins - recA.wins;
     }
 
@@ -3169,6 +3237,8 @@ async function renderFaabSpendByPlayerAllTime() {
 
     var careerPfAvg = pfAverage(rec.pointsFor, rec.wins, rec.losses, rec.ties);
     var careerPfAvgText = careerPfAvg !== null ? careerPfAvg.toFixed(2) : "-";
+    var careerPaAvg = paAverage(rec.pointsAgainst, rec.wins, rec.losses, rec.ties);
+    var careerPaAvgText = careerPaAvg !== null ? careerPaAvg.toFixed(2) : "-";
 
     tr.innerHTML =
       "<td>" + (idx + 1) + "</td>" +
@@ -3181,6 +3251,7 @@ async function renderFaabSpendByPlayerAllTime() {
       "<td>" + rec.pointsFor.toFixed(2) + "</td>" +
       "<td>" + careerPfAvgText + "</td>" +
       "<td>" + rec.pointsAgainst.toFixed(2) + "</td>" +
+      "<td>" + careerPaAvgText + "</td>" +
       "<td>" + champHtml + "</td>" +
       "<td>" + runnerUpHtml + "</td>" +
       "<td>" + txnHtml + "</td>";
@@ -3190,7 +3261,6 @@ async function renderFaabSpendByPlayerAllTime() {
   var noteEl = byId("career-txn-note");
   if (noteEl) noteEl.hidden = !anyIncomplete;
 }
-
 
   function populateH2hSelectors(allSeasonsData) {
     var selectA = byId("h2h-owner-a");
