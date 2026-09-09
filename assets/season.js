@@ -1412,44 +1412,48 @@ var directionArrow = selectedRosterId
   }
 
   function renderStandings() {
-    var heading = byId("standings-heading");
-    var info = state.finalStandingsInfo;
-    var isComplete =
-      state.dataSource === "espn" || (state.league && state.league.status === "complete");
-    heading.textContent = isComplete ? "Final Standings" : "Standings";
+  var heading = byId("standings-heading");
+  var info = state.finalStandingsInfo;
+  var isComplete =
+    state.dataSource === "espn" || (state.league && state.league.status === "complete");
+  heading.textContent = isComplete ? "Final Standings" : "Standings";
 
-    var tbody = document.querySelector("#standings-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  var tbody = document.querySelector("#standings-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-    var sortFn =
-      state.dataSource === "espn" ? window.EspnLoader.sortStandings : SleeperAPI.sortStandings;
-    var standings = info ? info.standings : sortFn(state.rosterMap);
+  var sortFn =
+    state.dataSource === "espn" ? window.EspnLoader.sortStandings : SleeperAPI.sortStandings;
+  var standings = info ? info.standings : sortFn(state.rosterMap);
 
-    standings.forEach(function (team, idx) {
-      var tr = document.createElement("tr");
-      var isChamp = info && info.champion && info.champion.rosterId === team.rosterId;
-      var isRunnerUp = info && info.runnerUp && info.runnerUp.rosterId === team.rosterId;
-      if (isChamp) tr.classList.add("champion-row");
-      if (isRunnerUp) tr.classList.add("runner-up-row");
+  standings.forEach(function (team, idx) {
+    var tr = document.createElement("tr");
+    var isChamp = info && info.champion && info.champion.rosterId === team.rosterId;
+    var isRunnerUp = info && info.runnerUp && info.runnerUp.rosterId === team.rosterId;
+    if (isChamp) tr.classList.add("champion-row");
+    if (isRunnerUp) tr.classList.add("runner-up-row");
 
-      var resultTag = "";
-      if (isChamp) resultTag = '<span class="result-tag champ">CHAMPION</span>';
-      else if (isRunnerUp) resultTag = '<span class="result-tag runner-up">RUNNER-UP</span>';
+    var resultTag = "";
+    if (isChamp) resultTag = '<span class="result-tag champ">CHAMPION</span>';
+    else if (isRunnerUp) resultTag = '<span class="result-tag runner-up">RUNNER-UP</span>';
 
-      tr.innerHTML =
-        "<td>" + (idx + 1) + "</td>" +
-        "<td>" + escapeHtml(team.teamName) + "</td>" +
-        "<td>" + escapeHtml(team.displayName) + "</td>" +
-        "<td>" + team.wins + "</td>" +
-        "<td>" + team.losses + "</td>" +
-        "<td>" + team.ties + "</td>" +
-        "<td>" + team.fpts.toFixed(2) + "</td>" +
-        "<td>" + team.fptsAgainst.toFixed(2) + "</td>" +
-        "<td>" + resultTag + "</td>";
-      tbody.appendChild(tr);
-    });
-  }
+    var pfAvg = pfAverage(team.fpts, team.wins, team.losses, team.ties);
+    var pfAvgText = pfAvg !== null ? pfAvg.toFixed(2) : "-";
+
+    tr.innerHTML =
+      "<td>" + (idx + 1) + "</td>" +
+      "<td>" + escapeHtml(team.teamName) + "</td>" +
+      "<td>" + escapeHtml(team.displayName) + "</td>" +
+      "<td>" + team.wins + "</td>" +
+      "<td>" + team.losses + "</td>" +
+      "<td>" + team.ties + "</td>" +
+      "<td>" + team.fpts.toFixed(2) + "</td>" +
+      "<td>" + pfAvgText + "</td>" +
+      "<td>" + team.fptsAgainst.toFixed(2) + "</td>" +
+      "<td>" + resultTag + "</td>";
+    tbody.appendChild(tr);
+  });
+}
 
   function renderDivisionStandings() {
     var wrap = byId("division-standings-wrap");
@@ -2311,11 +2315,11 @@ var directionArrow = selectedRosterId
  *
  * WHERE THIS GOES:
  *   File:      season.js  (your season-50.js)
- *   Function:  faabCardsHtml(rows)
+ *   Function:  
  *
  * HOW TO APPLY IT:
  *   1. Open season.js.
- *   2. Search for the line: function faabCardsHtml(rows) {
+ *   2. Search for the line: function  {
  *   3. Select from that line down through the matching closing brace of
  *      that function (the one right before the next top-level function
  *      definition starts).
@@ -2349,9 +2353,6 @@ function faabCardsHtml(rows) {
         var bidsHtml = r.bids
           .map(function (b) {
             var yearWeek = (b.year ? b.year : "") + (b.week ? " Wk " + b.week : "");
-            // b.won is undefined for older cached rows built before this
-            // field existed - treat that case as a win so previously-saved
-            // snapshots still render instead of showing LOST incorrectly.
             var won = b.won !== false;
             var resultTag = won
               ? '<span class="add-tag">WON</span>'
@@ -2465,9 +2466,6 @@ function renderFaabSection(container, allRows, labelSuffix, selectIdPrefix) {
   });
   owners.sort();
 
-  // Collect every distinct week that appears across all bids, so the Week
-  // dropdown only ever offers weeks that actually have FAAB activity for
-  // this season - never a fixed 1-17 list that would mostly be empty.
   var weeks = [];
   var seenWeeks = {};
   allRows.forEach(function (r) {
@@ -2619,6 +2617,12 @@ function filterFaabRows(allRows, weekFilter, ownerFilter) {
       .replace(/'/g, "&#39;");
   }
 
+  function pfAverage(pointsFor, wins, losses, ties) {
+  var games = (wins || 0) + (losses || 0) + (ties || 0);
+  if (games === 0) return null;
+  return pointsFor / games;
+}
+  
   // Label a team with its owner when the two differ (e.g. "Spencer's Team (Spencer)").
   function teamWithOwner(teamName, ownerName) {
     if (ownerName && teamName && ownerName !== teamName) {
@@ -3069,119 +3073,124 @@ async function renderFaabSpendByPlayerAllTime() {
 }
 
   function renderCareerTotals(allSeasonsData, split) {
-    var tbody = document.querySelector("#career-totals-table tbody");
-    if (!tbody) return;
+  var tbody = document.querySelector("#career-totals-table tbody");
+  if (!tbody) return;
 
-    var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
+  var totals = window.AllTimeStats.buildCareerTotals(allSeasonsData);
 
-    var sorted = totals.slice().sort(function (a, b) {
-      var recA = a[split];
-      var recB = b[split];
-      var sortBy = state.careerSort || "championships";
+  var sorted = totals.slice().sort(function (a, b) {
+    var recA = a[split];
+    var recB = b[split];
+    var sortBy = state.careerSort || "championships";
 
-      if (sortBy === "championships") {
-        if (b.championships !== a.championships) {
-          return b.championships - a.championships;
-        }
-        if (recB.winPct !== recA.winPct) {
-          return recB.winPct - recA.winPct;
-        }
-        return recB.wins - recA.wins;
+    if (sortBy === "championships") {
+      if (b.championships !== a.championships) {
+        return b.championships - a.championships;
       }
-
-      if (sortBy === "pf") {
-        if (recB.pointsFor !== recA.pointsFor) {
-          return recB.pointsFor - recA.pointsFor;
-        }
-        return recB.wins - recA.wins;
-      }
-
-      if (sortBy === "pa") {
-        if (recA.pointsAgainst !== recB.pointsAgainst) {
-          return recA.pointsAgainst - recB.pointsAgainst;
-        }
-        return recB.wins - recA.wins;
-      }
-
-      if (sortBy === "wins") {
-        if (recB.wins !== recA.wins) {
-          return recB.wins - recA.wins;
-        }
+      if (recB.winPct !== recA.winPct) {
         return recB.winPct - recA.winPct;
       }
-      if (sortBy === "losses") {
-        if (recB.losses !== recA.losses) return recA.losses - recB.losses;
+      return recB.wins - recA.wins;
+    }
+
+    if (sortBy === "pf") {
+      if (recB.pointsFor !== recA.pointsFor) {
+        return recB.pointsFor - recA.pointsFor;
+      }
+      return recB.wins - recA.wins;
+    }
+
+    if (sortBy === "pa") {
+      if (recA.pointsAgainst !== recB.pointsAgainst) {
+        return recA.pointsAgainst - recB.pointsAgainst;
+      }
+      return recB.wins - recA.wins;
+    }
+
+    if (sortBy === "wins") {
+      if (recB.wins !== recA.wins) {
+        return recB.wins - recA.wins;
+      }
+      return recB.winPct - recA.winPct;
+    }
+    if (sortBy === "losses") {
+      if (recB.losses !== recA.losses) return recA.losses - recB.losses;
+      return recB.winPct - recA.winPct;
+    }
+    if (sortBy === "winPct") {
+      if (recB.winPct !== recA.winPct) {
         return recB.winPct - recA.winPct;
       }
-      if (sortBy === "winPct") {
-        if (recB.winPct !== recA.winPct) {
-          return recB.winPct - recA.winPct;
-        }
-        return recB.wins - recA.wins;
+      return recB.wins - recA.wins;
+    }
+
+    if (sortBy === "seasons") {
+      if (b.seasons !== a.seasons) {
+        return b.seasons - a.seasons;
       }
+      return recB.wins - recA.wins;
+    }
 
-      if (sortBy === "seasons") {
-        if (b.seasons !== a.seasons) {
-          return b.seasons - a.seasons;
-        }
-        return recB.wins - recA.wins;
+    if (sortBy === "runnerUps") {
+      if (b.runnerUps !== a.runnerUps) {
+        return b.runnerUps - a.runnerUps;
       }
+      return recB.wins - recA.wins;
+    }
 
-      if (sortBy === "runnerUps") {
-        if (b.runnerUps !== a.runnerUps) {
-          return b.runnerUps - a.runnerUps;
-        }
-        return recB.wins - recA.wins;
+    if (sortBy === "transactions") {
+      if (b.totalTransactions !== a.totalTransactions) {
+        return b.totalTransactions - a.totalTransactions;
       }
+      return recB.wins - recA.wins;
+    }
 
-      if (sortBy === "transactions") {
-        if (b.totalTransactions !== a.totalTransactions) {
-          return b.totalTransactions - a.totalTransactions;
-        }
-        return recB.wins - recA.wins;
-      }
+    if (sortBy === "name") {
+      return a.ownerName.localeCompare(b.ownerName);
+    }
 
-      if (sortBy === "name") {
-        return a.ownerName.localeCompare(b.ownerName);
-      }
+    return 0;
+  });
 
-      return 0;
-    });
+  tbody.innerHTML = "";
 
-    tbody.innerHTML = "";
+  var anyIncomplete = false;
 
-    var anyIncomplete = false;
+  sorted.forEach(function (owner, idx) {
+    var rec = owner[split] || owner.combined;
+    var tr = document.createElement("tr");
+    if (idx === 0 && split === "combined" && owner.championships > 0) {
+      tr.classList.add("top-champion");
+    }
+    var champHtml = owner.championships > 0 ? "\ud83c\udfc6 x" + owner.championships : "-";
+    var runnerUpHtml = owner.runnerUps > 0 ? "\ud83e\udd48 x" + owner.runnerUps : "-";
+    var txnHtml = owner.totalTransactions + (owner.hasIncompleteTransactionData ? "*" : "");
+    if (owner.hasIncompleteTransactionData) anyIncomplete = true;
 
-    sorted.forEach(function (owner, idx) {
-      var rec = owner[split] || owner.combined;
-      var tr = document.createElement("tr");
-      if (idx === 0 && split === "combined" && owner.championships > 0) {
-        tr.classList.add("top-champion");
-      }
-      var champHtml = owner.championships > 0 ? "\ud83c\udfc6 x" + owner.championships : "-";
-      var runnerUpHtml = owner.runnerUps > 0 ? "\ud83e\udd48 x" + owner.runnerUps : "-";
-      var txnHtml = owner.totalTransactions + (owner.hasIncompleteTransactionData ? "*" : "");
-      if (owner.hasIncompleteTransactionData) anyIncomplete = true;
+    var careerPfAvg = pfAverage(rec.pointsFor, rec.wins, rec.losses, rec.ties);
+    var careerPfAvgText = careerPfAvg !== null ? careerPfAvg.toFixed(2) : "-";
 
-      tr.innerHTML =
-        "<td>" + (idx + 1) + "</td>" +
-        "<td>" + escapeHtml(owner.ownerName) + "</td>" +
-        "<td>" + owner.seasons + "</td>" +
-        "<td>" + rec.wins + "</td>" +
-        "<td>" + rec.losses + "</td>" +
-        "<td>" + rec.ties + "</td>" +
-        "<td>" + (rec.winPct * 100).toFixed(1) + "%</td>" +
-        "<td>" + rec.pointsFor.toFixed(2) + "</td>" +
-        "<td>" + rec.pointsAgainst.toFixed(2) + "</td>" +
-        "<td>" + champHtml + "</td>" +
-        "<td>" + runnerUpHtml + "</td>" +
-        "<td>" + txnHtml + "</td>";
-      tbody.appendChild(tr);
-    });
+    tr.innerHTML =
+      "<td>" + (idx + 1) + "</td>" +
+      "<td>" + escapeHtml(owner.ownerName) + "</td>" +
+      "<td>" + owner.seasons + "</td>" +
+      "<td>" + rec.wins + "</td>" +
+      "<td>" + rec.losses + "</td>" +
+      "<td>" + rec.ties + "</td>" +
+      "<td>" + (rec.winPct * 100).toFixed(1) + "%</td>" +
+      "<td>" + rec.pointsFor.toFixed(2) + "</td>" +
+      "<td>" + careerPfAvgText + "</td>" +
+      "<td>" + rec.pointsAgainst.toFixed(2) + "</td>" +
+      "<td>" + champHtml + "</td>" +
+      "<td>" + runnerUpHtml + "</td>" +
+      "<td>" + txnHtml + "</td>";
+    tbody.appendChild(tr);
+  });
 
-    var noteEl = byId("career-txn-note");
-    if (noteEl) noteEl.hidden = !anyIncomplete;
-  }
+  var noteEl = byId("career-txn-note");
+  if (noteEl) noteEl.hidden = !anyIncomplete;
+}
+
 
   function populateH2hSelectors(allSeasonsData) {
     var selectA = byId("h2h-owner-a");
