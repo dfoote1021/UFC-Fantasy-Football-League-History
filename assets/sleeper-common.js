@@ -1061,123 +1061,145 @@
    * since a losing bid never actually costs any FAAB budget.
    */
   function buildFaabSpendByPlayer(allTransactions, rosterMap, playersMap, historicalTeamsMap) {
-    function playerMeta(playerId) {
-      return (playersMap && playersMap[playerId]) || {};
-    }
+  function playerMeta(playerId) {
+    return (playersMap && playersMap[playerId]) || {};
+  }
 
-    function playerName(playerId) {
-      var meta = playerMeta(playerId);
-      return meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
-    }
+  function playerName(playerId) {
+    var meta = playerMeta(playerId);
+    return meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId);
+  }
 
-    function playerPosition(playerId) {
-      var meta = playerMeta(playerId);
-      return meta.position || null;
-    }
+  function playerPosition(playerId) {
+    var meta = playerMeta(playerId);
+    return meta.position || null;
+  }
 
-    function playerNflTeam(playerId) {
-  // Only trust historicalTeamsMap for the NFL team a player was on THAT
-  // season. Falling back to the live players map's current team is what
-  // caused old FAAB bids to show a player's present-day team instead of
-  // the team they were actually on when the bid happened - e.g. a player
-  // who has since been traded/signed elsewhere showed their new team on
-  // an old bid. If historicalTeamsMap has no entry for this player that
-  // year (can happen for players with very limited stats that season),
-  // return null rather than guessing with a wrong current team.
-  return (historicalTeamsMap && historicalTeamsMap[playerId]) || null;
-}
+  function playerNflTeam(playerId) {
+    // Only trust historicalTeamsMap for the NFL team a player was on THAT
+    // season. Falling back to the live players map's current team is what
+    // caused old FAAB bids to show a player's present-day team instead of
+    // the team they were actually on when the bid happened - e.g. a player
+    // who has since been traded/signed elsewhere showed their new team on
+    // an old bid. If historicalTeamsMap has no entry for this player that
+    // year (can happen for players with very limited stats that season),
+    // return null rather than guessing with a wrong current team.
+    return (historicalTeamsMap && historicalTeamsMap[playerId]) || null;
+  }
 
-    function teamLabel(rosterId) {
-      var team = rosterMap[rosterId];
-      return team ? team.teamName : "Roster " + rosterId;
-    }
+  function teamLabel(rosterId) {
+    var team = rosterMap[rosterId];
+    return team ? team.teamName : "Roster " + rosterId;
+  }
 
-    function ownerLabel(rosterId) {
-      var team = rosterMap[rosterId];
-      return team ? team.displayName : "Unknown";
-    }
+  function ownerLabel(rosterId) {
+    var team = rosterMap[rosterId];
+    return team ? team.displayName : "Unknown";
+  }
 
-    function ownerLabel(rosterId) {
-  var team = rosterMap[rosterId];
-  return team ? team.displayName : "Unknown";
-}
-
-function dedupeBidsByOwnerWeek(bids) {
-  var groups = {};
-  var order = [];
-  bids.forEach(function (b) {
-    var key = b.ownerName + "|" + (b.week || "");
-    if (!groups[key]) {
-      groups[key] = [];
-      order.push(key);
-    }
-    groups[key].push(b);
-  });
-  return order.map(function (key) {
-    var group = groups[key];
-    var best = group[0];
-    for (var i = 1; i < group.length; i++) {
-      if (group[i].amount > best.amount) best = group[i];
-    }
-    return best;
-  });
-}
-    
-    var byPlayer = {};
-
-    (allTransactions || []).forEach(function (txn) {
-      if (txn.type !== "waiver") return;
-
-      var amount =
-        txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
-          ? txn.settings.waiver_bid
-          : null;
-      if (amount === null) return;
-
-      var playerId = txn.adds && Object.keys(txn.adds).length ? Object.keys(txn.adds)[0] : null;
-      if (!playerId) return;
-
-      var rosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
-      var won = txn.status === "complete";
-
-      if (!byPlayer[playerId]) {
-        byPlayer[playerId] = {
-          playerId: playerId,
-          playerName: playerName(playerId),
-          position: playerPosition(playerId),
-          nflTeam: playerNflTeam(playerId),
-          totalSpent: 0,
-          timesWon: 0,
-          timesLost: 0,
-          bids: [],
-        };
+  // Collapses multiple bids from the SAME owner in the SAME week down to
+  // just the highest-amount one. Sleeper allows a manager to submit
+  // multiple ranked/backup FAAB claims on the same player in one week;
+  // without this, every one of those showed up as a separate bid,
+  // inflating both the win/loss counts and total bid volume for that
+  // player. If two of a manager's bids in the same week tie exactly,
+  // only the first one encountered is kept.
+  function dedupeBidsByOwnerWeek(bids) {
+    var groups = {};
+    var order = [];
+    bids.forEach(function (b) {
+      var key = b.ownerName + "|" + (b.week || "");
+      if (!groups[key]) {
+        groups[key] = [];
+        order.push(key);
       }
+      groups[key].push(b);
+    });
+    return order.map(function (key) {
+      var group = groups[key];
+      var best = group[0];
+      for (var i = 1; i < group.length; i++) {
+        if (group[i].amount > best.amount) best = group[i];
+      }
+      return best;
+    });
+  }
 
-      var entry = byPlayer[playerId];
-      // Only WON bids count toward total FAAB actually spent - a losing bid
-      // never costs any budget, so it must not add to totalSpent.
-      if (won) {
-        entry.totalSpent += amount;
+  var byPlayer = {};
+
+  (allTransactions || []).forEach(function (txn) {
+    if (txn.type !== "waiver") return;
+
+    var amount =
+      txn.settings && txn.settings.waiver_bid !== undefined && txn.settings.waiver_bid !== null
+        ? txn.settings.waiver_bid
+        : null;
+    if (amount === null) return;
+
+    var playerId = txn.adds && Object.keys(txn.adds).length ? Object.keys(txn.adds)[0] : null;
+    if (!playerId) return;
+
+    var rosterId = (txn.roster_ids && txn.roster_ids.length) ? txn.roster_ids[0] : null;
+    var won = txn.status === "complete";
+
+    if (!byPlayer[playerId]) {
+      byPlayer[playerId] = {
+        playerId: playerId,
+        playerName: playerName(playerId),
+        position: playerPosition(playerId),
+        nflTeam: playerNflTeam(playerId),
+        totalSpent: 0,
+        timesWon: 0,
+        timesLost: 0,
+        bids: [],
+      };
+    }
+
+    var entry = byPlayer[playerId];
+    // Only WON bids count toward total FAAB actually spent - a losing bid
+    // never costs any budget, so it must not add to totalSpent.
+    if (won) {
+      entry.totalSpent += amount;
+      entry.timesWon += 1;
+    } else {
+      entry.timesLost += 1;
+    }
+
+    entry.bids.push({
+      amount: amount,
+      won: won,
+      rosterId: rosterId,
+      teamName: rosterId !== null ? teamLabel(rosterId) : "Unknown",
+      ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
+      week: txn._week || null,
+      date: txn.status_updated || null,
+    });
+  });
+
+  // NEW: dedupe each player's bids by owner+week (collapsing multiple
+  // ranked/backup claims from the same manager in the same week down to
+  // just the highest one), then recompute totals from the deduped list
+  // so counts and totalSpent reflect only the real, final claim.
+  Object.keys(byPlayer).forEach(function (playerId) {
+    var entry = byPlayer[playerId];
+    entry.bids = dedupeBidsByOwnerWeek(entry.bids);
+    entry.totalSpent = 0;
+    entry.timesWon = 0;
+    entry.timesLost = 0;
+    entry.bids.forEach(function (b) {
+      if (b.won) {
+        entry.totalSpent += b.amount;
         entry.timesWon += 1;
       } else {
         entry.timesLost += 1;
       }
-
-      entry.bids.push({
-        amount: amount,
-        won: won,
-        rosterId: rosterId,
-        teamName: rosterId !== null ? teamLabel(rosterId) : "Unknown",
-        ownerName: rosterId !== null ? ownerLabel(rosterId) : "Unknown",
-        week: txn._week || null,
-        date: txn.status_updated || null,
-      });
     });
+  });
 
-    return Object.keys(byPlayer)
-      .map(function (playerId) { return byPlayer[playerId]; })
-      .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
-  }
+  return Object.keys(byPlayer)
+    .map(function (playerId) { return byPlayer[playerId]; })
+    .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+}
 
   function buildSeasonSnapshot(leagueId) {
     return Promise.all([
