@@ -1097,6 +1097,32 @@
       return team ? team.displayName : "Unknown";
     }
 
+    function ownerLabel(rosterId) {
+  var team = rosterMap[rosterId];
+  return team ? team.displayName : "Unknown";
+}
+
+function dedupeBidsByOwnerWeek(bids) {
+  var groups = {};
+  var order = [];
+  bids.forEach(function (b) {
+    var key = b.ownerName + "|" + (b.week || "");
+    if (!groups[key]) {
+      groups[key] = [];
+      order.push(key);
+    }
+    groups[key].push(b);
+  });
+  return order.map(function (key) {
+    var group = groups[key];
+    var best = group[0];
+    for (var i = 1; i < group.length; i++) {
+      if (group[i].amount > best.amount) best = group[i];
+    }
+    return best;
+  });
+}
+    
     var byPlayer = {};
 
     (allTransactions || []).forEach(function (txn) {
