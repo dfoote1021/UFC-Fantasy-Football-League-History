@@ -7,13 +7,11 @@
 <link rel="stylesheet" href="assets/season.css" />
 </head>
 <body>
-
 <header class="site-header">
-  <h1 id="page-title">UFC: Ultimate Football Challenge</h1>
-
+  <h1 id="page-title">UFC Ultimate Football Challenge</h1>
   <div class="season-picker" id="season-picker">
     <span id="season-badge" class="badge season-badge"></span>
-    <label for="season-select">Season:</label>
+    <label for="season-select">Season</label>
     <select id="season-select"></select>
     <button id="alltime-btn" class="btn btn-alltime">All-Time</button>
     <span id="live-badge" class="badge live-badge" hidden>LIVE</span>
@@ -21,7 +19,6 @@
     <span id="last-refreshed"></span>
     <button id="refresh-btn" class="btn">Refresh</button>
   </div>
-
   <div class="season-picker alltime-picker" id="alltime-picker" hidden>
     <span class="badge season-badge">All-Time</span>
     <span id="alltime-header-status" class="status-text"></span>
@@ -45,28 +42,35 @@
 </nav>
 
 <main id="season-main">
-
-<section id="tab-standings" class="tab-panel active">
-  <h2 id="standings-heading">Standings</h2>
-
-  <table id="standings-table" class="data-table">
-    <thead>
-      <tr><th></th><th>Team</th><th>Owner</th><th>W</th><th>L</th><th>T</th><th>PF</th><th>PF/G</th><th>PA</th><th>Result</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <div id="division-standings-wrap" hidden>
-    <h3 class="playoff-heading">Final Standings by Division</h3>
-    <div id="division-standings" class="division-grid"></div>
-  </div>
-
-  <h3 class="playoff-heading">Playoff Bracket (Winners)</h3>
-  <div id="playoff-bracket" class="playoff-bracket"></div>
-
-  <h3 class="playoff-heading">Consolation Bracket (Losers)</h3>
-  <div id="consolation-bracket" class="playoff-bracket"></div>
-</section>
+  <section id="tab-standings" class="tab-panel active">
+    <h2 id="standings-heading">Standings</h2>
+    <table id="standings-table" class="data-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Team</th>
+          <th>Owner</th>
+          <th class="sortable-col" data-sort="wins">W</th>
+          <th class="sortable-col" data-sort="losses">L</th>
+          <th>T</th>
+          <th class="sortable-col" data-sort="pf">PF</th>
+          <th class="sortable-col" data-sort="pfg">PF/G</th>
+          <th class="sortable-col" data-sort="pa">PA</th>
+          <th class="sortable-col" data-sort="pag">PA/G</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="division-standings-wrap" hidden>
+      <h3 class="playoff-heading">Final Standings by Division</h3>
+      <div id="division-standings" class="division-grid"></div>
+    </div>
+    <h3 class="playoff-heading">Playoff Bracket (Winners)</h3>
+    <div id="playoff-bracket" class="playoff-bracket"></div>
+    <h3 class="playoff-heading">Consolation Bracket (Losers)</h3>
+    <div id="consolation-bracket" class="playoff-bracket"></div>
+  </section>
 
   <section id="tab-matchups" class="tab-panel">
     <h2>Matchups</h2>
@@ -74,18 +78,16 @@
       <button class="btn view-toggle-btn active" data-view="week">By Week</button>
       <button class="btn view-toggle-btn" data-view="schedule">By Team (Full Schedule)</button>
     </div>
-
     <div id="matchups-week-view">
       <div class="week-picker">
-        <label for="week-select">Week:</label>
+        <label for="week-select">Week</label>
         <select id="week-select"></select>
       </div>
       <div id="matchups-list" class="matchups-grid"></div>
     </div>
-
     <div id="matchups-schedule-view" hidden>
       <div class="week-picker">
-        <label for="schedule-team-select">Team:</label>
+        <label for="schedule-team-select">Team</label>
         <select id="schedule-team-select"></select>
       </div>
       <table id="schedule-table" class="data-table">
@@ -105,34 +107,28 @@
   <section id="tab-rosters" class="tab-panel">
     <h2>Weekly Rosters</h2>
     <div class="week-picker roster-controls">
-      <label for="roster-team-select">Team:</label>
+      <label for="roster-team-select">Team</label>
       <select id="roster-team-select"></select>
-      <label for="roster-week-select">Week:</label>
+      <label for="roster-week-select">Week</label>
       <select id="roster-week-select"></select>
     </div>
     <div id="roster-total" class="roster-total"></div>
     <table id="roster-table" class="data-table">
       <thead>
-        <tr>
-          <th>Slot</th><th>Player</th><th>Pos</th><th>NFL Team</th><th>Points</th>
-        </tr>
+        <tr><th>Slot</th><th>Player</th><th>Pos</th><th>NFL Team</th><th>Points</th></tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
 
   <section id="tab-draft" class="tab-panel">
-    <h2>Draft Board — Who Drafted Who</h2>
+    <h2>Draft Board (Who Drafted Who)</h2>
     <div class="week-picker">
-      <label for="draft-team-filter">Team/Owner:</label>
-      <select id="draft-team-filter">
-        <option value="">All Teams</option>
-      </select>
+      <label for="draft-team-filter">Team/Owner</label>
+      <select id="draft-team-filter"><option value="">All Teams</option></select>
     </div>
-
     <h3 class="playoff-heading">Breakdown</h3>
     <div id="draft-breakdown" class="draft-breakdown"></div>
-
     <h3 class="playoff-heading">Picks</h3>
     <div id="draft-board" class="draft-board"></div>
   </section>
@@ -140,17 +136,17 @@
   <section id="tab-transactions" class="tab-panel">
     <h2>Transactions</h2>
     <div class="week-picker">
-      <label for="txn-filter-mode">View by:</label>
+      <label for="txn-filter-mode">View by</label>
       <select id="txn-filter-mode">
         <option value="week">Week</option>
         <option value="member">Member</option>
       </select>
       <span id="txn-week-wrap">
-        <label for="txn-week-select">Week:</label>
+        <label for="txn-week-select">Week</label>
         <select id="txn-week-select"></select>
       </span>
       <span id="txn-member-wrap" hidden>
-        <label for="txn-member-select">Member:</label>
+        <label for="txn-member-select">Member</label>
         <select id="txn-member-select"></select>
       </span>
     </div>
@@ -160,7 +156,6 @@
   <section id="tab-records" class="tab-panel">
     <h2>Season Records</h2>
     <div id="season-records-loading" class="status-text">Loading season data…</div>
-
     <div id="season-records-content" hidden>
       <div class="records-controls">
         <div class="records-view-toggle">
@@ -172,11 +167,10 @@
           <button class="btn season-records-split-btn" data-split="playoff">Playoffs</button>
         </div>
         <span id="season-records-member-picker-wrap" hidden>
-          <label for="season-records-member-select">Member:</label>
+          <label for="season-records-member-select">Member</label>
           <select id="season-records-member-select"></select>
         </span>
       </div>
-
       <div id="season-records-grid" class="records-grid"></div>
     </div>
   </section>
@@ -190,17 +184,14 @@
     <h3>League Info</h3>
     <pre id="league-info-raw"></pre>
   </section>
-
 </main>
 
 <main id="alltime-main" hidden>
   <div class="alltime-header">
     <h2>All-Time League History</h2>
-    <button id="back-to-season-btn" class="btn">← Back to Season</button>
+    <button id="back-to-season-btn" class="btn">Back to Season</button>
   </div>
-
   <div id="alltime-loading" class="status-text">Loading every season, this may take a few seconds…</div>
-
   <div id="alltime-content" hidden>
     <nav class="tabs alltime-tabs">
       <button class="tab-btn active" data-alltime-tab="career">Career Totals</button>
@@ -217,16 +208,19 @@
         <button class="btn career-toggle-btn" data-split="playoff">Playoffs Only</button>
       </div>
       <table id="career-totals-table" class="data-table">
-        <<thead>
+        <thead>
           <tr>
-            <th>#</th>
+            <th></th>
             <th class="sortable-col" data-sort="name">Owner</th>
             <th class="sortable-col" data-sort="seasons">Seasons</th>
             <th class="sortable-col" data-sort="wins">W</th>
             <th class="sortable-col" data-sort="losses">L</th>
             <th>T</th>
             <th class="sortable-col" data-sort="winPct">Win %</th>
-            <th class="sortable-col" data-sort="pf">PF</th><th>PF/G</th><th class="sortable-col" data-sort="pa">PA</th>
+            <th class="sortable-col" data-sort="pf">PF</th>
+            <th class="sortable-col" data-sort="pfg">PF/G</th>
+            <th class="sortable-col" data-sort="pa">PA</th>
+            <th class="sortable-col" data-sort="pag">PA/G</th>
             <th class="sortable-col" data-sort="championships">🏆</th>
             <th class="sortable-col" data-sort="runnerUps">🥈</th>
             <th class="sortable-col" data-sort="transactions">Txns</th>
@@ -235,29 +229,25 @@
         <tbody></tbody>
       </table>
       <p id="career-txn-note" class="status-text" hidden>
-        Note: at least one ESPN season is missing transaction-count data in the source CSV;
+        *Note: at least one ESPN season is missing transaction-count data in the source CSV;
         transaction totals for owners active in that season may be undercounted.
       </p>
     </section>
 
     <section id="alltime-h2h" class="tab-panel">
       <div class="h2h-picker">
-        <label for="h2h-owner-a">Owner A:</label>
+        <label for="h2h-owner-a">Owner A</label>
         <select id="h2h-owner-a"></select>
         <span class="h2h-vs">vs</span>
-        <label for="h2h-owner-b">Owner B:</label>
+        <label for="h2h-owner-b">Owner B</label>
         <select id="h2h-owner-b"></select>
       </div>
-
       <h3 class="h2h-split-heading">Combined (Regular Season + Playoffs)</h3>
       <div id="h2h-summary-combined" class="h2h-summary"></div>
-
       <h3 class="h2h-split-heading">Regular Season Only</h3>
       <div id="h2h-summary-regular" class="h2h-summary"></div>
-
       <h3 class="h2h-split-heading">Playoffs Only</h3>
       <div id="h2h-summary-playoff" class="h2h-summary"></div>
-
       <h3 class="h2h-split-heading">All Games</h3>
       <table id="h2h-games-table" class="data-table">
         <thead>
@@ -269,16 +259,13 @@
 
     <section id="alltime-vsfield" class="tab-panel">
       <div class="vsfield-picker">
-        <label for="vsfield-owner-select">Owner:</label>
+        <label for="vsfield-owner-select">Owner</label>
         <select id="vsfield-owner-select"></select>
       </div>
-
-      <h3 class="h2h-split-heading">Overall Regular Season Record (vs. Everyone)</h3>
+      <h3 class="h2h-split-heading">Overall Regular Season Record vs. Everyone</h3>
       <div id="vsfield-overall-regular" class="h2h-summary"></div>
-
-      <h3 class="h2h-split-heading">Overall Playoff Record (vs. Everyone)</h3>
+      <h3 class="h2h-split-heading">Overall Playoff Record vs. Everyone</h3>
       <div id="vsfield-overall-playoff" class="h2h-summary"></div>
-
       <h3 class="h2h-split-heading">Record By Opponent</h3>
       <table id="vsfield-table" class="data-table">
         <thead>
@@ -307,32 +294,26 @@
           <button class="btn records-split-btn" data-split="playoff">Playoffs</button>
         </div>
         <span id="records-member-picker-wrap" hidden>
-          <label for="records-member-select">Member:</label>
+          <label for="records-member-select">Member</label>
           <select id="records-member-select"></select>
         </span>
       </div>
-
       <div id="records-grid" class="records-grid"></div>
     </section>
 
-   <section id="alltime-draft" class="tab-panel">
-  <div class="week-picker">
-    <label for="alltime-draft-owner-filter">Team/Owner:</label>
-    <select id="alltime-draft-owner-filter">
-      <option value="">All Owners</option>
-    </select>
+    <section id="alltime-draft" class="tab-panel">
+      <div class="week-picker">
+        <label for="alltime-draft-owner-filter">Team/Owner</label>
+        <select id="alltime-draft-owner-filter"><option value="">All Owners</option></select>
+      </div>
+      <h3 class="playoff-heading">All-Time Breakdown (All Picks)</h3>
+      <div id="alltime-draft-breakdown" class="draft-breakdown"></div>
+      <h3 class="playoff-heading">Keepers Breakdown</h3>
+      <div id="alltime-keeper-breakdown" class="draft-breakdown"></div>
+      <h3 class="playoff-heading">Drafts By Year</h3>
+      <div id="alltime-draft-by-year"></div>
+    </section>
   </div>
-
-  <h3 class="playoff-heading">All-Time Breakdown (All Picks)</h3>
-  <div id="alltime-draft-breakdown" class="draft-breakdown"></div>
-
-  <h3 class="playoff-heading">Keepers Breakdown</h3>
-  <div id="alltime-keeper-breakdown" class="draft-breakdown"></div>
-
-  <h3 class="playoff-heading">Drafts By Year</h3>
-  <div id="alltime-draft-by-year"></div>
-</section>
-</div>
 </main>
 
 <footer class="site-footer">
