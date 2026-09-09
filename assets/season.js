@@ -2421,9 +2421,17 @@ function faabCardsHtml(rows) {
           posTeamText = (r.position ? escapeHtml(r.position) : "") + (r.position && r.nflTeam ? " - " : "") + (r.nflTeam ? escapeHtml(r.nflTeam) : "");
         }
 
+        // Total bid volume = every bid's amount, win or lost - what the
+        // league collectively bid on this player. totalSpent (from
+        // buildFaabSpendByPlayer) only ever sums WON bids, since a
+        // losing bid never actually costs any FAAB budget - that number
+        // stays as "spent (wins)" alongside the new bid-volume total.
+        var totalBidVolume = r.bids.reduce(function (sum, b) { return sum + b.amount; }, 0);
+
         var timesLost = r.timesLost || 0;
         var summaryText =
-          "$" + r.totalSpent + " total &middot; " +
+          "$" + r.totalSpent + " spent (wins) &middot; " +
+          "$" + totalBidVolume + " total bid &middot; " +
           r.timesWon + (r.timesWon === 1 ? " win" : " wins") +
           (timesLost > 0 ? " &middot; " + timesLost + (timesLost === 1 ? " loss" : " losses") : "");
 
