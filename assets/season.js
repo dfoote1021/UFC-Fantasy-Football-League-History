@@ -1426,26 +1426,26 @@ var directionArrow = selectedRosterId
     state.dataSource === "espn" ? window.EspnLoader.sortStandings : SleeperAPI.sortStandings;
   var standings = info ? info.standings : sortFn(state.rosterMap);
 
-  if (!info && state.standingsSort) {
-    standings = standings.slice().sort(function (a, b) {
-      var sortBy = state.standingsSort;
-      if (sortBy === "pf") return b.fpts - a.fpts;
-      if (sortBy === "pa") return b.fptsAgainst - a.fptsAgainst;
-      if (sortBy === "pfg") {
-        var pfgA = pfAverage(a.fpts, a.wins, a.losses, a.ties) || 0;
-        var pfgB = pfAverage(b.fpts, b.wins, b.losses, b.ties) || 0;
-        return pfgB - pfgA;
-      }
-      if (sortBy === "pag") {
-        var pagA = paAverage(a.fptsAgainst, a.wins, a.losses, a.ties) || 0;
-        var pagB = paAverage(b.fptsAgainst, b.wins, b.losses, b.ties) || 0;
-        return pagA - pagB;
-      }
-      if (sortBy === "wins") return b.wins - a.wins;
-      if (sortBy === "losses") return b.losses - a.losses;
-      return b.wins - a.wins;
-    });
-  }
+if (state.standingsSort) {
+  standings = standings.slice().sort(function (a, b) {
+    var sortBy = state.standingsSort;
+    if (sortBy === "pf") return b.fpts - a.fpts;
+    if (sortBy === "pa") return b.fptsAgainst - a.fptsAgainst;
+    if (sortBy === "pfg") {
+      var pfgA = pfAverage(a.fpts, a.wins, a.losses, a.ties) || 0;
+      var pfgB = pfAverage(b.fpts, b.wins, b.losses, b.ties) || 0;
+      return pfgB - pfgA;
+    }
+    if (sortBy === "pag") {
+      var pagA = paAverage(a.fptsAgainst, a.wins, a.losses, a.ties) || 0;
+      var pagB = paAverage(b.fptsAgainst, b.wins, b.losses, b.ties) || 0;
+      return pagA - pagB;
+    }
+    if (sortBy === "wins") return b.wins - a.wins;
+    if (sortBy === "losses") return b.losses - a.losses;
+    return b.wins - a.wins;
+  });
+}
 
   standings.forEach(function (team, idx) {
     var tr = document.createElement("tr");
