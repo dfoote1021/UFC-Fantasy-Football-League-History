@@ -3868,6 +3868,7 @@ async function renderFaabSpendByPlayerAllTime() {
     setupAllTimeTabs();
     setupCareerToggle();
     setupCareerSort();
+    setupStandingsSort();
     setupRecordsControls();
     setupSeasonRecordsControls();
 
