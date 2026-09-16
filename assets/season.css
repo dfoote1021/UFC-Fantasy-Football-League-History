@@ -1075,6 +1075,92 @@ display: none !important;
   font-weight: 700;
 }
 
+.weekly-prizes-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.weekly-prize-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.weekly-prize-heading {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.weekly-prize-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.weekly-prize-sub {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.eliminator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eliminator-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.eliminator-week {
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 70px;
+}
+
+.eliminator-status {
+  flex: 1;
+}
+
+.eliminator-remaining {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.eliminator-out-tag {
+  background: var(--live);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+.eliminator-winner-tag {
+  background: var(--gold);
+  color: #1a1a1a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 @media (max-width: 700px) {
   main {
     padding: 16px;
