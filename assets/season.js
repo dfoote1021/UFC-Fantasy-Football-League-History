@@ -3609,24 +3609,37 @@ function renderMostDraftedByPosition(allPicks) {
   function renderAllTimeDraftFiltered() {
   if (!state.allTimeData) return;
 
-  // Top 10 leaderboards are always league-wide — do not apply the
-  // Team/Owner dropdown filter to these.
-  var allLeaguePicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData);
-  renderMostDraftedByPosition(allLeaguePicks);
+  try {
+    var allLeaguePicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData);
+    renderMostDraftedByPosition(allLeaguePicks);
+  } catch (e) {
+    console.error("Top 10 Most Drafted by Position failed to render", e);
+  }
 
   var select = byId("alltime-draft-owner-filter");
   var ownerName = select ? select.value : "";
   var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
 
-  var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
-  renderDraftBreakdownGrid("alltime-draft-breakdown", allBreakdown);
+  try {
+    var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid("alltime-draft-breakdown", allBreakdown);
+  } catch (e) {
+    console.error("All-Time Breakdown failed to render", e);
+  }
 
-  var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
-  renderDraftBreakdownGrid("alltime-keeper-breakdown", keeperBreakdown);
+  try {
+    var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid("alltime-keeper-breakdown", keeperBreakdown);
+  } catch (e) {
+    console.error("Keepers Breakdown failed to render", e);
+  }
 
-  renderAllTimeDraftByYear(allPicks, !ownerName);
+  try {
+    renderAllTimeDraftByYear(allPicks, !ownerName);
+  } catch (e) {
+    console.error("Drafts By Year failed to render", e);
+  }
 }
-
   function populateAllTimeDraftOwnerFilter(allSeasonsData) {
     var select = byId('alltime-draft-owner-filter');
     if (!select) return;
