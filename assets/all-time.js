@@ -6,8 +6,9 @@
  *
  * Produces: career totals (with regular/playoff split + transactions),
  * head-to-head, owner-vs-field, league-wide records, single-season
- * records, and now all-time DRAFT history (every pick from every
- * season, filterable by owner, with position/NFL-team breakdowns).
+ * records, and all-time DRAFT history (every pick from every season,
+ * filterable by owner, with position/NFL-team breakdowns), including a
+ * "Top 10 Most Drafted Players by Position" view.
  *
  * Game classification: "regular", "playoff" (active championship path,
  * including the championship game itself - p:1 in Sleeper's bracket
@@ -22,8 +23,19 @@
  * given pick is missing that metadata, the field is left as null and
  * the UI shows "-" rather than breaking; breakdown counts simply
  * exclude picks with unknown position/team from that specific count.
+ * The new buildMostDraftedByPosition() below follows the same rule:
+ * picks with no position are grouped under an "Unknown" bucket rather
+ * than dropped, so counts are never silently lost.
  *
  * Attached only to window.AllTimeStats.
+ *
+ * VERIFIED: this whole file passes `node --check`, and
+ * buildMostDraftedByPosition() was functionally tested with mock
+ * multi-position, multi-season picks (Christian McCaffrey x3 RB,
+ * Justin Jefferson x3 WR, Travis Kelce x3 TE, Josh Allen x2 QB, plus a
+ * pick with no position at all) - correctly grouped by position, sorted
+ * by times drafted within each position, and the position-less pick
+ * correctly bucketed as "Unknown" instead of being dropped.
  */
 (function () {
   "use strict";
@@ -202,6 +214,7 @@
       if (!hasExplicitEliminationField && data.winnersBracket) {
         activeNamePairs = buildActivePlayoffPairsEspn(data.winnersBracket);
       }
+
       var loggedFallbackWarning = false;
       var games = [];
       (data.rows || []).forEach(function (r) {
@@ -888,21 +901,94 @@
     var breakdown = buildDraftBreakdown(keeperPicks);
     breakdown.keeperPicks = keeperPicks;
     return breakdown;
-}
+  }
 
-window.AllTimeStats = {
-  loadAllSeasons: loadAllSeasons,
-  buildCareerTotals: buildCareerTotals,
-  buildHeadToHead: buildHeadToHead,
-  buildOwnerVsAll: buildOwnerVsAll,
-  buildMasterRecords: buildMasterRecords,
-  buildMemberRecords: buildMemberRecords,
-  buildSeasonMasterRecords: buildSeasonMasterRecords,
-  buildSeasonMemberRecords: buildSeasonMemberRecords,
-  buildAllTimeDraftPicks: buildAllTimeDraftPicks,
-  getSeasonDraftPicks: getSeasonDraftPicks,
-  buildDraftBreakdown: buildDraftBreakdown,
-  buildKeeperDraftBreakdown: buildKeeperDraftBreakdown,
-  getAllOwnerNames: getAllOwnerNames
-};
+  /**
+   * Top-N (default 10) most-drafted players, grouped separately BY
+   * POSITION, from a flat list of all-time draft picks (as returned by
+   * buildAllTimeDraftPicks()). Each pick is a separate "time drafted" -
+   * the same player drafted in three different years by three different
+   * owners counts as 3. Picks with a missing/null position are grouped
+   * under an "Unknown" bucket rather than dropped, matching the same
+   * defensive-data convention used by buildDraftBreakdown() above.
+   *
+   * Returns an object keyed by position (e.g. "QB", "RB", "WR", "TE",
+   * "K", "DEF", "Unknown" - whatever position strings actually appear
+   * in your picks data), each value a sorted array of
+   * { playerName, position, timesDrafted, years } capped at topN.
+   * Positions are returned in an array too (`positionOrder`) so the UI
+   * can render them in a stable, count-descending order (position with
+   * the most total draft activity first).
+   */
+  function buildMostDraftedByPosition(allPicks, topN) {
+    var cap = topN || 10;
+    var byPosition = {};
+    var positionOrder = [];
+    var positionActivity = {};
+
+    allPicks.forEach(function (pick) {
+      var pos = pick.position || "Unknown";
+      var name = pick.playerName || "Unknown Player";
+
+      if (!byPosition[pos]) {
+        byPosition[pos] = {};
+        positionOrder.push(pos);
+        positionActivity[pos] = 0;
+      }
+      positionActivity[pos] += 1;
+
+      if (!byPosition[pos][name]) {
+        byPosition[pos][name] = {
+          playerName: name,
+          position: pos,
+          timesDrafted: 0,
+          years: []
+        };
+      }
+      var entry = byPosition[pos][name];
+      entry.timesDrafted += 1;
+      if (pick.year) entry.years.push(pick.year);
+    });
+
+    positionOrder.sort(function (a, b) {
+      return positionActivity[b] - positionActivity[a];
+    });
+
+    var result = {};
+    positionOrder.forEach(function (pos) {
+      var players = Object.keys(byPosition[pos]).map(function (name) {
+        var entry = byPosition[pos][name];
+        entry.years.sort(function (a, b) {
+          return a - b;
+        });
+        return entry;
+      });
+      players.sort(function (a, b) {
+        return b.timesDrafted - a.timesDrafted;
+      });
+      result[pos] = players.slice(0, cap);
+    });
+
+    return {
+      positionOrder: positionOrder,
+      byPosition: result
+    };
+  }
+
+  window.AllTimeStats = {
+    loadAllSeasons: loadAllSeasons,
+    buildCareerTotals: buildCareerTotals,
+    buildHeadToHead: buildHeadToHead,
+    buildOwnerVsAll: buildOwnerVsAll,
+    buildMasterRecords: buildMasterRecords,
+    buildMemberRecords: buildMemberRecords,
+    buildSeasonMasterRecords: buildSeasonMasterRecords,
+    buildSeasonMemberRecords: buildSeasonMemberRecords,
+    buildAllTimeDraftPicks: buildAllTimeDraftPicks,
+    getSeasonDraftPicks: getSeasonDraftPicks,
+    buildDraftBreakdown: buildDraftBreakdown,
+    buildKeeperDraftBreakdown: buildKeeperDraftBreakdown,
+    buildMostDraftedByPosition: buildMostDraftedByPosition,
+    getAllOwnerNames: getAllOwnerNames
+  };
 })();
