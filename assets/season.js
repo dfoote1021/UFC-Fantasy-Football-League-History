@@ -3024,8 +3024,10 @@ async function renderFaabSpendByPlayerAllTime() {
   if (!container) {
     container = document.createElement("div");
     container.id = "faab-by-player-alltime";
-    var draftBoard = byId("alltime-draft-board");
-    var anchor = (draftBoard && draftBoard.parentElement) || byId("alltime-content");
+
+    // FAAB belongs on the All-Time Records tab, not next to the draft
+    // board on the All-Time Draft tab.
+    var anchor = byId("alltime-records");
     if (anchor) {
       anchor.appendChild(container);
     } else {
@@ -3034,7 +3036,7 @@ async function renderFaabSpendByPlayerAllTime() {
   }
 
   if (state.allTimeFaabRows) {
-    renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime-owner-filter");
+    renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime");
     return;
   }
 
@@ -3049,7 +3051,6 @@ async function renderFaabSpendByPlayerAllTime() {
       var year = sleeperYears[i];
       var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
       if (!leagueId) continue;
-
       try {
         var users = await SleeperAPI.getUsers(leagueId);
         var rosters = await SleeperAPI.getRosters(leagueId);
@@ -3057,16 +3058,15 @@ async function renderFaabSpendByPlayerAllTime() {
         var historicalTeams = await SleeperAPI.getHistoricalPlayerTeams(year).catch(function () {
           return {};
         });
-
         var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
         for (var w = 1; w <= maxWeek; w++) {
           try {
             var weekTxns = await SleeperAPI.getTransactions(leagueId, w);
-            (weekTxns || []).forEach(function (t) {
-              t._week = w;
-              t._year = year;
-              t._rosterMap = rosterMap;
-              t._historicalTeams = historicalTeams;
+            weekTxns.forEach(function (t) {
+              t.week = w;
+              t.year = year;
+              t.rosterMap = rosterMap;
+              t.historicalTeams = historicalTeams;
               allTxns.push(t);
             });
           } catch (e) {}
@@ -3078,18 +3078,20 @@ async function renderFaabSpendByPlayerAllTime() {
 
     var byYear = {};
     allTxns.forEach(function (t) {
-      if (!byYear[t._year]) byYear[t._year] = [];
-      byYear[t._year].push(t);
+      if (!byYear[t.year]) byYear[t.year] = [];
+      byYear[t.year].push(t);
     });
 
     var combined = {};
     Object.keys(byYear).forEach(function (year) {
       var yearTxns = byYear[year];
-      var rosterMapForYear = yearTxns.length ? yearTxns[0]._rosterMap : {};
-      var historicalTeamsForYear = yearTxns.length ? yearTxns[0]._historicalTeams : {};
-
+      var rosterMapForYear = yearTxns.length ? yearTxns[0].rosterMap : {};
+      var historicalTeamsForYear = yearTxns.length ? yearTxns[0].historicalTeams : {};
       var yearRows = SleeperAPI.buildFaabSpendByPlayer(
-        yearTxns, rosterMapForYear, mergedPlayersMap, historicalTeamsForYear
+        yearTxns,
+        rosterMapForYear,
+        mergedPlayersMap,
+        historicalTeamsForYear
       );
 
       yearRows.forEach(function (row) {
@@ -3102,7 +3104,7 @@ async function renderFaabSpendByPlayerAllTime() {
             totalSpent: 0,
             timesWon: 0,
             timesLost: 0,
-            bids: [],
+            bids: []
           };
         }
         var entry = combined[row.playerId];
@@ -3116,18 +3118,22 @@ async function renderFaabSpendByPlayerAllTime() {
             teamName: b.teamName,
             ownerName: b.ownerName,
             week: b.week,
-            year: year,
+            year: year
           });
         });
       });
     });
 
     var rows = Object.keys(combined)
-      .map(function (pid) { return combined[pid]; })
-      .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+      .map(function (pid) {
+        return combined[pid];
+      })
+      .sort(function (a, b) {
+        return b.totalSpent - a.totalSpent;
+      });
 
     state.allTimeFaabRows = rows;
-    renderFaabSection(container, rows, "All-Time", "faab-alltime-owner-filter");
+    renderFaabSection(container, rows, "All-Time", "faab-alltime");
   } catch (err) {
     console.error("Failed to build all-time FAAB data", err);
     container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
@@ -3557,22 +3563,69 @@ async function renderFaabSpendByPlayerAllTime() {
       })
       .join("");
   }
+
+function renderMostDraftedByPosition(allPicks) {
+  var container = byId("alltime-most-drafted-by-position");
+  if (!container) return;
+
+  var result = window.AllTimeStats.buildMostDraftedByPosition(allPicks, 10);
+
+  if (!result.positionOrder.length) {
+    container.innerHTML = "<p>No draft data available yet.</p>";
+    return;
+  }
+
+  container.innerHTML =
+    '<h3 class="playoff-heading">Top 10 Most Drafted Players by Position</h3>' +
+    '<div class="most-drafted-position-grid">' +
+    result.positionOrder
+      .map(function (pos) {
+        var players = result.byPosition[pos];
+        var rowsHtml = players
+          .map(function (p, idx) {
+            return (
+              '<div class="most-drafted-row">' +
+              '<span class="most-drafted-rank">' + (idx + 1) + "</span>" +
+              '<span class="most-drafted-name">' + escapeHtml(p.playerName) + "</span>" +
+              '<span class="most-drafted-count">' +
+              p.timesDrafted +
+              (p.timesDrafted === 1 ? " time" : " times") +
+              "</span>" +
+              "</div>"
+            );
+          })
+          .join("");
+        return (
+          '<div class="most-drafted-position-card">' +
+          '<h4 class="most-drafted-position-heading">' + escapeHtml(pos) + "</h4>" +
+          '<div class="most-drafted-list">' + rowsHtml + "</div>" +
+          "</div>"
+        );
+      })
+      .join("") +
+    "</div>";
+}
   
   function renderAllTimeDraftFiltered() {
-    if (!state.allTimeData) return;
-    var select = byId('alltime-draft-owner-filter');
-    var ownerName = select ? select.value : '';
+  if (!state.allTimeData) return;
 
-    var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
+  // Top 10 leaderboards are always league-wide — do not apply the
+  // Team/Owner dropdown filter to these.
+  var allLeaguePicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData);
+  renderMostDraftedByPosition(allLeaguePicks);
 
-    var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
-    renderDraftBreakdownGrid('alltime-draft-breakdown', allBreakdown);
+  var select = byId("alltime-draft-owner-filter");
+  var ownerName = select ? select.value : "";
+  var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
 
-    var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
-    renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
+  var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
+  renderDraftBreakdownGrid("alltime-draft-breakdown", allBreakdown);
 
-        renderAllTimeDraftByYear(allPicks, !ownerName);
-  }
+  var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
+  renderDraftBreakdownGrid("alltime-keeper-breakdown", keeperBreakdown);
+
+  renderAllTimeDraftByYear(allPicks, !ownerName);
+}
 
   function populateAllTimeDraftOwnerFilter(allSeasonsData) {
     var select = byId('alltime-draft-owner-filter');
