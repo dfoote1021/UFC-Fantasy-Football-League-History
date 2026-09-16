@@ -313,9 +313,10 @@
       renderBracket("playoff-bracket", state.winnersBracket);
       renderBracket("consolation-bracket", state.losersBracket);
       await populateWeekSelects();
-      await renderMatchups();
-      await renderTeams();
-      await populateRosterTeamSelect();
+await renderMatchups();
+renderWeeklyHighScoreAndEliminator();
+await renderTeams();
+await populateRosterTeamSelect();
       await renderWeeklyRoster();
       await populateScheduleTeamSelect();
       await renderDraft();
@@ -1866,6 +1867,119 @@ function syncStandingsSortHeaders() {
 
     list.innerHTML = "";
 
+   function buildWeeklyHighsAndEliminator(allWeeksMatchups, rosterMap, playedWeeks, playoffStartWeek) {
+  var regularWeeks = playedWeeks
+    .filter(function (w) {
+      return !playoffStartWeek || w < playoffStartWeek;
+    })
+    .sort(function (a, b) {
+      return a - b;
+    });
+
+  var eliminatedRosterIds = {};
+  var weeklyResults = [];
+
+  regularWeeks.forEach(function (week) {
+    var rows = (allWeeksMatchups[week] || []).filter(function (r) {
+      return r.roster_id && r.points !== null && r.points !== undefined;
+    });
+    if (!rows.length) return;
+
+    var highRow = rows.reduce(function (best, r) {
+      return Number(r.points) > Number(best.points) ? r : best;
+    });
+    var highTeam = rosterMap[highRow.roster_id];
+
+    var activeRows = rows.filter(function (r) {
+      return !eliminatedRosterIds[r.roster_id];
+    });
+
+    var eliminatedThisWeek = null;
+    if (activeRows.length > 1) {
+      var lowRow = activeRows.reduce(function (worst, r) {
+        return Number(r.points) < Number(worst.points) ? r : worst;
+      });
+      eliminatedRosterIds[lowRow.roster_id] = true;
+      eliminatedThisWeek = {
+        rosterId: lowRow.roster_id,
+        teamName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].teamName : "Unknown",
+        ownerName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].displayName : "Unknown",
+        points: Number(lowRow.points)
+      };
+    }
+
+    var remainingCount = activeRows.length - (eliminatedThisWeek ? 1 : 0);
+
+    weeklyResults.push({
+      week: week,
+      highScore: {
+        rosterId: highRow.roster_id,
+        teamName: highTeam ? highTeam.teamName : "Unknown",
+        ownerName: highTeam ? highTeam.displayName : "Unknown",
+        points: Number(highRow.points)
+      },
+      eliminated: eliminatedThisWeek,
+      remainingCount: remainingCount,
+      isFinalWeek: remainingCount <= 1
+    });
+  });
+
+  return weeklyResults;
+}
+
+function renderWeeklyHighScoreAndEliminator() {
+  var container = byId("weekly-prizes-section");
+  if (!container) return;
+  if (state.dataSource === "espn") {
+    container.innerHTML = '<p class="status-text">Weekly prize tracking is only available for live Sleeper seasons.</p>';
+    return;
+  }
+  if (!state.allWeeksMatchups || !state.sleeperPlayedWeeks) return;
+
+  var results = buildWeeklyHighsAndEliminator(
+    state.allWeeksMatchups,
+    state.rosterMap,
+    state.sleeperPlayedWeeks,
+    state.playoffStartWeek
+  );
+
+  if (!results.length) {
+    container.innerHTML = '<p class="status-text">No weekly data yet.</p>';
+    return;
+  }
+
+  var latest = results[results.length - 1];
+  var highScoreHtml =
+    '<div class="weekly-prize-card">' +
+    '<h4 class="weekly-prize-heading">Week ' + latest.week + " Highest Score</h4>" +
+    '<div class="weekly-prize-value">' + escapeHtml(latest.highScore.ownerName) + " " + latest.highScore.points.toFixed(2) + "</div>" +
+    '<div class="weekly-prize-sub">' + escapeHtml(latest.highScore.teamName) + "</div>" +
+    "</div>";
+
+  var eliminatorRowsHtml = results
+    .slice()
+    .reverse()
+    .map(function (r) {
+      var statusHtml = r.eliminated
+        ? '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")"
+        : r.isFinalWeek
+        ? '<span class="eliminator-winner-tag">WINNER</span>'
+        : '<span class="status-text">No elimination this week</span>';
+      return (
+        '<div class="eliminator-row">' +
+        '<span class="eliminator-week">Week ' + r.week + "</span>" +
+        '<span class="eliminator-status">' + statusHtml + "</span>" +
+        '<span class="eliminator-remaining">' + r.remainingCount + " left</span>" +
+        "</div>"
+      );
+    })
+    .join("");
+
+  container.innerHTML =
+    highScoreHtml +
+    '<h4 class="weekly-prize-heading">Eliminator</h4>' +
+    '<div class="eliminator-list">' + eliminatorRowsHtml + "</div>";
+} 
     // Resolve an owner name from the pair side, falling back to rosterMap
     // (pairMatchups may not always carry displayName through).
     function ownerOf(team) {
@@ -3024,8 +3138,10 @@ async function renderFaabSpendByPlayerAllTime() {
   if (!container) {
     container = document.createElement("div");
     container.id = "faab-by-player-alltime";
-    var draftBoard = byId("alltime-draft-board");
-    var anchor = (draftBoard && draftBoard.parentElement) || byId("alltime-content");
+
+    // FAAB belongs on the All-Time Records tab, not next to the draft
+    // board on the All-Time Draft tab.
+    var anchor = byId("alltime-records");
     if (anchor) {
       anchor.appendChild(container);
     } else {
@@ -3034,7 +3150,7 @@ async function renderFaabSpendByPlayerAllTime() {
   }
 
   if (state.allTimeFaabRows) {
-    renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime-owner-filter");
+    renderFaabSection(container, state.allTimeFaabRows, "All-Time", "faab-alltime");
     return;
   }
 
@@ -3049,7 +3165,6 @@ async function renderFaabSpendByPlayerAllTime() {
       var year = sleeperYears[i];
       var leagueId = SleeperAPI.SLEEPER_SEASONS[year];
       if (!leagueId) continue;
-
       try {
         var users = await SleeperAPI.getUsers(leagueId);
         var rosters = await SleeperAPI.getRosters(leagueId);
@@ -3057,16 +3172,15 @@ async function renderFaabSpendByPlayerAllTime() {
         var historicalTeams = await SleeperAPI.getHistoricalPlayerTeams(year).catch(function () {
           return {};
         });
-
         var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
         for (var w = 1; w <= maxWeek; w++) {
           try {
             var weekTxns = await SleeperAPI.getTransactions(leagueId, w);
-            (weekTxns || []).forEach(function (t) {
-              t._week = w;
-              t._year = year;
-              t._rosterMap = rosterMap;
-              t._historicalTeams = historicalTeams;
+            weekTxns.forEach(function (t) {
+              t.week = w;
+              t.year = year;
+              t.rosterMap = rosterMap;
+              t.historicalTeams = historicalTeams;
               allTxns.push(t);
             });
           } catch (e) {}
@@ -3078,18 +3192,20 @@ async function renderFaabSpendByPlayerAllTime() {
 
     var byYear = {};
     allTxns.forEach(function (t) {
-      if (!byYear[t._year]) byYear[t._year] = [];
-      byYear[t._year].push(t);
+      if (!byYear[t.year]) byYear[t.year] = [];
+      byYear[t.year].push(t);
     });
 
     var combined = {};
     Object.keys(byYear).forEach(function (year) {
       var yearTxns = byYear[year];
-      var rosterMapForYear = yearTxns.length ? yearTxns[0]._rosterMap : {};
-      var historicalTeamsForYear = yearTxns.length ? yearTxns[0]._historicalTeams : {};
-
+      var rosterMapForYear = yearTxns.length ? yearTxns[0].rosterMap : {};
+      var historicalTeamsForYear = yearTxns.length ? yearTxns[0].historicalTeams : {};
       var yearRows = SleeperAPI.buildFaabSpendByPlayer(
-        yearTxns, rosterMapForYear, mergedPlayersMap, historicalTeamsForYear
+        yearTxns,
+        rosterMapForYear,
+        mergedPlayersMap,
+        historicalTeamsForYear
       );
 
       yearRows.forEach(function (row) {
@@ -3102,7 +3218,7 @@ async function renderFaabSpendByPlayerAllTime() {
             totalSpent: 0,
             timesWon: 0,
             timesLost: 0,
-            bids: [],
+            bids: []
           };
         }
         var entry = combined[row.playerId];
@@ -3116,18 +3232,22 @@ async function renderFaabSpendByPlayerAllTime() {
             teamName: b.teamName,
             ownerName: b.ownerName,
             week: b.week,
-            year: year,
+            year: year
           });
         });
       });
     });
 
     var rows = Object.keys(combined)
-      .map(function (pid) { return combined[pid]; })
-      .sort(function (a, b) { return b.totalSpent - a.totalSpent; });
+      .map(function (pid) {
+        return combined[pid];
+      })
+      .sort(function (a, b) {
+        return b.totalSpent - a.totalSpent;
+      });
 
     state.allTimeFaabRows = rows;
-    renderFaabSection(container, rows, "All-Time", "faab-alltime-owner-filter");
+    renderFaabSection(container, rows, "All-Time", "faab-alltime");
   } catch (err) {
     console.error("Failed to build all-time FAAB data", err);
     container.innerHTML = "<p>Could not load all-time FAAB data.</p>";
@@ -3557,23 +3677,83 @@ async function renderFaabSpendByPlayerAllTime() {
       })
       .join("");
   }
-  
-  function renderAllTimeDraftFiltered() {
-    if (!state.allTimeData) return;
-    var select = byId('alltime-draft-owner-filter');
-    var ownerName = select ? select.value : '';
 
-    var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
+function renderMostDraftedByPosition(allPicks) {
+  var container = byId("alltime-most-drafted-by-position");
+  if (!container) return;
 
-    var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
-    renderDraftBreakdownGrid('alltime-draft-breakdown', allBreakdown);
+  var result = window.AllTimeStats.buildMostDraftedByPosition(allPicks, 10);
 
-    var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
-    renderDraftBreakdownGrid('alltime-keeper-breakdown', keeperBreakdown);
-
-        renderAllTimeDraftByYear(allPicks, !ownerName);
+  if (!result.positionOrder.length) {
+    container.innerHTML = "<p>No draft data available yet.</p>";
+    return;
   }
 
+  container.innerHTML =
+    '<h3 class="playoff-heading">Top 10 Most Drafted Players by Position</h3>' +
+    '<div class="most-drafted-position-grid">' +
+    result.positionOrder
+      .map(function (pos) {
+        var players = result.byPosition[pos];
+        var rowsHtml = players
+          .map(function (p, idx) {
+            return (
+              '<div class="most-drafted-row">' +
+              '<span class="most-drafted-rank">' + (idx + 1) + "</span>" +
+              '<span class="most-drafted-name">' + escapeHtml(p.playerName) + "</span>" +
+              '<span class="most-drafted-count">' +
+              p.timesDrafted +
+              (p.timesDrafted === 1 ? " time" : " times") +
+              "</span>" +
+              "</div>"
+            );
+          })
+          .join("");
+        return (
+          '<div class="most-drafted-position-card">' +
+          '<h4 class="most-drafted-position-heading">' + escapeHtml(pos) + "</h4>" +
+          '<div class="most-drafted-list">' + rowsHtml + "</div>" +
+          "</div>"
+        );
+      })
+      .join("") +
+    "</div>";
+}
+  
+  function renderAllTimeDraftFiltered() {
+  if (!state.allTimeData) return;
+
+  try {
+    var allLeaguePicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData);
+    renderMostDraftedByPosition(allLeaguePicks);
+  } catch (e) {
+    console.error("Top 10 Most Drafted by Position failed to render", e);
+  }
+
+  var select = byId("alltime-draft-owner-filter");
+  var ownerName = select ? select.value : "";
+  var allPicks = window.AllTimeStats.buildAllTimeDraftPicks(state.allTimeData, ownerName || null);
+
+  try {
+    var allBreakdown = window.AllTimeStats.buildDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid("alltime-draft-breakdown", allBreakdown);
+  } catch (e) {
+    console.error("All-Time Breakdown failed to render", e);
+  }
+
+  try {
+    var keeperBreakdown = window.AllTimeStats.buildKeeperDraftBreakdown(allPicks);
+    renderDraftBreakdownGrid("alltime-keeper-breakdown", keeperBreakdown);
+  } catch (e) {
+    console.error("Keepers Breakdown failed to render", e);
+  }
+
+  try {
+    renderAllTimeDraftByYear(allPicks, !ownerName);
+  } catch (e) {
+    console.error("Drafts By Year failed to render", e);
+  }
+}
   function populateAllTimeDraftOwnerFilter(allSeasonsData) {
     var select = byId('alltime-draft-owner-filter');
     if (!select) return;
