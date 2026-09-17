@@ -77,6 +77,7 @@
     <div class="matchup-view-toggle">
       <button class="btn view-toggle-btn active" data-view="week">By Week</button>
       <button class="btn view-toggle-btn" data-view="schedule">By Team (Full Schedule)</button>
+      <button class="btn view-toggle-btn" data-view="totw">Team of the Week / Bench of the Week</button>
     </div>
     <div id="matchups-week-view">
       <div class="week-picker">
@@ -97,7 +98,16 @@
         <tbody></tbody>
       </table>
     </div>
-
+    <div id="matchups-totw-view" hidden>
+      <div class="week-picker">
+        <label for="totw-week-select">Week</label>
+        <select id="totw-week-select"></select>
+      </div>
+      <h3 class="playoff-heading">Team of the Week</h3>
+      <div id="totw-grid" class="teams-grid"></div>
+      <h3 class="playoff-heading">Bench of the Week</h3>
+      <div id="botw-grid" class="teams-grid"></div>
+    </div>
     <div id="weekly-prizes-section" class="weekly-prizes-section"></div>
   </section>
 
@@ -304,24 +314,24 @@
     </section>
 
     <section id="alltime-draft" class="tab-panel">
-  <div class="week-picker">
-    <label for="alltime-draft-owner-filter">Team/Owner</label>
-    <select id="alltime-draft-owner-filter">
-      <option value="">All Owners</option>
-    </select>
-  </div>
+      <div class="week-picker">
+        <label for="alltime-draft-owner-filter">Team/Owner</label>
+        <select id="alltime-draft-owner-filter">
+          <option value="">All Owners</option>
+        </select>
+      </div>
 
-  <div id="alltime-most-drafted-by-position"></div>
+      <div id="alltime-most-drafted-by-position"></div>
 
-  <h3 class="playoff-heading">All-Time Breakdown (All Picks)</h3>
-  <div id="alltime-draft-breakdown" class="draft-breakdown"></div>
+      <h3 class="playoff-heading">All-Time Breakdown (All Picks)</h3>
+      <div id="alltime-draft-breakdown" class="draft-breakdown"></div>
 
-  <h3 class="playoff-heading">Keepers Breakdown</h3>
-  <div id="alltime-keeper-breakdown" class="draft-breakdown"></div>
+      <h3 class="playoff-heading">Keepers Breakdown</h3>
+      <div id="alltime-keeper-breakdown" class="draft-breakdown"></div>
 
-  <h3 class="playoff-heading">Drafts By Year</h3>
-  <div id="alltime-draft-by-year"></div>
-</section>
+      <h3 class="playoff-heading">Drafts By Year</h3>
+      <div id="alltime-draft-by-year"></div>
+    </section>
   </div>
 </main>
 
