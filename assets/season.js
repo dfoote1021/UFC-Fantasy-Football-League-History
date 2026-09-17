@@ -2127,7 +2127,7 @@ if (!matchups) {
         });
     }
 
-async function setupTotwView() {
+        async function setupTotwView() {
             if (state.dataSource === "espn") {
                 byId("matchups-totw-view").innerHTML = '<p class="status-text">Team of the Week and Bench of the Week are only available for live Sleeper seasons.</p>';
                 return;
@@ -2181,37 +2181,45 @@ async function setupTotwView() {
                 );
             }).join("");
         }
-            var card = document.createElement("div");
-            card.className = "team-card";
-            var avatarHtml = team.avatar ?
-                '<img src="' + team.avatar + '" alt="' + escapeHtml(team.teamName) + '" />' :
-                "";
-            var txnCount = state.txnCountsByRoster[team.rosterId] || 0;
-            card.innerHTML =
-                "<div>" + avatarHtml + "<strong>" + escapeHtml(team.teamName) + "</strong></div>" +
-                "<p>" + escapeHtml(team.displayName) + "</p>" +
-                '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
-                '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
-                '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
-                '<div class="team-stats-row"><span>Transactions</span><span>' + txnCount + "</span></div>" +
-                '<div class="team-stats-row"><span>Roster Size</span><span>' + team.players.length + "</span></div>";
-            grid.appendChild(card);
-        });
-    }
 
-    async function populateRosterTeamSelect() {
-        var select = byId("roster-team-select");
-        if (!select) return;
-        select.innerHTML = "";
-        var standings = SleeperAPI.sortStandings(state.rosterMap);
-        standings.forEach(function(team) {
-            var opt = document.createElement("option");
-            opt.value = String(team.rosterId);
-            opt.textContent = team.teamName + " (" + team.displayName + ")";
-            select.appendChild(opt);
-        });
-        select.onchange = renderWeeklyRoster;
-    }
+        async function renderTeams() {
+            var grid = byId("teams-grid");
+            if (!grid) return;
+            grid.innerHTML = "";
+            await ensureAllTransactions();
+            var standings = SleeperAPI.sortStandings(state.rosterMap);
+            standings.forEach(function(team) {
+                var card = document.createElement("div");
+                card.className = "team-card";
+                var avatarHtml = team.avatar ?
+                    '<img src="' + team.avatar + '" alt="' + escapeHtml(team.teamName) + '" />' :
+                    "";
+                var txnCount = state.txnCountsByRoster[team.rosterId] || 0;
+                card.innerHTML =
+                    "<div>" + avatarHtml + "<strong>" + escapeHtml(team.teamName) + "</strong></div>" +
+                    "<p>" + escapeHtml(team.displayName) + "</p>" +
+                    '<div class="team-stats-row"><span>Record</span><span>' + team.wins + "-" + team.losses + "-" + team.ties + "</span></div>" +
+                    '<div class="team-stats-row"><span>Points For</span><span>' + team.fpts.toFixed(2) + "</span></div>" +
+                    '<div class="team-stats-row"><span>Points Against</span><span>' + team.fptsAgainst.toFixed(2) + "</span></div>" +
+                    '<div class="team-stats-row"><span>Transactions</span><span>' + txnCount + "</span></div>" +
+                    '<div class="team-stats-row"><span>Roster Size</span><span>' + team.players.length + "</span></div>";
+                grid.appendChild(card);
+            });
+        }
+
+        async function populateRosterTeamSelect() {
+            var select = byId("roster-team-select");
+            if (!select) return;
+            select.innerHTML = "";
+            var standings = SleeperAPI.sortStandings(state.rosterMap);
+            standings.forEach(function(team) {
+                var opt = document.createElement("option");
+                opt.value = String(team.rosterId);
+                opt.textContent = team.teamName + " (" + team.displayName + ")";
+                select.appendChild(opt);
+            });
+            select.onchange = renderWeeklyRoster;
+        }
 
     async function renderWeeklyRoster() {
         if (state.dataSource === "espn") {
