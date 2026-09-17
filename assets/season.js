@@ -434,7 +434,7 @@
                 renderBracket("consolation-bracket", state.losersBracket);
                 await populateWeekSelects();
                 await renderMatchups();
-                renderWeeklyHighScoreAndEliminator();
+renderWeeklyHighScoreAndEliminator(Number(byId("week-select").value) || state.currentWeek);
                 await renderTeams();
                 await populateRosterTeamSelect();
                 await renderWeeklyRoster();
@@ -556,7 +556,10 @@
                 weekSelect.appendChild(opt);
             });
             weekSelect.value = String(weeks[0] || 1);
-            weekSelect.onchange = renderMatchupsEspn;
+            weekSelect.onchange = function () {
+    renderMatchups();
+    renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
+};
 
             var txnWeekSelect = byId("txn-week-select");
             if (txnWeekSelect) txnWeekSelect.innerHTML = "";
