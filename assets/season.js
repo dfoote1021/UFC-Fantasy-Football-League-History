@@ -664,38 +664,6 @@
             });
         }
 
-        function renderTeamScheduleEspn() {
-            var select = byId("schedule-team-select");
-            var tbody = document.querySelector("#schedule-table tbody");
-            if (!select || !tbody || !state.espnSeasonData) return;
-
-            var teamName = select.value;
-            if (!teamName) return;
-
-            var schedule = state.espnSeasonData.getTeamSchedule(teamName);
-            if (!schedule || schedule.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">No schedule data available.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = "";
-            schedule.forEach(function(game) {
-                var tr = document.createElement("tr");
-                if (game.result === "W") tr.classList.add("result-w");
-                if (game.result === "L") tr.classList.add("result-l");
-                var weekLabel = game.week + (game.isPlayoff ? " (Playoff)" : "");
-                tr.innerHTML =
-                    "<td>" + weekLabel + "</td>" +
-                    "<td>" + escapeHtml(game.opponentName) + "</td>" +
-                    "<td>" + game.result + "</td>" +
-                    "<td>" + game.myPoints.toFixed(2) + "</td>" +
-                    "<td>" + (game.opponentPoints !== null ? game.opponentPoints.toFixed(2) : "-") + "</td>" +
-                    "<td>" + escapeHtml(game.recordAfter) + "</td>";
-                tbody.appendChild(tr);
-            });
-        }
-
-
         function setRosterWeekSelectorVisible(isVisible) {
             var weekSelect = byId("roster-week-select");
             if (!weekSelect) return;
@@ -831,10 +799,6 @@
             }
         }
 
-        /**
-         * ESPN draft tab entry point. Fetches this season's draft picks...
-         */
-        async function renderDraftEspn(season, myToken) {}
         /**
          * ESPN draft tab entry point. Fetches this season's draft picks, then
          * populates the #draft-team-filter dropdown and renders the board
