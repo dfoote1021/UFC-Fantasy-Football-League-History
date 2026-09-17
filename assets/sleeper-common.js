@@ -375,6 +375,93 @@
     return roster;
   }
 
+  function buildLeagueWideWeeklyPlayerPool(weekMatchups, playersMap) {
+            var pool = [];
+            (weekMatchups || []).forEach(function (side) {
+                var starterSet = {};
+                (side.starters || []).forEach(function (pid) { starterSet[pid] = true; });
+                var pointsMap = side.players_points || {};
+                (side.players || []).forEach(function (pid) {
+                    var meta = playersMap[pid] || {};
+                    var pts = pointsMap[pid];
+                    if (pts === undefined || pts === null) return;
+                    pool.push({
+                        playerId: pid,
+                        name: meta.full_name || ((meta.first_name || "") + " " + (meta.last_name || "")).trim() || pid,
+                        position: meta.position || "UNK",
+                        rosterId: side.roster_id,
+                        points: Number(pts),
+                        isStarter: !!starterSet[pid]
+                    });
+                });
+            });
+            return pool;
+        }
+
+        function buildTeamOfTheWeek(weekMatchups, playersMap, rosterMap) {
+            var pool = buildLeagueWideWeeklyPlayerPool(weekMatchups, playersMap);
+            var used = {};
+
+            function takeBest(eligiblePositions) {
+                var candidates = pool.filter(function (p) {
+                    return eligiblePositions.indexOf(p.position) !== -1 && !used[p.playerId];
+                });
+                candidates.sort(function (a, b) { return b.points - a.points; });
+                return candidates.length ? candidates[0] : null;
+            }
+
+            var slotDefs = [
+                { slot: "QB", positions: ["QB"] },
+                { slot: "RB", positions: ["RB"] },
+                { slot: "RB", positions: ["RB"] },
+                { slot: "WR", positions: ["WR"] },
+                { slot: "WR", positions: ["WR"] },
+                { slot: "TE", positions: ["TE"] },
+                { slot: "DEF", positions: ["DEF"] },
+                { slot: "K", positions: ["K"] },
+                { slot: "WR/RB", positions: ["WR", "RB"] },
+                { slot: "WR/TE", positions: ["WR", "TE"] }
+            ];
+
+            var result = [];
+            slotDefs.forEach(function (def) {
+                var pick = takeBest(def.positions);
+                if (pick) {
+                    used[pick.playerId] = true;
+                    var team = rosterMap[pick.rosterId];
+                    result.push({
+                        slot: def.slot,
+                        playerName: pick.name,
+                        position: pick.position,
+                        ownerName: team ? team.displayName : "Unknown",
+                        teamName: team ? team.teamName : "Unknown",
+                        points: pick.points
+                    });
+                } else {
+                    result.push({ slot: def.slot, playerName: null, position: null, ownerName: null, teamName: null, points: null });
+                }
+            });
+            return result;
+        }
+
+        function buildBenchOfTheWeek(weekMatchups, playersMap, rosterMap, limit) {
+            var pool = buildLeagueWideWeeklyPlayerPool(weekMatchups, playersMap);
+            var benched = pool.filter(function (p) {
+                return !p.isStarter && ["QB", "RB", "WR", "TE", "DEF", "K"].indexOf(p.position) !== -1;
+            });
+            benched.sort(function (a, b) { return b.points - a.points; });
+            return benched.slice(0, limit || 10).map(function (p) {
+                var team = rosterMap[p.rosterId];
+                return {
+                    playerName: p.name,
+                    position: p.position,
+                    ownerName: team ? team.displayName : "Unknown",
+                    teamName: team ? team.teamName : "Unknown",
+                    points: p.points
+                };
+            });
+        }
+
   function getDefaultWeek(league) {
     return getNFLState()
       .then(function (state) {
