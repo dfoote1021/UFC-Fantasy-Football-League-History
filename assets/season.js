@@ -44,6 +44,121 @@
   function byId(id) {
     return document.getElementById(id);
   }
+
+  function buildWeeklyHighsAndEliminator(allWeeksMatchups, rosterMap, playedWeeks, playoffStartWeek) {
+    var regularWeeks = playedWeeks
+      .filter(function (w) {
+        return !playoffStartWeek || w < playoffStartWeek;
+      })
+      .sort(function (a, b) {
+        return a - b;
+      });
+
+    var eliminatedRosterIds = {};
+    var weeklyResults = [];
+
+    regularWeeks.forEach(function (week) {
+      var rows = (allWeeksMatchups[week] || []).filter(function (r) {
+        return r.roster_id && r.points !== null && r.points !== undefined;
+      });
+      if (!rows.length) return;
+
+      var highRow = rows.reduce(function (best, r) {
+        return Number(r.points) > Number(best.points) ? r : best;
+      });
+      var highTeam = rosterMap[highRow.roster_id];
+
+      var activeRows = rows.filter(function (r) {
+        return !eliminatedRosterIds[r.roster_id];
+      });
+
+      var eliminatedThisWeek = null;
+      if (activeRows.length > 1) {
+        var lowRow = activeRows.reduce(function (worst, r) {
+          return Number(r.points) < Number(worst.points) ? r : worst;
+        });
+        eliminatedRosterIds[lowRow.roster_id] = true;
+        eliminatedThisWeek = {
+          rosterId: lowRow.roster_id,
+          teamName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].teamName : "Unknown",
+          ownerName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].displayName : "Unknown",
+          points: Number(lowRow.points)
+        };
+      }
+
+      var remainingCount = activeRows.length - (eliminatedThisWeek ? 1 : 0);
+
+      weeklyResults.push({
+        week: week,
+        highScore: {
+          rosterId: highRow.roster_id,
+          teamName: highTeam ? highTeam.teamName : "Unknown",
+          ownerName: highTeam ? highTeam.displayName : "Unknown",
+          points: Number(highRow.points)
+        },
+        eliminated: eliminatedThisWeek,
+        remainingCount: remainingCount,
+        isFinalWeek: remainingCount <= 1
+      });
+    });
+
+    return weeklyResults;
+  }
+
+  function renderWeeklyHighScoreAndEliminator() {
+    var container = byId("weekly-prizes-section");
+    if (!container) return;
+    if (state.dataSource === "espn") {
+      container.innerHTML = '<p class="status-text">Weekly prize tracking is only available for live Sleeper seasons.</p>';
+      return;
+    }
+    if (!state.allWeeksMatchups || !state.sleeperPlayedWeeks) return;
+
+    var results = buildWeeklyHighsAndEliminator(
+      state.allWeeksMatchups,
+      state.rosterMap,
+      state.sleeperPlayedWeeks,
+      state.playoffStartWeek
+    );
+
+    if (!results.length) {
+      container.innerHTML = '<p class="status-text">No weekly data yet.</p>';
+      return;
+    }
+
+    var latest = results[results.length - 1];
+    var highScoreHtml =
+      '<div class="weekly-prize-card">' +
+      '<h4 class="weekly-prize-heading">Week ' + latest.week + " Highest Score</h4>" +
+      '<div class="weekly-prize-value">' + escapeHtml(latest.highScore.ownerName) + " " + latest.highScore.points.toFixed(2) + "</div>" +
+      '<div class="weekly-prize-sub">' + escapeHtml(latest.highScore.teamName) + "</div>" +
+      "</div>";
+
+    var eliminatorRowsHtml = results
+      .slice()
+      .reverse()
+      .map(function (r) {
+        var statusHtml = r.eliminated
+          ? '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")"
+          : r.isFinalWeek
+          ? '<span class="eliminator-winner-tag">WINNER</span>'
+          : '<span class="status-text">No elimination this week</span>';
+        return (
+          '<div class="eliminator-row">' +
+          '<span class="eliminator-week">Week ' + r.week + "</span>" +
+          '<span class="eliminator-status">' + statusHtml + "</span>" +
+          '<span class="eliminator-remaining">' + r.remainingCount + " left</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    container.innerHTML =
+      highScoreHtml +
+      '<h4 class="weekly-prize-heading">Eliminator</h4>' +
+      '<div class="eliminator-list">' + eliminatorRowsHtml + "</div>";
+  }
+
   var state = {
     season: null,
     dataSource: null,
@@ -88,7 +203,6 @@
     // overwrite data after the user has selected another season.
     loadToken: 0,
   };
-
   // Season Records tab state (separate from the All-Time Records tab's
   // state.recordsView/state.recordsSplit above) - scoped to whichever
   // season is currently loaded.
@@ -1807,179 +1921,133 @@ function syncStandingsSortHeaders() {
     rosterWeekSelect.onchange = renderWeeklyRoster;
   }
 
-  async function renderMatchups() {
-    var weekSelect = byId("week-select");
-    var week = Number(weekSelect.value) || state.currentWeek;
-    var list = byId("matchups-list");
-    list.innerHTML = "<p>Loading…</p>";
+ async function renderMatchups() {
+  var weekSelect = byId("week-select");
+  var week = Number(weekSelect.value) || state.currentWeek;
+  var list = byId("matchups-list");
+  list.innerHTML = "<p>Loading…</p>";
 
-    var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
-    if (!matchups) {
-      try {
-        matchups = await SleeperAPI.getMatchups(state.leagueId, week);
-      } catch (e) {
-        list.innerHTML = "<p>No matchup data for this week.</p>";
-        return;
-      }
-    }
-
-    if (!matchups || matchups.length === 0) {
-      list.innerHTML = "<p>No matchup data for this week yet.</p>";
+  var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
+  if (!matchups) {
+    try {
+      matchups = await SleeperAPI.getMatchups(state.leagueId, week);
+    } catch (e) {
+      list.innerHTML = "<p>No matchup data for this week.</p>";
       return;
     }
+  }
 
-    if (!state.playersMap) {
-      try {
-        state.playersMap = await SleeperAPI.getPlayersMap();
-      } catch (e) {
-        state.playersMap = {};
-      }
+  if (!matchups || matchups.length === 0) {
+    list.innerHTML = "<p>No matchup data for this week yet.</p>";
+    return;
+  }
+
+  if (!state.playersMap) {
+    try {
+      state.playersMap = await SleeperAPI.getPlayersMap();
+    } catch (e) {
+      state.playersMap = {};
     }
-    await ensureHistoricalTeamsMap();
+  }
+  await ensureHistoricalTeamsMap();
 
-    var recordsThisWeek =
-      (state.sleeperRunningRecordsByWeek && state.sleeperRunningRecordsByWeek[week]) || {};
+  var recordsThisWeek =
+    (state.sleeperRunningRecordsByWeek && state.sleeperRunningRecordsByWeek[week]) || {};
 
-    var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
+  var pairs = SleeperAPI.pairMatchups(matchups, state.rosterMap);
 
-    // Determine which rosters are in a GENUINE two-team matchup: group the
-    // raw weekly response by matchup_id (ignoring null ids) and keep only
-    // groups with exactly two members. Sleeper gives every roster a row
-    // each week, including teams on a bye — those get matchup_id === null
-    // (or a single-member group). Everyone not in a genuine two-team
-    // matchup is a bye and gets its own BYE card below. Byes are
-    // display-only: they never count as games, wins/losses, PF/PA, records,
-    // or All-Time stats.
-    var groups = {};
-    (matchups || []).forEach(function (m) {
-      if (m.matchup_id === null || m.matchup_id === undefined) return;
-      if (!groups[m.matchup_id]) groups[m.matchup_id] = [];
-      groups[m.matchup_id].push(m);
-    });
-    var pairedRosterIds = {};
-    Object.keys(groups).forEach(function (key) {
-      var rows = groups[key];
-      if (rows.length === 2) {
-        if (rows[0].roster_id) pairedRosterIds[rows[0].roster_id] = true;
-        if (rows[1].roster_id) pairedRosterIds[rows[1].roster_id] = true;
-      }
-    });
-
-    list.innerHTML = "";
-
-   function buildWeeklyHighsAndEliminator(allWeeksMatchups, rosterMap, playedWeeks, playoffStartWeek) {
-  var regularWeeks = playedWeeks
-    .filter(function (w) {
-      return !playoffStartWeek || w < playoffStartWeek;
-    })
-    .sort(function (a, b) {
-      return a - b;
-    });
-
-  var eliminatedRosterIds = {};
-  var weeklyResults = [];
-
-  regularWeeks.forEach(function (week) {
-    var rows = (allWeeksMatchups[week] || []).filter(function (r) {
-      return r.roster_id && r.points !== null && r.points !== undefined;
-    });
-    if (!rows.length) return;
-
-    var highRow = rows.reduce(function (best, r) {
-      return Number(r.points) > Number(best.points) ? r : best;
-    });
-    var highTeam = rosterMap[highRow.roster_id];
-
-    var activeRows = rows.filter(function (r) {
-      return !eliminatedRosterIds[r.roster_id];
-    });
-
-    var eliminatedThisWeek = null;
-    if (activeRows.length > 1) {
-      var lowRow = activeRows.reduce(function (worst, r) {
-        return Number(r.points) < Number(worst.points) ? r : worst;
-      });
-      eliminatedRosterIds[lowRow.roster_id] = true;
-      eliminatedThisWeek = {
-        rosterId: lowRow.roster_id,
-        teamName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].teamName : "Unknown",
-        ownerName: rosterMap[lowRow.roster_id] ? rosterMap[lowRow.roster_id].displayName : "Unknown",
-        points: Number(lowRow.points)
-      };
+  var groups = {};
+  (matchups || []).forEach(function (m) {
+    if (m.matchup_id === null || m.matchup_id === undefined) return;
+    if (!groups[m.matchup_id]) groups[m.matchup_id] = [];
+    groups[m.matchup_id].push(m);
+  });
+  var pairedRosterIds = {};
+  Object.keys(groups).forEach(function (key) {
+    var rows = groups[key];
+    if (rows.length === 2) {
+      if (rows[0].roster_id) pairedRosterIds[rows[0].roster_id] = true;
+      if (rows[1].roster_id) pairedRosterIds[rows[1].roster_id] = true;
     }
-
-    var remainingCount = activeRows.length - (eliminatedThisWeek ? 1 : 0);
-
-    weeklyResults.push({
-      week: week,
-      highScore: {
-        rosterId: highRow.roster_id,
-        teamName: highTeam ? highTeam.teamName : "Unknown",
-        ownerName: highTeam ? highTeam.displayName : "Unknown",
-        points: Number(highRow.points)
-      },
-      eliminated: eliminatedThisWeek,
-      remainingCount: remainingCount,
-      isFinalWeek: remainingCount <= 1
-    });
   });
 
-  return weeklyResults;
+  list.innerHTML = "";
+
+  function ownerOf(team) {
+    if (!team) return null;
+    return team.displayName || (team.rosterId && state.rosterMap[team.rosterId] ? state.rosterMap[team.rosterId].displayName : null);
+  }
+
+  pairs.forEach(function (pair, idx) {
+    if (!pair.teamB || pair.matchupId === null || pair.matchupId === undefined) return;
+
+    var card = document.createElement("div");
+    card.className = "matchup-card";
+    var aWins = pair.teamA.points > pair.teamB.points;
+    var bWins = pair.teamB.points > pair.teamA.points;
+    var aLabel = teamWithOwner(pair.teamA.teamName, ownerOf(pair.teamA));
+    var bLabel = teamWithOwner(pair.teamB.teamName, ownerOf(pair.teamB));
+    var aRecord = recordsThisWeek[pair.teamA.rosterId] ? " (" + recordsThisWeek[pair.teamA.rosterId] + ")" : "";
+    var bRecord = recordsThisWeek[pair.teamB.rosterId] ? " (" + recordsThisWeek[pair.teamB.rosterId] + ")" : "";
+
+    var rowA =
+      '<div class="matchup-row' + (aWins ? " winner" : "") + '">' +
+      "<span>" + escapeHtml(aLabel) + escapeHtml(aRecord) + "</span>" +
+      "<span>" + Number(pair.teamA.points || 0).toFixed(2) + "</span>" +
+      "</div>";
+    var rowB =
+      '<div class="matchup-row' + (bWins ? " winner" : "") + '">' +
+      "<span>" + escapeHtml(bLabel) + escapeHtml(bRecord) + "</span>" +
+      "<span>" + Number(pair.teamB.points || 0).toFixed(2) + "</span>" +
+      "</div>";
+
+    var toggleId = "matchup-rosters-" + idx;
+    var toggleHtml = '<div class="matchup-toggle"><button class="btn btn-small" data-target="' + toggleId + '">Show rosters</button></div>';
+    var rosterAHtml = rosterListHtml(pair.teamA);
+    var rosterBHtml = rosterListHtml(pair.teamB);
+    var rostersHtml =
+      '<div class="matchup-rosters" id="' + toggleId + '">' +
+      '<div class="matchup-roster-col"><h5>' + escapeHtml(aLabel) + "</h5>" + rosterAHtml + "</div>" +
+      '<div class="matchup-roster-col"><h5>' + escapeHtml(bLabel) + "</h5>" + rosterBHtml + "</div>" +
+      "</div>";
+
+    card.innerHTML = rowA + rowB + toggleHtml + rostersHtml;
+    list.appendChild(card);
+  });
+
+  var byeEntries = (matchups || []).filter(function (raw) {
+    return raw && raw.roster_id && !pairedRosterIds[raw.roster_id];
+  });
+  byeEntries.sort(function (a, b) {
+    var teamA = state.rosterMap[a.roster_id];
+    var teamB = state.rosterMap[b.roster_id];
+    var nameA = teamA ? teamA.teamName : "";
+    var nameB = teamB ? teamB.teamName : "";
+    return nameA.localeCompare(nameB);
+  });
+  byeEntries.forEach(function (raw) {
+    var team = state.rosterMap[raw.roster_id];
+    if (!team) return;
+    var card = document.createElement("div");
+    card.className = "matchup-card bye-card";
+    var byeLabel = teamWithOwner(team.teamName, team.displayName);
+    var byeRecord = recordsThisWeek[raw.roster_id] ? " (" + recordsThisWeek[raw.roster_id] + ")" : "";
+    var byePoints = raw.points !== null && raw.points !== undefined ? Number(raw.points).toFixed(2) : "-";
+    card.innerHTML =
+      '<div class="matchup-row"><span>' + escapeHtml(byeLabel) + escapeHtml(byeRecord) + "</span><span>" + byePoints + "</span></div>" +
+      '<div class="matchup-row bye-row">BYE</div>';
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll(".matchup-toggle button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var target = byId(btn.dataset.target);
+      if (!target) return;
+      var expanded = target.classList.toggle("expanded");
+      btn.textContent = expanded ? "Hide rosters" : "Show rosters";
+    });
+  });
 }
-
-function renderWeeklyHighScoreAndEliminator() {
-  var container = byId("weekly-prizes-section");
-  if (!container) return;
-  if (state.dataSource === "espn") {
-    container.innerHTML = '<p class="status-text">Weekly prize tracking is only available for live Sleeper seasons.</p>';
-    return;
-  }
-  if (!state.allWeeksMatchups || !state.sleeperPlayedWeeks) return;
-
-  var results = buildWeeklyHighsAndEliminator(
-    state.allWeeksMatchups,
-    state.rosterMap,
-    state.sleeperPlayedWeeks,
-    state.playoffStartWeek
-  );
-
-  if (!results.length) {
-    container.innerHTML = '<p class="status-text">No weekly data yet.</p>';
-    return;
-  }
-
-  var latest = results[results.length - 1];
-  var highScoreHtml =
-    '<div class="weekly-prize-card">' +
-    '<h4 class="weekly-prize-heading">Week ' + latest.week + " Highest Score</h4>" +
-    '<div class="weekly-prize-value">' + escapeHtml(latest.highScore.ownerName) + " " + latest.highScore.points.toFixed(2) + "</div>" +
-    '<div class="weekly-prize-sub">' + escapeHtml(latest.highScore.teamName) + "</div>" +
-    "</div>";
-
-  var eliminatorRowsHtml = results
-    .slice()
-    .reverse()
-    .map(function (r) {
-      var statusHtml = r.eliminated
-        ? '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")"
-        : r.isFinalWeek
-        ? '<span class="eliminator-winner-tag">WINNER</span>'
-        : '<span class="status-text">No elimination this week</span>';
-      return (
-        '<div class="eliminator-row">' +
-        '<span class="eliminator-week">Week ' + r.week + "</span>" +
-        '<span class="eliminator-status">' + statusHtml + "</span>" +
-        '<span class="eliminator-remaining">' + r.remainingCount + " left</span>" +
-        "</div>"
-      );
-    })
-    .join("");
-
-  container.innerHTML =
-    highScoreHtml +
-    '<h4 class="weekly-prize-heading">Eliminator</h4>' +
-    '<div class="eliminator-list">' + eliminatorRowsHtml + "</div>";
-} 
     // Resolve an owner name from the pair side, falling back to rosterMap
     // (pairMatchups may not always carry displayName through).
     function ownerOf(team) {
