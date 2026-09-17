@@ -1111,11 +1111,39 @@ display: none !important;
 
 .weekly-prizes-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .highscore-list { display: flex; flex-direction: column; gap: 6px; }
-.highscore-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
-.highscore-row-current { border-color: var(--accent); background: rgba(79, 140, 255, 0.08); }
-.highscore-week { font-weight: 700; }
-.highscore-name { color: var(--text); }
-.highscore-points { color: var(--gold); font-weight: 700; }
+.highscore-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.highscore-row-current {
+  border: 1px solid var(--accent);
+  background: rgba(79, 140, 255, 0.08);
+}
+
+.highscore-week {
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 70px;
+}
+
+.highscore-name {
+  flex: 1;
+  color: var(--text);
+}
+
+.highscore-points {
+  color: var(--gold);
+  font-weight: 700;
+  text-align: right;
+  min-width: 70px;
+}
 @media (max-width: 700px) { .weekly-prizes-columns { grid-template-columns: 1fr; } }
 
 .eliminator-list {
