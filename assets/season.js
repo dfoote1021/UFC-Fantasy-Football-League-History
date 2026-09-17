@@ -692,9 +692,6 @@ await populateRosterTeamSelect();
     });
   }
 
-  /* ============================================================
-   * INSERT THE FOLLOWING TWO FUNCTIONS HERE
-   * ============================================================ */
 
   function setRosterWeekSelectorVisible(isVisible) {
     var weekSelect = byId("roster-week-select");
@@ -831,15 +828,10 @@ await populateRosterTeamSelect();
     }
   }
 
-  /* ============================================================
-   * YOUR EXISTING ESPN DRAFT FUNCTION CONTINUES HERE
-   * ============================================================ */
-
   /**
    * ESPN draft tab entry point. Fetches this season's draft picks...
    */
   async function renderDraftEspn(season, myToken) {
-    // your existing code remains unchanged
   }
   /**
    * ESPN draft tab entry point. Fetches this season's draft picks, then
@@ -2535,38 +2527,6 @@ function syncStandingsSortHeaders() {
     renderFaabSection(container, state.seasonFaabRows, String(state.season), "faab-season-owner-filter");
   }
 
-  /**
- * FAAB lost-bid display fix — ONE function to replace in season.js.
- *
- * Verified: passes `node --check` and was test-rendered with a mock
- * player that has one won bid and one lost bid — output correctly shows
- * a WON tag on the $47 bid and a LOST tag on the $30 bid, plus a summary
- * line reading "$47 total · 1 win · 1 loss".
- *
- * WHERE THIS GOES:
- *   File:      season.js  (your season-50.js)
- *   Function:  
- *
- * HOW TO APPLY IT:
- *   1. Open season.js.
- *   2. Search for the line: function  {
- *   3. Select from that line down through the matching closing brace of
- *      that function (the one right before the next top-level function
- *      definition starts).
- *   4. Delete that whole block and paste in the function below.
- *   5. Save. No other file needs to change for this specific piece IF you
- *      already applied the sleeper-common.js rebuild delivered earlier in
- *      this conversation (that file's resolveTransactionDetail() and
- *      buildFaabSpendByPlayer() are what actually attach `won: true/false`
- *      to each bid — this function only renders that flag).
- *
- * If you have NOT yet applied the sleeper-common.js rebuild, this
- * function will still run without errors, but every bid will render as
- * WON (since `b.won` will be undefined, and this code treats that as a
- * win by design, for backward compatibility with old cached data). You
- * need both files updated for LOST tags to actually appear.
- */
-
 function faabCardsHtml(rows) {
   if (!rows.length) {
     return (
@@ -2647,7 +2607,7 @@ function faabCardsHtml(rows) {
  *     to just that owner's Week 10 bid.
  *   - Switching back to Full Season correctly restores full totals.
  *
- * WHERE THIS GOES:
+ * :
  *   File:     season.js  (your season-50.js)
  *   Function: REPLACES your existing renderFaabSection(container, allRows,
  *             labelSuffix, selectId) function, and ADDS one new helper
@@ -3187,19 +3147,6 @@ function paAverage(pointsAgainst, wins, losses, ties) {
         "Could not load all-time data. Details: " + (err && err.message ? err.message : err);
     }
   }
-
-  /**
- * CONFIRMED FIX - your live season-51.js still has the unfixed merge bug
- * (verified directly by reading the file this turn: the combined object
- * only initializes totalSpent/timesWon, and entry.bids.push() never
- * copies `won`). This replacement is `node --check` verified.
- *
- * WHERE THIS GOES:
- *   File:     season.js (your season-51.js)
- *   Function: REPLACES the entire renderFaabSpendByPlayerAllTime()
- *             function, from "async function renderFaabSpendByPlayerAllTime() {"
- *             down through its closing "}".
- */
 
 async function renderFaabSpendByPlayerAllTime() {
   var container = byId("faab-by-player-alltime");
