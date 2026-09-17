@@ -1212,11 +1212,17 @@ display: none !important;
   border-radius: 4px;
 }
 
-.totw-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
-.totw-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
-.totw-slot { font-weight: 700; color: var(--accent); min-width: 60px; }
-.totw-name { flex: 1; color: var(--text); }
-.totw-points { color: var(--gold); font-weight: 700; text-align: right; min-width: 60px; }
+.totw-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.totw-card { padding: 10px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+.totw-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.totw-name { font-weight: 700; color: var(--text); font-size: 1rem; }
+.totw-pos-badge { background: var(--panel-alt); color: var(--accent); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+.totw-card-bottom { display: flex; justify-content: space-between; align-items: center; }
+.totw-owner { color: var(--text-dim); font-size: 0.85rem; }
+.totw-points { color: var(--gold); font-weight: 700; font-size: 1.1rem; }
+.totw-total-row { border-top: 2px solid var(--accent); }
+.totw-total-row .totw-name { font-weight: 800; }
+.totw-total-row .totw-points { color: var(--accent); }
 
 @media (max-width: 700px) {
   main {
