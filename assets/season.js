@@ -2012,7 +2012,7 @@
                 list.appendChild(card);
             });
 
-            list.querySelectorAll(".matchup-toggle button").forEach(function(btn) {
+        list.querySelectorAll(".matchup-toggle button").forEach(function(btn) {
                 btn.addEventListener("click", function() {
                     var target = byId(btn.dataset.target);
                     if (!target) return;
@@ -2020,8 +2020,9 @@
                     btn.textContent = expanded ? "Hide rosters" : "Show rosters";
                 });
             });
-       
-    async function populateScheduleTeamSelect() {
+        }
+
+        async function populateScheduleTeamSelect() {
         var select = byId("schedule-team-select");
         if (!select) return;
         select.innerHTML = "";
