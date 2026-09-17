@@ -1203,6 +1203,21 @@ display: none !important;
   border-radius: 4px;
 }
 
+.eliminator-winner-tag {
+  background: var(--gold);
+  color: #1a1a1a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.totw-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.totw-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+.totw-slot { font-weight: 700; color: var(--accent); min-width: 60px; }
+.totw-name { flex: 1; color: var(--text); }
+.totw-points { color: var(--gold); font-weight: 700; text-align: right; min-width: 60px; }
+
 @media (max-width: 700px) {
   main {
     padding: 16px;
