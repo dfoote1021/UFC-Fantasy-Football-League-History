@@ -2189,18 +2189,6 @@ if (!matchups) {
             }).join("");
         }
 
-            var botwGrid = byId("botw-grid");
-            var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10);
-            botwGrid.innerHTML = botw.map(function(entry) {
-                return (
-                    '<div class="team-card">' +
-                    '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' +
-                    '<div class="team-stats-row"><span>' + escapeHtml(entry.position) + '</span><span>' + escapeHtml(entry.ownerName) + '</span></div>' +
-                    '</div>'
-                );
-            }).join("");
-        }
-
         async function renderTeams() {
             var grid = byId("teams-grid");
             if (!grid) return;
