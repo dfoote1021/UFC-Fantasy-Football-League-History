@@ -1896,7 +1896,10 @@ renderWeeklyHighScoreAndEliminator(Number(byId("week-select").value) || state.cu
             txnWeekSelect.value = String(state.currentWeek);
             rosterWeekSelect.value = String(state.currentWeek);
 
-            weekSelect.onchange = renderMatchups;
+            weekSelect.onchange = function () {
+    renderMatchups();
+    renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
+};
             txnWeekSelect.onchange = renderTransactions;
             rosterWeekSelect.onchange = renderWeeklyRoster;
         }
