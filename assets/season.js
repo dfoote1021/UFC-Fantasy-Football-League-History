@@ -45,7 +45,7 @@
             return document.getElementById(id);
         }
 
-        function buildWeeklyHighsAndEliminator(allWeeksMatchups, rosterMap, playedWeeks, playoffStartWeek) {
+       function buildWeeklyHighsAndEliminator(allWeeksMatchups, rosterMap, playedWeeks, playoffStartWeek) {
             var regularWeeks = playedWeeks
                 .filter(function(w) {
                     return !playoffStartWeek || w < playoffStartWeek;
@@ -88,6 +88,22 @@
 
                 var remainingCount = activeRows.length - (eliminatedThisWeek ? 1 : 0);
 
+                var winner = null;
+                if (remainingCount <= 1) {
+                    var survivorRow = activeRows.find(function(r) {
+                        return !eliminatedThisWeek || r.roster_id !== eliminatedThisWeek.rosterId;
+                    });
+                    if (survivorRow) {
+                        var survivorTeam = rosterMap[survivorRow.roster_id];
+                        winner = {
+                            rosterId: survivorRow.roster_id,
+                            teamName: survivorTeam ? survivorTeam.teamName : "Unknown",
+                            ownerName: survivorTeam ? survivorTeam.displayName : "Unknown",
+                            points: Number(survivorRow.points)
+                        };
+                    }
+                }
+
                 weeklyResults.push({
                     week: week,
                     highScore: {
@@ -97,6 +113,7 @@
                         points: Number(highRow.points)
                     },
                     eliminated: eliminatedThisWeek,
+                    winner: winner,
                     remainingCount: remainingCount,
                     isFinalWeek: remainingCount <= 1
                 });
@@ -144,9 +161,9 @@
         .map(function (r) {
             var statusHtml = r.eliminated ?
                 '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")" :
-                r.isFinalWeek ?
-                '<span class="eliminator-winner-tag">WINNER</span>' :
-                '<span class="status-text">No elimination this week</span>';
+                : (r.isFinalWeek
+    ? '<span class="eliminator-winner-tag">WINNER</span> ' + (r.winner ? escapeHtml(r.winner.ownerName) : '')
+    : '<span class="status-text">No elimination this week</span>');
             return (
                 '<div class="eliminator-row' + (r.week === weekToShow ? " eliminator-row-current" : "") + '">' +
                 '<span class="eliminator-week">Week ' + r.week + "</span>" +
