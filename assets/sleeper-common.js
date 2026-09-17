@@ -1398,6 +1398,8 @@
     buildDivisionStandings: buildDivisionStandings,
     pairMatchups: pairMatchups,
     resolveMatchupRoster: resolveMatchupRoster,
+    buildTeamOfTheWeek: buildTeamOfTheWeek,
+    buildBenchOfTheWeek: buildBenchOfTheWeek,
     getDefaultWeek: getDefaultWeek,
     isWeekPlayed: isWeekPlayed,
     getPlayedWeeks: getPlayedWeeks,
