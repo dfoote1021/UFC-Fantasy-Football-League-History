@@ -286,20 +286,18 @@
             });
         }
 
-        function setupMatchupViewToggle() {
+       function setupMatchupViewToggle() {
             var buttons = document.querySelectorAll(".view-toggle-btn");
             buttons.forEach(function(btn) {
                 btn.addEventListener("click", function() {
-                    buttons.forEach(function(b) {
-                        b.classList.remove("active");
-                    });
+                    buttons.forEach(function(b) { b.classList.remove("active"); });
                     btn.classList.add("active");
                     var view = btn.dataset.view;
-                    byId("matchups-week-view").hidden = view !== "week";
-                    byId("matchups-schedule-view").hidden = view !== "schedule";
-                    if (view === "schedule") {
-                        renderTeamSchedule();
-                    }
+                    byId("matchups-week-view").hidden = (view !== "week");
+                    byId("matchups-schedule-view").hidden = (view !== "schedule");
+                    byId("matchups-totw-view").hidden = (view !== "totw");
+                    if (view === "schedule") renderTeamSchedule();
+                    if (view === "totw") setupTotwView();
                 });
             });
         }
@@ -2128,6 +2126,8 @@ if (!matchups) {
             tbody.appendChild(tr);
         });
     }
+
+async function setupTotwView() { if (state.dataSource === "espn") { byId("matchups-totw-view").innerHTML = '<p class="status-text">Team of the Week and Bench of the Week are only available for live Sleeper seasons.</p>'; return; } var weekSelect = byId("totw-week-select"); if (!weekSelect) return; if (!weekSelect.options.length) { weekSelect.innerHTML = ""; (state.sleeperPlayedWeeks || []).forEach(function(w) { var opt = document.createElement("option"); opt.value = String(w); opt.textContent = "Week " + w; weekSelect.appendChild(opt); }); weekSelect.value = String(state.currentWeek); weekSelect.onchange = renderTotwAndBotw; } if (!state.playersMap) { try { state.playersMap = await SleeperAPI.getPlayersMap(); } catch (e) { state.playersMap = {}; } } renderTotwAndBotw(); }  function renderTotwAndBotw() { var week = Number(byId("totw-week-select").value) || state.currentWeek; var weekMatchups = (state.allWeeksMatchups && state.allWeeksMatchups[week]) || [];  var totwGrid = byId("totw-grid"); var totw = SleeperAPI.buildTeamOfTheWeek(weekMatchups, state.playersMap, state.rosterMap); totwGrid.innerHTML = totw.map(function(entry) { if (!entry.playerName) { return '<div class="team-card"><div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>No data</span></div></div>'; } return ( '<div class="team-card">' + '<div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + escapeHtml(entry.position) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.ownerName) + '</span><span></span></div>' + '</div>' ); }).join("");  var botwGrid = byId("botw-grid"); var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10); botwGrid.innerHTML = botw.map(function(entry) { return ( '<div class="team-card">' + '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.position) + '</span><span>' + escapeHtml(entry.ownerName) + '</span></div>' + '</div>' ); }).join(""); }
 
     async function renderTeams() {
         var grid = byId("teams-grid");
