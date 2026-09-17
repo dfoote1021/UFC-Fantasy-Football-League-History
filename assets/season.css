@@ -1109,6 +1109,15 @@ display: none !important;
   margin-top: 2px;
 }
 
+.weekly-prizes-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.highscore-list { display: flex; flex-direction: column; gap: 6px; }
+.highscore-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.highscore-row-current { border-color: var(--accent); background: rgba(79, 140, 255, 0.08); }
+.highscore-week { font-weight: 700; }
+.highscore-name { color: var(--text); }
+.highscore-points { color: var(--gold); font-weight: 700; }
+@media (max-width: 700px) { .weekly-prizes-columns { grid-template-columns: 1fr; } }
+
 .eliminator-list {
   display: flex;
   flex-direction: column;
