@@ -2127,18 +2127,60 @@ if (!matchups) {
         });
     }
 
-async function setupTotwView() { if (state.dataSource === "espn") { byId("matchups-totw-view").innerHTML = '<p class="status-text">Team of the Week and Bench of the Week are only available for live Sleeper seasons.</p>'; return; } var weekSelect = byId("totw-week-select"); if (!weekSelect) return; if (!weekSelect.options.length) { weekSelect.innerHTML = ""; (state.sleeperPlayedWeeks || []).forEach(function(w) { var opt = document.createElement("option"); opt.value = String(w); opt.textContent = "Week " + w; weekSelect.appendChild(opt); }); weekSelect.value = String(state.currentWeek); weekSelect.onchange = renderTotwAndBotw; } if (!state.playersMap) { try { state.playersMap = await SleeperAPI.getPlayersMap(); } catch (e) { state.playersMap = {}; } } renderTotwAndBotw(); }  function renderTotwAndBotw() { var week = Number(byId("totw-week-select").value) || state.currentWeek; var weekMatchups = (state.allWeeksMatchups && state.allWeeksMatchups[week]) || [];  var totwGrid = byId("totw-grid"); var totw = SleeperAPI.buildTeamOfTheWeek(weekMatchups, state.playersMap, state.rosterMap); totwGrid.innerHTML = totw.map(function(entry) { if (!entry.playerName) { return '<div class="team-card"><div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>No data</span></div></div>'; } return ( '<div class="team-card">' + '<div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + escapeHtml(entry.position) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.ownerName) + '</span><span></span></div>' + '</div>' ); }).join("");  var botwGrid = byId("botw-grid"); var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10); botwGrid.innerHTML = botw.map(function(entry) { return ( '<div class="team-card">' + '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' + '<div class="team-stats-row"><span>' + escapeHtml(entry.position) + '</span><span>' + escapeHtml(entry.ownerName) + '</span></div>' + '</div>' ); }).join(""); }
+async function setupTotwView() {
+            if (state.dataSource === "espn") {
+                byId("matchups-totw-view").innerHTML = '<p class="status-text">Team of the Week and Bench of the Week are only available for live Sleeper seasons.</p>';
+                return;
+            }
+            var weekSelect = byId("totw-week-select");
+            if (!weekSelect) return;
+            if (!weekSelect.options.length) {
+                weekSelect.innerHTML = "";
+                (state.sleeperPlayedWeeks || []).forEach(function(w) {
+                    var opt = document.createElement("option");
+                    opt.value = String(w);
+                    opt.textContent = "Week " + w;
+                    weekSelect.appendChild(opt);
+                });
+                weekSelect.value = String(state.currentWeek);
+                weekSelect.onchange = renderTotwAndBotw;
+            }
+            if (!state.playersMap) {
+                try { state.playersMap = await SleeperAPI.getPlayersMap(); } catch (e) { state.playersMap = {}; }
+            }
+            renderTotwAndBotw();
+        }
 
-    async function renderTeams() {
-        var grid = byId("teams-grid");
-        if (!grid) return;
-        grid.innerHTML = "<p>Loading…</p>";
+        function renderTotwAndBotw() {
+            var week = Number(byId("totw-week-select").value) || state.currentWeek;
+            var weekMatchups = (state.allWeeksMatchups && state.allWeeksMatchups[week]) || [];
 
-        await ensureAllTransactions();
+            var totwGrid = byId("totw-grid");
+            var totw = SleeperAPI.buildTeamOfTheWeek(weekMatchups, state.playersMap, state.rosterMap);
+            totwGrid.innerHTML = totw.map(function(entry) {
+                if (!entry.playerName) {
+                    return '<div class="team-card"><div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>No data</span></div></div>';
+                }
+                return (
+                    '<div class="team-card">' +
+                    '<div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' +
+                    '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + escapeHtml(entry.position) + '</span></div>' +
+                    '<div class="team-stats-row"><span>' + escapeHtml(entry.ownerName) + '</span><span></span></div>' +
+                    '</div>'
+                );
+            }).join("");
 
-        grid.innerHTML = "";
-        var standings = SleeperAPI.sortStandings(state.rosterMap);
-        standings.forEach(function(team) {
+            var botwGrid = byId("botw-grid");
+            var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10);
+            botwGrid.innerHTML = botw.map(function(entry) {
+                return (
+                    '<div class="team-card">' +
+                    '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' +
+                    '<div class="team-stats-row"><span>' + escapeHtml(entry.position) + '</span><span>' + escapeHtml(entry.ownerName) + '</span></div>' +
+                    '</div>'
+                );
+            }).join("");
+        }
             var card = document.createElement("div");
             card.className = "team-card";
             var avatarHtml = team.avatar ?
