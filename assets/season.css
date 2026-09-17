@@ -1127,6 +1127,11 @@ display: none !important;
   font-size: 0.9rem;
 }
 
+.eliminator-row-current {
+  border: 1px solid var(--accent);
+  background: rgba(79, 140, 255, 0.08);
+}
+
 .eliminator-week {
   font-weight: 700;
   color: var(--text-dim);
