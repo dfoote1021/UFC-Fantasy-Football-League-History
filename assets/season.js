@@ -2151,24 +2151,43 @@ if (!matchups) {
             renderTotwAndBotw();
         }
 
-        function renderTotwAndBotw() {
+        ffunction renderTotwAndBotw() {
             var week = Number(byId("totw-week-select").value) || state.currentWeek;
             var weekMatchups = (state.allWeeksMatchups && state.allWeeksMatchups[week]) || [];
 
-            var totwGrid = byId("totw-grid");
+            var totwList = byId("totw-grid");
             var totw = SleeperAPI.buildTeamOfTheWeek(weekMatchups, state.playersMap, state.rosterMap);
-            totwGrid.innerHTML = totw.map(function(entry) {
+            totwList.innerHTML = totw.map(function(entry) {
                 if (!entry.playerName) {
-                    return '<div class="team-card"><div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>No data</span></div></div>';
+                    return (
+                        '<div class="totw-row">' +
+                        '<span class="totw-slot">' + escapeHtml(entry.slot) + '</span>' +
+                        '<span class="totw-name">No data</span>' +
+                        '<span class="totw-points"></span>' +
+                        '</div>'
+                    );
                 }
                 return (
-                    '<div class="team-card">' +
-                    '<div class="team-stats-row"><span>' + escapeHtml(entry.slot) + '</span><span>' + entry.points.toFixed(2) + '</span></div>' +
-                    '<div class="team-stats-row"><span>' + escapeHtml(entry.playerName) + '</span><span>' + escapeHtml(entry.position) + '</span></div>' +
-                    '<div class="team-stats-row"><span>' + escapeHtml(entry.ownerName) + '</span><span></span></div>' +
+                    '<div class="totw-row">' +
+                    '<span class="totw-slot">' + escapeHtml(entry.slot) + '</span>' +
+                    '<span class="totw-name">' + escapeHtml(entry.playerName) + ' (' + escapeHtml(entry.ownerName) + ')</span>' +
+                    '<span class="totw-points">' + entry.points.toFixed(2) + '</span>' +
                     '</div>'
                 );
             }).join("");
+
+            var botwList = byId("botw-grid");
+            var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10);
+            botwList.innerHTML = botw.map(function(entry) {
+                return (
+                    '<div class="totw-row">' +
+                    '<span class="totw-slot">' + escapeHtml(entry.position) + '</span>' +
+                    '<span class="totw-name">' + escapeHtml(entry.playerName) + ' (' + escapeHtml(entry.ownerName) + ')</span>' +
+                    '<span class="totw-points">' + entry.points.toFixed(2) + '</span>' +
+                    '</div>'
+                );
+            }).join("");
+        }
 
             var botwGrid = byId("botw-grid");
             var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10);
