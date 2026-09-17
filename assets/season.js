@@ -1896,13 +1896,12 @@ weekSelect.onchange = function () {
             txnWeekSelect.value = String(state.currentWeek);
             rosterWeekSelect.value = String(state.currentWeek);
 
-   weekSelect.value = String(weeks[0] || 1);
-weekSelect.onchange = function () {
-    renderMatchupsEspn();
-    renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
-};
-            txn renderTransactions;
-            roster renderWeeklyRoster;
+               weekSelect.onchange = function() {
+                renderMatchups();
+                renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
+            };
+            txnWeekSelect.onchange = renderTransactions;
+            rosterWeekSelect.onchange = renderWeeklyRoster;
         }
 
         async function renderMatchups() {
