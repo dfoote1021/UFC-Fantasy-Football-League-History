@@ -2151,7 +2151,7 @@ if (!matchups) {
             renderTotwAndBotw();
         }
 
-        ffunction renderTotwAndBotw() {
+        function renderTotwAndBotw() {
             var week = Number(byId("totw-week-select").value) || state.currentWeek;
             var weekMatchups = (state.allWeeksMatchups && state.allWeeksMatchups[week]) || [];
 
