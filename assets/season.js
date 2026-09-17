@@ -1910,15 +1910,19 @@ renderWeeklyHighScoreAndEliminator(Number(byId("week-select").value) || state.cu
             var list = byId("matchups-list");
             list.innerHTML = "<p>Loading…</p>";
 
-            var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
-            if (!matchups) {
-                try {
-                    matchups = await SleeperAPI.getMatchups(state.leagueId, week);
-                } catch (e) {
-                    list.innerHTML = "<p>No matchup data for this week.</p>";
-                    return;
-                }
-            }
+           var matchups = state.allWeeksMatchups ? state.allWeeksMatchups[week] : null;
+if (!matchups) {
+    if (isEspnYear(state.season)) {
+        list.innerHTML = "<p>No matchup data for this week.</p>";
+        return;
+    }
+    try {
+        matchups = await SleeperAPI.getMatchups(state.leagueId, week);
+    } catch (e) {
+        list.innerHTML = "<p>No matchup data for this week.</p>";
+        return;
+    }
+}
 
             if (!matchups || matchups.length === 0) {
                 list.innerHTML = "<p>No matchup data for this week yet.</p>";
