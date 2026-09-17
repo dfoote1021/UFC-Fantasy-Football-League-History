@@ -105,59 +105,63 @@
             return weeklyResults;
         }
 
-        function renderWeeklyHighScoreAndEliminator() {
-            var container = byId("weekly-prizes-section");
-            if (!container) return;
-            if (state.dataSource === "espn") {
-                container.innerHTML = '<p class="status-text">Weekly prize tracking is only available for live Sleeper seasons.</p>';
-                return;
-            }
-            if (!state.allWeeksMatchups || !state.sleeperPlayedWeeks) return;
+        function renderWeeklyHighScoreAndEliminator(selectedWeek) {
+    var container = byId("weekly-prizes-section");
+    if (!container) return;
+    if (state.dataSource === "espn") {
+        container.innerHTML = '<p class="status-text">Weekly prize tracking is only available for live Sleeper seasons.</p>';
+        return;
+    }
+    if (!state.allWeeksMatchups || !state.sleeperPlayedWeeks) return;
 
-            var results = buildWeeklyHighsAndEliminator(
-                state.allWeeksMatchups,
-                state.rosterMap,
-                state.sleeperPlayedWeeks,
-                state.playoffStartWeek
+    var results = buildWeeklyHighsAndEliminator(
+        state.allWeeksMatchups,
+        state.rosterMap,
+        state.sleeperPlayedWeeks,
+        state.playoffStartWeek
+    );
+
+    if (!results.length) {
+        container.innerHTML = '<p class="status-text">No weekly data yet.</p>';
+        return;
+    }
+
+    var weekToShow = selectedWeek || results[results.length - 1].week;
+    var highScoreResult = results.find(function (r) {
+        return r.week === weekToShow;
+    }) || results[results.length - 1];
+
+    var highScoreHtml =
+        '<div class="weekly-prize-card">' +
+        '<h4 class="weekly-prize-heading">Week ' + highScoreResult.week + " Highest Score</h4>" +
+        '<div class="weekly-prize-value">' + escapeHtml(highScoreResult.highScore.ownerName) + " " + highScoreResult.highScore.points.toFixed(2) + "</div>" +
+        '<div class="weekly-prize-sub">' + escapeHtml(highScoreResult.highScore.teamName) + "</div>" +
+        "</div>";
+
+    var eliminatorRowsHtml = results
+        .slice()
+        .reverse()
+        .map(function (r) {
+            var statusHtml = r.eliminated ?
+                '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")" :
+                r.isFinalWeek ?
+                '<span class="eliminator-winner-tag">WINNER</span>' :
+                '<span class="status-text">No elimination this week</span>';
+            return (
+                '<div class="eliminator-row' + (r.week === weekToShow ? " eliminator-row-current" : "") + '">' +
+                '<span class="eliminator-week">Week ' + r.week + "</span>" +
+                '<span class="eliminator-status">' + statusHtml + "</span>" +
+                '<span class="eliminator-remaining">' + r.remainingCount + " left</span>" +
+                "</div>"
             );
+        })
+        .join("");
 
-            if (!results.length) {
-                container.innerHTML = '<p class="status-text">No weekly data yet.</p>';
-                return;
-            }
-
-            var latest = results[results.length - 1];
-            var highScoreHtml =
-                '<div class="weekly-prize-card">' +
-                '<h4 class="weekly-prize-heading">Week ' + latest.week + " Highest Score</h4>" +
-                '<div class="weekly-prize-value">' + escapeHtml(latest.highScore.ownerName) + " " + latest.highScore.points.toFixed(2) + "</div>" +
-                '<div class="weekly-prize-sub">' + escapeHtml(latest.highScore.teamName) + "</div>" +
-                "</div>";
-
-            var eliminatorRowsHtml = results
-                .slice()
-                .reverse()
-                .map(function(r) {
-                    var statusHtml = r.eliminated ?
-                        '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")" :
-                        r.isFinalWeek ?
-                        '<span class="eliminator-winner-tag">WINNER</span>' :
-                        '<span class="status-text">No elimination this week</span>';
-                    return (
-                        '<div class="eliminator-row">' +
-                        '<span class="eliminator-week">Week ' + r.week + "</span>" +
-                        '<span class="eliminator-status">' + statusHtml + "</span>" +
-                        '<span class="eliminator-remaining">' + r.remainingCount + " left</span>" +
-                        "</div>"
-                    );
-                })
-                .join("");
-
-            container.innerHTML =
-                highScoreHtml +
-                '<h4 class="weekly-prize-heading">Eliminator</h4>' +
-                '<div class="eliminator-list">' + eliminatorRowsHtml + "</div>";
-        }
+    container.innerHTML =
+        highScoreHtml +
+        '<h4 class="weekly-prize-heading">Eliminator</h4>' +
+        '<div class="eliminator-list">' + eliminatorRowsHtml + "</div>";
+}
 
         var state = {
             season: null,
