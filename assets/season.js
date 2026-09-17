@@ -1896,8 +1896,9 @@ weekSelect.onchange = function () {
             txnWeekSelect.value = String(state.currentWeek);
             rosterWeekSelect.value = String(state.currentWeek);
 
-             function () {
-    renderMatchups();
+   weekSelect.value = String(weeks[0] || 1);
+weekSelect.onchange = function () {
+    renderMatchupsEspn();
     renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
 };
             txn renderTransactions;
