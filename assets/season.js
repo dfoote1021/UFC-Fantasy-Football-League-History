@@ -161,9 +161,9 @@
         .map(function (r) {
             var statusHtml = r.eliminated ?
                 '<span class="eliminator-out-tag">OUT</span> ' + escapeHtml(r.eliminated.ownerName) + " (" + r.eliminated.points.toFixed(2) + ")" :
-                : (r.isFinalWeek
-    ? '<span class="eliminator-winner-tag">WINNER</span> ' + (r.winner ? escapeHtml(r.winner.ownerName) : '')
-    : '<span class="status-text">No elimination this week</span>');
+                (r.isFinalWeek
+                    ? '<span class="eliminator-winner-tag">WINNER</span> ' + (r.winner ? escapeHtml(r.winner.ownerName) : '')
+                    : '<span class="status-text">No elimination this week</span>');
             return (
                 '<div class="eliminator-row' + (r.week === weekToShow ? " eliminator-row-current" : "") + '">' +
                 '<span class="eliminator-week">Week ' + r.week + "</span>" +
@@ -173,7 +173,6 @@
             );
         })
         .join("");
-
     container.innerHTML =
         highScoreHtml +
         '<h4 class="weekly-prize-heading">Eliminator</h4>' +
