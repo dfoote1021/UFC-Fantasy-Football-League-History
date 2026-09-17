@@ -556,8 +556,8 @@ renderWeeklyHighScoreAndEliminator(Number(byId("week-select").value) || state.cu
                 weekSelect.appendChild(opt);
             });
             weekSelect.value = String(weeks[0] || 1);
-            weekSelect.onchange = function () {
-    renderMatchups();
+weekSelect.onchange = function () {
+    renderMatchupsEspn();
     renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
 };
 
@@ -1896,12 +1896,12 @@ renderWeeklyHighScoreAndEliminator(Number(byId("week-select").value) || state.cu
             txnWeekSelect.value = String(state.currentWeek);
             rosterWeekSelect.value = String(state.currentWeek);
 
-            weekSelect.onchange = function () {
+             function () {
     renderMatchups();
     renderWeeklyHighScoreAndEliminator(Number(weekSelect.value));
 };
-            txnWeekSelect.onchange = renderTransactions;
-            rosterWeekSelect.onchange = renderWeeklyRoster;
+            txn renderTransactions;
+            roster renderWeeklyRoster;
         }
 
         async function renderMatchups() {
