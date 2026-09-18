@@ -375,6 +375,105 @@
     return roster;
   }
 
+function buildTeamOfTheWeek(weekMatchups, playersMap, rosterMap) {
+    var SLOT_ORDER = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "DEF", "K"];
+    var candidatesBySlotType = { QB: [], RB: [], WR: [], TE: [], FLEX: [], DEF: [], K: [] };
+
+    (weekMatchups || []).forEach(function (side) {
+        var team = rosterMap[side.roster_id] || {};
+        var starterSet = {};
+        (side.starters || []).forEach(function (playerId) {
+            starterSet[playerId] = true;
+        });
+        var playerPoints = side.players_points || {};
+
+        (side.players || []).forEach(function (playerId) {
+            if (!starterSet[playerId]) return;
+
+            var meta = (playersMap && playersMap[playerId]) || {};
+            var position = meta.position || "";
+            var points = playerPoints[playerId] !== undefined ? playerPoints[playerId] : 0;
+            var entry = {
+                playerId: playerId,
+                playerName: meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId),
+                position: position,
+                points: points,
+                ownerName: team.displayName || team.teamName || "Unknown",
+                rosterId: side.roster_id,
+            };
+
+            if (candidatesBySlotType[position]) {
+                candidatesBySlotType[position].push(entry);
+            }
+            if (position === "RB" || position === "WR" || position === "TE") {
+                candidatesBySlotType.FLEX.push(entry);
+            }
+        });
+    });
+
+    Object.keys(candidatesBySlotType).forEach(function (key) {
+        candidatesBySlotType[key].sort(function (a, b) {
+            return (b.points || 0) - (a.points || 0);
+        });
+    });
+
+    var usedPlayerIds = {};
+    return SLOT_ORDER.map(function (slotType) {
+        var pool = candidatesBySlotType[slotType] || [];
+        var winner = pool.find(function (entry) {
+            return !usedPlayerIds[entry.playerId];
+        });
+
+        if (!winner) {
+            return { slot: slotType, playerName: null, position: slotType, points: 0, ownerName: null };
+        }
+
+        usedPlayerIds[winner.playerId] = true;
+        return {
+            slot: slotType,
+            playerName: winner.playerName,
+            position: winner.position,
+            points: winner.points,
+            ownerName: winner.ownerName,
+        };
+    });
+}
+
+function buildBenchOfTheWeek(weekMatchups, playersMap, rosterMap, limit) {
+    var benchEntries = [];
+
+    (weekMatchups || []).forEach(function (side) {
+        var team = rosterMap[side.roster_id] || {};
+        var starterSet = {};
+        (side.starters || []).forEach(function (playerId) {
+            starterSet[playerId] = true;
+        });
+        var playerPoints = side.players_points || {};
+
+        (side.players || []).forEach(function (playerId) {
+            if (starterSet[playerId]) return;
+
+            var meta = (playersMap && playersMap[playerId]) || {};
+            var points = playerPoints[playerId] !== undefined ? playerPoints[playerId] : 0;
+
+            benchEntries.push({
+                playerId: playerId,
+                playerName: meta.full_name || (meta.first_name ? meta.first_name + " " + meta.last_name : playerId),
+                position: meta.position || "",
+                points: points,
+                ownerName: team.displayName || team.teamName || "Unknown",
+                rosterId: side.roster_id,
+            });
+        });
+    });
+
+    benchEntries.sort(function (a, b) {
+        return (b.points || 0) - (a.points || 0);
+    });
+
+    return benchEntries.slice(0, limit || 10);
+}
+  
   function buildLeagueWideWeeklyPlayerPool(weekMatchups, playersMap) {
             var pool = [];
             (weekMatchups || []).forEach(function (side) {
