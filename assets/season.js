@@ -2191,7 +2191,7 @@ if (!matchups) {
             );
 
             var botwList = byId("botw-grid");
-            var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap, 10);
+            var botw = SleeperAPI.buildBenchOfTheWeek(weekMatchups, state.playersMap, state.rosterMap);
             var botwTotal = 0;
             botwList.innerHTML = botw.map(function(entry) {
                 botwTotal += entry.points;
