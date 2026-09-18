@@ -440,34 +440,6 @@ function buildTeamOfTheWeek(weekMatchups, playersMap, rosterMap) {
     });
 }
 
-    Object.keys(candidatesBySlotType).forEach(function (key) {
-        candidatesBySlotType[key].sort(function (a, b) {
-            return (b.points || 0) - (a.points || 0);
-        });
-    });
-
-    var usedPlayerIds = {};
-    return SLOT_ORDER.map(function (slotType) {
-        var pool = candidatesBySlotType[slotType] || [];
-        var winner = pool.find(function (entry) {
-            return !usedPlayerIds[entry.playerId];
-        });
-
-        if (!winner) {
-            return { slot: slotType, playerName: null, position: slotType, points: 0, ownerName: null };
-        }
-
-        usedPlayerIds[winner.playerId] = true;
-        return {
-            slot: slotType,
-            playerName: winner.playerName,
-            position: winner.position,
-            points: winner.points,
-            ownerName: winner.ownerName,
-        };
-    });
-}
-
 function buildBenchOfTheWeek(weekMatchups, playersMap, rosterMap) {
     var BENCH_SLOT_DEFS = [
         { slot: "QB", positions: ["QB"] },
@@ -532,7 +504,6 @@ function buildBenchOfTheWeek(weekMatchups, playersMap, rosterMap) {
     });
 }
   
-
   function getDefaultWeek(league) {
     return getNFLState()
       .then(function (state) {
