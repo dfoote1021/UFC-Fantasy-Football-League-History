@@ -382,18 +382,10 @@ font-size: 0.7rem;
 margin-top: 2px;
 }
 
-/* KEEPER text at the bottom of the card is now redundant with the
-  corner badge (.is-keeper-pick::after below), so it's hidden here
-  rather than styled. */
 .draft-pick .draft-owner[style*="ffd25c"] {
 display: none;
 }
 
-/* Keeper corner badge - a small pinned tag on any pick card containing
-  "KEEPER" text (class added by draft-enhancements.js). Uses a color
-  deliberately NOT used anywhere else on the site - not an NFL team
-  color, not a position color, not --gold/--accent/--win/--live -
-  so keeper picks are unmistakably distinct at a glance. */
 .draft-pick.is-keeper-pick::after {
 content: "KEEPER";
 position: absolute;
@@ -410,9 +402,6 @@ box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 z-index: 2;
 }
 
-/* Draft pick headshots (Sleeper CDN for 2022+ picks, ESPN CDN for
-  2012-2021 picks). Falls back gracefully to a plain colored circle
-  if a headshot URL 404s. */
 .draft-pick .draft-headshot-wrap {
 width: 100%;
 aspect-ratio: 1 / 1;
@@ -438,9 +427,6 @@ color: var(--text-dim);
 font-weight: 700;
 }
 
-/* Draft breakdown ("By Position" / "By NFL Team") - same visual
-  language as .h2h-stat-card elsewhere on the site: bordered box,
-  big bold value, small dim label underneath, in a responsive grid. */
 .breakdown-heading {
 margin: 16px 0 10px;
 color: var(--text-dim);
@@ -482,11 +468,6 @@ margin-top: 4px;
 letter-spacing: 0.03em;
 }
 
-/* NFL-team-colored breakdown cards ("By NFL Team"). draft-enhancements.js
-  sets --nfl-primary/--nfl-secondary per card from nfl-team-colors.js;
-  this makes the whole box use the team's primary color as its
-  background and the secondary color for both the count and the
-  abbreviation label, so each box is two-toned per team. */
 .nfl-breakdown-card {
 background: var(--nfl-primary, var(--panel)) !important;
 border-color: var(--nfl-primary, var(--border)) !important;
@@ -497,9 +478,6 @@ border-color: var(--nfl-primary, var(--border)) !important;
 color: var(--nfl-secondary, var(--text)) !important;
 }
 
-/* Position-colored breakdown cards ("By Position"). Same pattern as
-  .nfl-breakdown-card but driven by --pos-primary/--pos-secondary,
-  set from window.NflTeamColors.getPosition() in draft-enhancements.js. */
 .position-breakdown-card {
 background: var(--pos-primary, var(--panel)) !important;
 border-color: var(--pos-primary, var(--border)) !important;
@@ -515,11 +493,6 @@ font-size: 0.95rem;
 font-weight: 800;
 }
 
-/* Individual draft board pick cards, colored by the drafted player's
-  position (QB/RB/WR/TE/K/D-ST) using the same palette as the "By
-  Position" breakdown boxes. Text stays legible via --pos-secondary.
-  Applies to both the single-season Draft tab (#draft-board) and the
-  All-Time Draft tab (#alltime-draft-by-year) via draft-enhancements.js. */
 .draft-pick.position-draft-pick {
 background: var(--pos-primary, var(--panel)) !important;
 border-color: var(--pos-primary, var(--border)) !important;
@@ -608,8 +581,6 @@ color: var(--text-dim);
 font-size: 0.8rem;
 padding: 20px;
 }
-
-/* ---- Records (Season Records tab + All-Time Records tab) ---- */
 
 .records-controls {
 display: flex;
@@ -709,8 +680,6 @@ font-size: 0.85rem;
 color: var(--text-dim);
 }
 
-/* ---- All-Time view ---- */
-
 .alltime-header {
 display: flex;
 justify-content: space-between;
@@ -727,10 +696,6 @@ margin-bottom: 20px;
 
 #career-totals-table tr.top-champion td { color: var(--gold); font-weight: 700; }
 
-/* Career Totals sortable column headers - clicking Owner/Seasons/W/L/
-  Win %/PF/PA/🏆/🥈/Txns re-sorts the table via state.careerSort (see
-  setupCareerSort() in season.js). The currently active sort column is
-  highlighted in accent blue with a small up-triangle indicator. */
 #career-totals-table th.sortable-col {
 user-select: none;
 }
@@ -798,7 +763,6 @@ margin-top: 4px;
 #h2h-games-table tr.h2h-b-win td:nth-child(5) { color: var(--win); font-weight: 700; }
 #h2h-games-table tr.h2h-playoff-row td { background: rgba(255, 210, 92, 0.08); }
 
-/* Bracket placement labels (Championship Game / 3rd Place Game / 5th Place Game) */
 .bracket-placement-label {
 color: var(--accent);
 font-size: 0.68rem;
@@ -808,7 +772,6 @@ margin-bottom: 5px;
 text-transform: uppercase;
 }
 
-/* Sleeper bye cards shown in weekly Matchups (display-only, not counted) */
 .matchup-card.bye-card {
 border-color: var(--border);
 background: var(--panel-alt);
@@ -822,8 +785,6 @@ text-transform: uppercase;
 justify-content: center;
 }
 
-/* Playoff bracket first-round byes (see buildBracketView in
-  sleeper-common.js for how these are detected and injected) */
 .bracket-match.bye-match {
 border: 1px dashed var(--border);
 background: var(--panel-alt);
@@ -842,24 +803,10 @@ justify-content: center;
 padding-top: 4px;
 }
 
-/* Fix: .season-picker has display:flex, which overrides the browser's
-  default [hidden]{display:none} behavior. Without this, the All-Time
-  header bar (#alltime-picker) and the normal Season header bar
-  (#season-picker) can both stay visible at once even after JS sets
-  .hidden = true, since [hidden] alone loses to a more specific
-  display:flex rule. This restores correct hide/show behavior for
-  both bars when toggling into/out of the All-Time view. */
 .season-picker[hidden] {
 display: none !important;
 }
 
-/* Same root cause as .season-picker[hidden] above: .champion-banner
-   and .tabs both have display:flex, which overrides the browser's
-   default [hidden]{display:none} behavior. Without this, elements
-   marked hidden by showAllTimeView() (season-tabs, champion-banner)
-   stay visually visible even though hidden=true is correctly set in
-   the DOM (confirmed via console: both reported hidden=true while
-   still rendering on screen). */
 .champion-banner[hidden] {
   display: none !important;
 }
@@ -867,24 +814,12 @@ display: none !important;
 .tabs[hidden] {
   display: none !important;
 }
-/* ============================================================
-   Snake draft-board arrows
-   Used by ESPN, Sleeper, and All-Time draft boards.
-   ============================================================ */
 
-/* Reserves space at the bottom of each card for its direction arrow.
-   The existing .draft-pick { position: relative; } rule above lets the
-   arrow be positioned inside its own card instead of the overall board. */
 .draft-pick-snake {
   min-height: 100px;
   padding-bottom: 26px;
 }
 
-/* Arrow direction for the snake path:
-   → across odd rounds
-   ← across even rounds
-   ↓ on the 12th pick of each non-final round
-   No arrow on the overall final pick. */
 .draft-direction {
   position: absolute;
   left: 8px;
@@ -896,8 +831,6 @@ display: none !important;
   opacity: 0.9;
 }
 
-/* Keeper badge shown directly by season.js on all draft boards:
-   ESPN seasons, Sleeper seasons, and All-Time yearly boards. */
 .draft-pick.is-keeper-pick::after {
   content: "KEEPER";
   position: absolute;
@@ -914,18 +847,10 @@ display: none !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Optional fallback for any older renderer still outputting a textual
-   KEEPER label at the bottom of the card. */
 .draft-keeper-tag {
   color: var(--gold) !important;
   font-weight: 700;
 }
-
-/*
- * Add this CSS anywhere in season.css. These are new classes used by
- * the "FAAB Spend by Player" section (season and all-time views) â€” no
- * existing rules are modified, so this is safe to append.
- */
 
 .faab-section-header {
   display: flex;
@@ -1203,15 +1128,6 @@ display: none !important;
   border-radius: 4px;
 }
 
-.eliminator-winner-tag {
-  background: var(--gold);
-  color: #1a1a1a;
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
 .totw-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .totw-card { padding: 10px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
 .totw-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
@@ -1228,4 +1144,38 @@ display: none !important;
   main {
     padding: 16px;
   }
+}
+
+/* MOBILE RESPONSIVE OVERRIDES */
+@media (max-width: 780px) {
+  .site-header { padding: 12px 16px; gap: 8px; }
+  .site-header h1 { font-size: 1.1rem; width: 100%; }
+  .season-picker { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+  .season-picker select#season-select { min-width: 0; flex: 1 1 140px; }
+  .champion-banner { padding: 10px 16px; font-size: 0.85rem; }
+  .tabs { padding: 8px 12px 0; gap: 2px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .tab-btn { padding: 8px 12px; font-size: 0.85rem; white-space: nowrap; flex: 0 0 auto; }
+  main { padding: 12px; }
+  .data-table { display: block; width: 100%; overflow-x: auto; white-space: nowrap; }
+  .data-table th, .data-table td { padding: 8px 10px; font-size: 0.82rem; }
+  .division-grid, .playoff-bracket, .matchups-grid, .teams-grid, .records-grid, .h2h-summary, .breakdown-grid, .faab-grid, .most-drafted-position-grid { grid-template-columns: 1fr; }
+  .matchup-rosters, .bracket-rosters { grid-template-columns: 1fr; }
+  .draft-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .week-picker, .records-controls, .h2h-picker, .matchup-view-toggle, .faab-section-header { flex-direction: column; align-items: stretch; gap: 10px; }
+  .week-picker select, .records-controls select, .h2h-picker select, .faab-owner-select { width: 100%; }
+  .record-card .record-value { font-size: 1.6rem; }
+  .alltime-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .totw-list { gap: 6px; }
+  .totw-card { padding: 8px 12px; }
+  .totw-name { font-size: 0.95rem; }
+  .totw-points { font-size: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .site-header h1 { font-size: 1rem; }
+  .tab-btn { padding: 8px 10px; font-size: 0.8rem; }
+  .breakdown-grid, .faab-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .draft-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .weekly-prizes-columns { grid-template-columns: 1fr; }
+  .highscore-row, .eliminator-row { flex-wrap: wrap; }
 }
