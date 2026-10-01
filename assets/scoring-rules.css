@@ -1,0 +1,19 @@
+/* Scoring & Rules tab */
+.scoring-intro { color: var(--text-dim); margin: 0 0 16px; }
+.scoring-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+.scoring-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.scoring-card-title { margin: 0 0 8px; font-size: 0.95rem; color: var(--text); }
+.scoring-table { background: transparent; }
+.scoring-table td { padding: 6px 8px; }
+.scoring-value { text-align: right !important; font-weight: 600; white-space: nowrap; }
+.scoring-neg { color: var(--live); }
+.scoring-changed td { background: rgba(79, 140, 255, 0.10); }
+.scoring-change { margin-left: 8px; font-size: 0.72rem; font-weight: 500; color: var(--text-dim); }
+.scoring-new { color: var(--win); text-transform: uppercase; }
+.scoring-removed { margin: 8px 0 0; font-size: 0.8rem; color: var(--text-dim); }
+.scoring-divisions { display: flex; flex-wrap: wrap; gap: 12px; }
+.scoring-division { flex: 1 1 110px; }
+.scoring-division-name { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.scoring-division-member { font-size: 0.9rem; padding: 2px 0; }
+.scoring-empty { color: var(--text-dim); }
+@media (max-width: 640px) { .scoring-grid { grid-template-columns: 1fr; } }
