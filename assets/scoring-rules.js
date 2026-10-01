@@ -280,7 +280,7 @@
             (prevIdx >= 0 ? " Highlighted rows changed from " + prevYear + "." : " First season of the league.")));
         host.appendChild(buildTiles(idx));
 
-        var rulesRow = el("div", "scoring-row");
+        var rulesRow = el("div", "scoring-row scoring-rules-row");
         GROUP_ORDER.forEach(function (group) {
             var rows = SCORING_DATA.rows.filter(function (r) { return r[0] === group; });
             var c = buildCard(group, rows, idx, prevIdx, prevYear);
@@ -294,7 +294,7 @@
         var scoringRows = SCORING_DATA.rows.filter(function (r) { return r[0] === "Scoring"; });
         var sections = [];
         scoringRows.forEach(function (r) { if (sections.indexOf(r[1]) < 0) sections.push(r[1]); });
-        var scoringRow = el("div", "scoring-row");
+        var scoringRow = el("div", "scoring-row scoring-scoring-row");
         sections.forEach(function (s) {
             var sr = scoringRows.filter(function (r) { return r[1] === s; });
             var sc = buildCard(s, sr, idx, prevIdx, prevYear);
