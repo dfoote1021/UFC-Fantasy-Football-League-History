@@ -1615,35 +1615,6 @@ weekSelect.onchange = function () {
                 tbody.appendChild(tr);
             });
 
-            var totals = standings.reduce(function(sum, team) {
-                sum.wins += Number(team.wins) || 0;
-                sum.losses += Number(team.losses) || 0;
-                sum.ties += Number(team.ties) || 0;
-                sum.pf += Number(team.fpts) || 0;
-                sum.pa += Number(team.fptsAgainst) || 0;
-                return sum;
-            }, { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0 });
-            var totalGames = totals.wins + totals.losses + totals.ties;
-            var totalPfPerGame = totalGames ? totals.pf / totalGames : null;
-            var totalPaPerGame = totalGames ? totals.pa / totalGames : null;
-            var totalsRow = document.createElement("tr");
-            totalsRow.className = "league-totals-row";
-            totalsRow.style.borderTop = "2px solid rgba(255,255,255,.35)";
-            totalsRow.style.background = "rgba(255,255,255,.06)";
-            totalsRow.innerHTML =
-                "<td></td>" +
-                "<td><strong>League Totals</strong></td>" +
-                "<td></td>" +
-                "<td><strong>" + totals.wins + "</strong></td>" +
-                "<td><strong>" + totals.losses + "</strong></td>" +
-                "<td><strong>" + totals.ties + "</strong></td>" +
-                "<td><strong>" + totals.pf.toFixed(2) + "</strong></td>" +
-                "<td><strong>" + (totalPfPerGame !== null ? totalPfPerGame.toFixed(2) : "-") + "</strong></td>" +
-                "<td><strong>" + totals.pa.toFixed(2) + "</strong></td>" +
-                "<td><strong>" + (totalPaPerGame !== null ? totalPaPerGame.toFixed(2) : "-") + "</strong></td>" +
-                "<td></td>";
-            tbody.appendChild(totalsRow);
-
             syncStandingsSortHeaders();
         }
 
@@ -3487,6 +3458,48 @@ if (!matchups) {
                 "<td>" + txnHtml + "</td>";
             tbody.appendChild(tr);
         });
+
+        var leagueTotals = totals.reduce(function(sum, owner) {
+            var rec = owner[split] || owner.combined;
+            sum.seasons += Number(owner.seasons) || 0;
+            sum.wins += Number(rec.wins) || 0;
+            sum.losses += Number(rec.losses) || 0;
+            sum.ties += Number(rec.ties) || 0;
+            sum.pointsFor += Number(rec.pointsFor) || 0;
+            sum.pointsAgainst += Number(rec.pointsAgainst) || 0;
+            sum.championships += Number(owner.championships) || 0;
+            sum.runnerUps += Number(owner.runnerUps) || 0;
+            sum.transactions += Number(owner.totalTransactions) || 0;
+            sum.hasIncompleteTransactions = sum.hasIncompleteTransactions || !!owner.hasIncompleteTransactionData;
+            return sum;
+        }, {
+            seasons: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0,
+            championships: 0, runnerUps: 0, transactions: 0, hasIncompleteTransactions: false
+        });
+        var leagueGames = leagueTotals.wins + leagueTotals.losses + leagueTotals.ties;
+        var leagueWinPct = leagueGames ? leagueTotals.wins / leagueGames : 0;
+        var leaguePfPerGame = leagueGames ? leagueTotals.pointsFor / leagueGames : null;
+        var leaguePaPerGame = leagueGames ? leagueTotals.pointsAgainst / leagueGames : null;
+        var leagueTotalsRow = document.createElement("tr");
+        leagueTotalsRow.className = "league-totals-row";
+        leagueTotalsRow.style.borderTop = "2px solid rgba(255,255,255,.35)";
+        leagueTotalsRow.style.background = "rgba(255,255,255,.06)";
+        leagueTotalsRow.innerHTML =
+            "<td></td>" +
+            "<td><strong>League Totals</strong></td>" +
+            "<td><strong>" + leagueTotals.seasons + "</strong></td>" +
+            "<td><strong>" + leagueTotals.wins + "</strong></td>" +
+            "<td><strong>" + leagueTotals.losses + "</strong></td>" +
+            "<td><strong>" + leagueTotals.ties + "</strong></td>" +
+            "<td><strong>" + (leagueWinPct * 100).toFixed(1) + "%</strong></td>" +
+            "<td><strong>" + leagueTotals.pointsFor.toFixed(2) + "</strong></td>" +
+            "<td><strong>" + (leaguePfPerGame !== null ? leaguePfPerGame.toFixed(2) : "-") + "</strong></td>" +
+            "<td><strong>" + leagueTotals.pointsAgainst.toFixed(2) + "</strong></td>" +
+            "<td><strong>" + (leaguePaPerGame !== null ? leaguePaPerGame.toFixed(2) : "-") + "</strong></td>" +
+            "<td><strong>🏆 x" + leagueTotals.championships + "</strong></td>" +
+            "<td><strong>🥈 x" + leagueTotals.runnerUps + "</strong></td>" +
+            "<td><strong>" + leagueTotals.transactions + (leagueTotals.hasIncompleteTransactions ? "*" : "") + "</strong></td>";
+        tbody.appendChild(leagueTotalsRow);
 
         var noteEl = byId("career-txn-note");
         if (noteEl) noteEl.hidden = !anyIncomplete;
