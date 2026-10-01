@@ -5,8 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>League Season</title>
 <link rel="stylesheet" href="assets/season.css" />
+<style>
+  .league-brand {
+    width: min(100%, 1600px);
+    margin: 0 auto;
+    background: #020914;
+    line-height: 0;
+    overflow: hidden;
+  }
+  .league-brand img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 420px;
+    object-fit: cover;
+    object-position: center;
+  }
+  @media (max-width: 640px) {
+    .league-brand {
+      max-width: 640px;
+    }
+    .league-brand img {
+      max-height: none;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+    }
+  }
+</style>
 </head>
 <body>
+<div class="league-brand" aria-label="UFC Ultimate Football Challenge — Fantasy Football League, established 2012">
+  <picture>
+    <source media="(max-width: 640px)" srcset="assets/ufc-league-logo-square.jpg" />
+    <img src="assets/ufc-league-logo-banner.jpg" alt="UFC Ultimate Football Challenge Fantasy Football League, established 2012" />
+  </picture>
+</div>
 <header class="site-header">
   <h1 id="page-title">UFC Ultimate Football Challenge</h1>
   <div class="season-picker" id="season-picker">
