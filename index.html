@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>League Season</title>
 <link rel="stylesheet" href="assets/season.css" />
+<link rel="stylesheet" href="assets/scoring-rules.css" />
 <style>
   .league-brand {
     width: min(100%, 1600px);
@@ -71,6 +72,7 @@
   <button class="tab-btn" data-tab="draft">Draft</button>
   <button class="tab-btn" data-tab="transactions">Transactions</button>
   <button class="tab-btn" data-tab="records">Records</button>
+  <button class="tab-btn" data-tab="scoring">Scoring &amp; Rules</button>
   <button class="tab-btn" data-tab="commish">Commissioner</button>
 </nav>
 
@@ -227,6 +229,11 @@
       </div>
       <div id="season-records-grid" class="records-grid"></div>
     </div>
+  </section>
+
+  <section id="tab-scoring" class="tab-panel">
+    <h2 id="scoring-rules-heading">Scoring &amp; Rules</h2>
+    <div id="scoring-rules-content"></div>
   </section>
 
   <section id="tab-commish" class="tab-panel">
@@ -392,5 +399,6 @@
 <script src="assets/all-time.js"></script>
 <script src="assets/draft-enhancements.js"></script>
 <script src="assets/season.js"></script>
+<script src="assets/scoring-rules.js"></script>
 </body>
 </html>

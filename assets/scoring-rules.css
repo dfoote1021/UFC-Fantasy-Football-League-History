@@ -1,5 +1,9 @@
 /* Scoring & Rules tab */
 .scoring-intro { color: var(--text-dim); margin: 0 0 16px; }
+.scoring-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.scoring-tile { background: var(--panel); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.scoring-tile-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+.scoring-tile-value { font-size: 2rem; font-weight: 800; line-height: 1.1; color: var(--accent); }
 .scoring-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
 .scoring-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
 .scoring-card-title { margin: 0 0 8px; font-size: 0.95rem; color: var(--text); }
