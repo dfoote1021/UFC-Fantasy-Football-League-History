@@ -155,7 +155,7 @@
         return year <= LAST_ESPN_YEAR ? "ESPN" : "Sleeper";
     };
 
-    var GROUP_ORDER = ["Roster", "Scoring", "Acquisitions & Trades", "Draft", "Regular Season", "Playoffs"];
+    var GROUP_ORDER = ["Roster", "Acquisitions & Trades", "Draft", "Regular Season", "Playoffs"];
     var NO_DIFF_LABELS = { "Draft Date": 1, "Trade Deadline": 1 };
     var TILES = [
         ["Roster", "Roster size", "Roster Spots"],
@@ -282,24 +282,27 @@
             (prevIdx >= 0 ? " Highlighted rows changed from " + prevYear + "." : " First season of the league.")));
         host.appendChild(buildTiles(idx));
 
+        var scoringRows = SCORING_DATA.rows.filter(function (r) { return r[0] === "Scoring"; });
+        var sections = [];
+        scoringRows.forEach(function (r) { if (sections.indexOf(r[1]) < 0) sections.push(r[1]); });
+        var scoringRow = el("div", "scoring-row");
+        sections.forEach(function (s) {
+            var sr = scoringRows.filter(function (r) { return r[1] === s; });
+            var sc = buildCard(s, sr, idx, prevIdx, prevYear);
+            if (sc) scoringRow.appendChild(sc);
+        });
+        host.appendChild(el("h3", "scoring-section-title", "Scoring"));
+        host.appendChild(scoringRow);
+
         var grid = el("div", "scoring-grid");
         GROUP_ORDER.forEach(function (group) {
             var rows = SCORING_DATA.rows.filter(function (r) { return r[0] === group; });
-            if (group !== "Scoring") {
-                var c = buildCard(group, rows, idx, prevIdx, prevYear);
-                if (c) grid.appendChild(c);
-                return;
-            }
-            var sections = [];
-            rows.forEach(function (r) { if (sections.indexOf(r[1]) < 0) sections.push(r[1]); });
-            sections.forEach(function (s) {
-                var sr = rows.filter(function (r) { return r[1] === s; });
-                var sc = buildCard("Scoring: " + s, sr, idx, prevIdx, prevYear);
-                if (sc) grid.appendChild(sc);
-            });
+            var c = buildCard(group, rows, idx, prevIdx, prevYear);
+            if (c) grid.appendChild(c);
         });
         var d = buildDivisions(year);
         if (d) grid.appendChild(d);
+        host.appendChild(el("h3", "scoring-section-title", "League Rules"));
         host.appendChild(grid);
     }
 
