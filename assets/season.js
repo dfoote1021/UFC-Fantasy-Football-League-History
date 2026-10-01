@@ -305,6 +305,28 @@
         function setupTxnFilterToggle() {
             var select = byId("txn-filter-mode");
             if (!select) return;
+
+            /* Build the Type dropdown if index.html doesn't already have one. */
+            var typeSelect = byId("txn-type-select");
+            if (!typeSelect) {
+                var memberWrap = byId("txn-member-wrap");
+                if (memberWrap && memberWrap.parentNode) {
+                    var typeWrap = document.createElement("span");
+                    typeWrap.id = "txn-type-wrap";
+                    typeWrap.innerHTML =
+                        '<label for="txn-type-select">Type</label> ' +
+                        '<select id="txn-type-select">' +
+                        '<option value="">All Types</option>' +
+                        '<option value="trade">Trade</option>' +
+                        '<option value="free_agent">Free Agency</option>' +
+                        '<option value="waiver">Waivers</option>' +
+                        '</select>';
+                    memberWrap.parentNode.insertBefore(typeWrap, memberWrap.nextSibling);
+                    typeSelect = byId("txn-type-select");
+                }
+            }
+            if (typeSelect) typeSelect.addEventListener("change", renderTransactions);
+
             select.addEventListener("change", function() {
                 var mode = select.value;
                 byId("txn-week-wrap").hidden = mode !== "week";
@@ -1908,6 +1930,11 @@ weekSelect.onchange = function () {
                 });
             });
 
+            var allSeasonOpt = document.createElement("option");
+            allSeasonOpt.value = "all";
+            allSeasonOpt.textContent = "All Season";
+            txnWeekSelect.appendChild(allSeasonOpt);
+
             var maxWeek = SleeperAPI.MAX_SLEEPER_WEEK || 17;
             for (var w = 1; w <= maxWeek; w++) {
                 var opt = document.createElement("option");
@@ -2338,17 +2365,33 @@ if (!matchups) {
 
         var txns = [];
         if (mode === "week") {
-            var week = Number(byId("txn-week-select").value) || state.currentWeek;
-            try {
-                txns = await SleeperAPI.getTransactions(state.leagueId, week);
-            } catch (e) {
-                txns = [];
+            var weekValue = byId("txn-week-select").value;
+            if (weekValue === "all") {
+                await ensureAllTransactions();
+                txns = (state.allTransactionsFlat || []).slice().sort(function(a, b) {
+                    return (b.status_updated || b.created || 0) - (a.status_updated || a.created || 0);
+                });
+            } else {
+                var week = Number(weekValue) || state.currentWeek;
+                try {
+                    txns = await SleeperAPI.getTransactions(state.leagueId, week);
+                } catch (e) {
+                    txns = [];
+                }
             }
         } else {
             var rosterId = Number(byId("txn-member-select").value);
             await ensureAllTransactions();
             txns = (state.allTransactionsFlat || []).filter(function(t) {
                 return (t.roster_ids || []).indexOf(rosterId) !== -1;
+            });
+        }
+
+        var typeFilterEl = byId("txn-type-select");
+        var typeFilter = typeFilterEl ? typeFilterEl.value : "";
+        if (typeFilter && txns) {
+            txns = txns.filter(function(t) {
+                return String(t.type || "").toLowerCase() === typeFilter;
             });
         }
 
