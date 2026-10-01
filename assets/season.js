@@ -1615,6 +1615,35 @@ weekSelect.onchange = function () {
                 tbody.appendChild(tr);
             });
 
+            var totals = standings.reduce(function(sum, team) {
+                sum.wins += Number(team.wins) || 0;
+                sum.losses += Number(team.losses) || 0;
+                sum.ties += Number(team.ties) || 0;
+                sum.pf += Number(team.fpts) || 0;
+                sum.pa += Number(team.fptsAgainst) || 0;
+                return sum;
+            }, { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0 });
+            var totalGames = totals.wins + totals.losses + totals.ties;
+            var totalPfPerGame = totalGames ? totals.pf / totalGames : null;
+            var totalPaPerGame = totalGames ? totals.pa / totalGames : null;
+            var totalsRow = document.createElement("tr");
+            totalsRow.className = "league-totals-row";
+            totalsRow.style.borderTop = "2px solid rgba(255,255,255,.35)";
+            totalsRow.style.background = "rgba(255,255,255,.06)";
+            totalsRow.innerHTML =
+                "<td></td>" +
+                "<td><strong>League Totals</strong></td>" +
+                "<td></td>" +
+                "<td><strong>" + totals.wins + "</strong></td>" +
+                "<td><strong>" + totals.losses + "</strong></td>" +
+                "<td><strong>" + totals.ties + "</strong></td>" +
+                "<td><strong>" + totals.pf.toFixed(2) + "</strong></td>" +
+                "<td><strong>" + (totalPfPerGame !== null ? totalPfPerGame.toFixed(2) : "-") + "</strong></td>" +
+                "<td><strong>" + totals.pa.toFixed(2) + "</strong></td>" +
+                "<td><strong>" + (totalPaPerGame !== null ? totalPaPerGame.toFixed(2) : "-") + "</strong></td>" +
+                "<td></td>";
+            tbody.appendChild(totalsRow);
+
             syncStandingsSortHeaders();
         }
 
