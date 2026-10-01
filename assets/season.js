@@ -1615,6 +1615,31 @@ weekSelect.onchange = function () {
                 tbody.appendChild(tr);
             });
 
+            var leagueTotals = standings.reduce(function(total, team) {
+                total.wins += Number(team.wins) || 0;
+                total.losses += Number(team.losses) || 0;
+                total.ties += Number(team.ties) || 0;
+                total.pointsFor += Number(team.fpts) || 0;
+                total.pointsAgainst += Number(team.fptsAgainst) || 0;
+                return total;
+            }, { wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0 });
+            var leagueGames = leagueTotals.wins + leagueTotals.losses + leagueTotals.ties;
+            var leagueTotalsRow = document.createElement("tr");
+            leagueTotalsRow.className = "league-totals-row";
+            leagueTotalsRow.innerHTML =
+                "<td></td>" +
+                "<td><strong>League Totals</strong></td>" +
+                "<td></td>" +
+                "<td><strong>" + leagueTotals.wins + "</strong></td>" +
+                "<td><strong>" + leagueTotals.losses + "</strong></td>" +
+                "<td><strong>" + leagueTotals.ties + "</strong></td>" +
+                "<td><strong>" + leagueTotals.pointsFor.toFixed(2) + "</strong></td>" +
+                "<td><strong>" + (leagueGames ? (leagueTotals.pointsFor / leagueGames).toFixed(2) : "-") + "</strong></td>" +
+                "<td><strong>" + leagueTotals.pointsAgainst.toFixed(2) + "</strong></td>" +
+                "<td><strong>" + (leagueGames ? (leagueTotals.pointsAgainst / leagueGames).toFixed(2) : "-") + "</strong></td>" +
+                "<td></td>";
+            tbody.appendChild(leagueTotalsRow);
+
             syncStandingsSortHeaders();
         }
 
