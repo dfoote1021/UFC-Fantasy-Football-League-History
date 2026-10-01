@@ -210,7 +210,7 @@
     function buildCard(title, rows, idx, prevIdx, prevYear) {
         var card = el("div", "scoring-card");
         card.appendChild(el("h4", "scoring-card-title", title));
-        var table = el("table", "data-table scoring-table");
+        var table = el("table", "scoring-table");
         var body = el("tbody");
         var removed = [];
         rows.forEach(function (row) {
@@ -248,14 +248,12 @@
         if (!divs || !divs.length) return null;
         var card = el("div", "scoring-card");
         card.appendChild(el("h4", "scoring-card-title", "Divisions"));
-        var wrap = el("div", "scoring-divisions");
         divs.forEach(function (d) {
             var box = el("div", "scoring-division");
             box.appendChild(el("div", "scoring-division-name", d.name));
-            d.members.forEach(function (m) { box.appendChild(el("div", "scoring-division-member", m)); });
-            wrap.appendChild(box);
+            box.appendChild(el("div", "scoring-division-members", d.members.join(", ")));
+            card.appendChild(box);
         });
-        card.appendChild(wrap);
         var note = SCORING_DATA.notes[String(year)];
         if (note && note.noSameDivision) {
             card.appendChild(el("p", "scoring-removed", "Not in the same division: " + note.noSameDivision.join("; ")));
@@ -282,6 +280,17 @@
             (prevIdx >= 0 ? " Highlighted rows changed from " + prevYear + "." : " First season of the league.")));
         host.appendChild(buildTiles(idx));
 
+        var rulesRow = el("div", "scoring-row");
+        GROUP_ORDER.forEach(function (group) {
+            var rows = SCORING_DATA.rows.filter(function (r) { return r[0] === group; });
+            var c = buildCard(group, rows, idx, prevIdx, prevYear);
+            if (c) rulesRow.appendChild(c);
+        });
+        var d = buildDivisions(year);
+        if (d) rulesRow.appendChild(d);
+        host.appendChild(el("h3", "scoring-section-title", "League Rules"));
+        host.appendChild(rulesRow);
+
         var scoringRows = SCORING_DATA.rows.filter(function (r) { return r[0] === "Scoring"; });
         var sections = [];
         scoringRows.forEach(function (r) { if (sections.indexOf(r[1]) < 0) sections.push(r[1]); });
@@ -293,17 +302,6 @@
         });
         host.appendChild(el("h3", "scoring-section-title", "Scoring"));
         host.appendChild(scoringRow);
-
-        var grid = el("div", "scoring-grid");
-        GROUP_ORDER.forEach(function (group) {
-            var rows = SCORING_DATA.rows.filter(function (r) { return r[0] === group; });
-            var c = buildCard(group, rows, idx, prevIdx, prevYear);
-            if (c) grid.appendChild(c);
-        });
-        var d = buildDivisions(year);
-        if (d) grid.appendChild(d);
-        host.appendChild(el("h3", "scoring-section-title", "League Rules"));
-        host.appendChild(grid);
     }
 
     function init() {

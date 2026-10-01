@@ -5,26 +5,20 @@
 .scoring-tile-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
 .scoring-tile-value { font-size: 2rem; font-weight: 800; line-height: 1.1; color: var(--accent); }
 .scoring-section-title { margin: 8px 0 12px; padding-left: 10px; border-left: 3px solid var(--accent); font-size: 1.05rem; }
-.scoring-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; align-items: start; margin-bottom: 28px; }
-.scoring-row .scoring-table td { padding: 5px 6px; font-size: 0.85rem; }
-.scoring-row .scoring-value { white-space: normal; }
-.scoring-row .scoring-change { display: block; margin: 2px 0 0; text-align: right; }
-.scoring-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
-.scoring-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.scoring-row { display: grid; grid-template-columns: repeat(6, minmax(220px, 1fr)); gap: 12px; align-items: start; margin-bottom: 28px; overflow-x: auto; padding-bottom: 6px; }
+.scoring-card { box-sizing: border-box; min-width: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow: hidden; }
 .scoring-card-title { margin: 0 0 8px; font-size: 0.95rem; color: var(--text); }
-.scoring-table { background: transparent; }
-.scoring-table td { padding: 6px 8px; }
-.scoring-value { text-align: right !important; font-weight: 600; white-space: nowrap; }
+.scoring-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.scoring-table td { padding: 5px 4px; font-size: 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+.scoring-table tr:last-child td { border-bottom: none; }
+.scoring-label { width: 58%; text-align: left; }
+.scoring-value { width: 42%; text-align: right; font-weight: 600; }
 .scoring-neg { color: var(--live); }
 .scoring-changed td { background: rgba(79, 140, 255, 0.10); }
-.scoring-change { margin-left: 8px; font-size: 0.72rem; font-weight: 500; color: var(--text-dim); }
+.scoring-change { display: block; margin-top: 2px; font-size: 0.7rem; font-weight: 500; color: var(--text-dim); }
 .scoring-new { color: var(--win); text-transform: uppercase; }
-.scoring-removed { margin: 8px 0 0; font-size: 0.8rem; color: var(--text-dim); }
-.scoring-divisions { display: flex; flex-wrap: wrap; gap: 12px; }
-.scoring-division { flex: 1 1 110px; }
-.scoring-division-name { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-.scoring-division-member { font-size: 0.9rem; padding: 2px 0; }
+.scoring-removed { margin: 8px 0 0; font-size: 0.8rem; color: var(--text-dim); overflow-wrap: anywhere; }
+.scoring-division { margin-bottom: 10px; }
+.scoring-division-name { font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+.scoring-division-members { font-size: 0.85rem; overflow-wrap: anywhere; }
 .scoring-empty { color: var(--text-dim); }
-@media (max-width: 1280px) { .scoring-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .scoring-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .scoring-grid, .scoring-row { grid-template-columns: 1fr; } }
