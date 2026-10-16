@@ -1,11 +1,12 @@
 /* member-career.js - Member Career tab for the All-Time section.
 Pick a member to see their whole career by season with Points For vs Points Against and Wins vs Losses charts.
-Uses window.AllTimeStats (same data as the other All-Time tabs). Consolation games are excluded. Charts are inline SVG. */
+Click a season on either chart to see the exact numbers. Uses window.AllTimeStats (same data as the other All-Time tabs).
+Consolation games are excluded. Charts are inline SVG. */
 (function () {
 'use strict';
 var Q = String.fromCharCode(34);
-var state = { data: null, owners: [], ownerKey: null, split: 'combined', loading: false };
-var C = { pf: '#4f8cff', pa: '#ff6b6b', win: '#3ecf8e', loss: '#ff6b6b', line: '#f5c451', axis: '#8b97ab', grid: 'rgba(139,151,171,0.22)' };
+var state = { data: null, owners: [], ownerKey: null, split: 'combined', loading: false, played: [] };
+var C = { pf: '#4f8cff', pa: '#ff6b6b', win: '#3ecf8e', loss: '#ff6b6b', line: '#f5c451', axis: '#8b97ab', grid: 'rgba(139,151,171,0.22)', sel: 'rgba(245,196,81,0.16)' };
 function esc(v) { return String(v == null ? '' : v).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split(Q).join('&quot;'); }
 function h(tag, attrs, inner) {
 var a = '';
@@ -68,6 +69,9 @@ return h('div', { class: 'mc-legend' }, items.map(function (i) { return h('span'
 }
 function rect(x, y, w, hh, fill, tip) { return h('rect', { x: x, y: y, width: w, height: Math.max(hh, 0), fill: fill, rx: 2 }, h('title', {}, esc(tip))); }
 function yearLabel(cx, hgt, year) { return h('text', { x: cx, y: hgt - 14, 'text-anchor': 'middle', 'font-size': 11, fill: C.axis }, year); }
+function hitRect(x, y, w, hh, chart, i, tip) {
+return h('rect', { x: x, y: y, width: w, height: hh, fill: 'transparent', class: 'mc-hit', 'data-chart': chart, 'data-i': i, style: 'cursor:pointer' }, h('title', {}, esc(tip)));
+}
 
 function barChart(rows, series, opts) {
 var w = Math.max(560, 90 + rows.length * 62), hgt = 280, m = { l: 56, r: 12, t: 14, b: 36 }, maxV = 0;
@@ -96,6 +100,7 @@ out += rect(cx - gw + k * gw, m.t + plotH - bh, gw - 2, bh, s.color, r.year + ' 
 });
 }
 out += yearLabel(cx, hgt, r.year);
+out += hitRect(m.l + slot * i, m.t, slot, plotH, opts.id, i, r.year + ': click for exact numbers');
 });
 return svgWrap(w, hgt, out, opts.label);
 }
@@ -118,6 +123,18 @@ function winPctText(r) { var p = pct(r.w, r.l, r.t); return p == null ? dash() :
 function recText(r) { return r.w + '-' + r.l + (r.t ? '-' + r.t : ''); }
 function td(v) { return h('td', {}, v); }
 
+function detailText(chart, r, split) {
+var x = pick(r, split), gp = games(x);
+var head = '<strong>' + esc(r.year) + '</strong> - ' + esc(r.teamName) + ' (' + esc(splitLabel(split)) + ')';
+if (chart === 'pfpa') {
+var d = x.pf - x.pa;
+return head + '<br>Points for: <strong>' + fmt(x.pf, 2) + '</strong> &nbsp; Points against: <strong>' + fmt(x.pa, 2) + '</strong> &nbsp; Difference: <strong>' + (d >= 0 ? '+' : '-') + fmt(Math.abs(d), 2) + '</strong>' +
+'<br>Per game: ' + fmt(x.pf / gp, 2) + ' for, ' + fmt(x.pa / gp, 2) + ' against &nbsp; Record: ' + recText(x) + ' (' + winPctText(x) + ')';
+}
+return head + '<br>Wins: <strong>' + x.w + '</strong> &nbsp; Losses: <strong>' + x.l + '</strong>' + (x.t ? ' &nbsp; Ties: <strong>' + x.t + '</strong>' : '') +
+' &nbsp; Win %: <strong>' + winPctText(x) + '</strong>' + '<br>Result: ' + esc(r.result);
+}
+
 function render() {
 var root = document.getElementById('mc-body');
 if (!root) return;
@@ -128,6 +145,7 @@ var champs = rows.filter(function (r) { return r.champion; }).length;
 var ru = rows.filter(function (r) { return r.runnerUp; }).length;
 var po = rows.filter(function (r) { return r.madePlayoffs; }).length;
 var played = rows.filter(function (r) { return games(pick(r, split)) > 0; });
+state.played = played;
 var best = null, worst = null;
 played.forEach(function (r) {
 var x = pick(r, split), p = pct(x.w, x.l, x.t);
@@ -145,13 +163,15 @@ legend([{ color: C.pf, label: 'Points for' }, { color: C.pa, label: 'Points agai
 h('div', { class: 'mc-chart' }, barChart(played, [
 { label: 'Points for', color: C.pf, val: function (r) { return pick(r, split).pf; }, fmt: function (v) { return fmt(v, 1); } },
 { label: 'Points against', color: C.pa, val: function (r) { return pick(r, split).pa; }, fmt: function (v) { return fmt(v, 1); } }
-], { stacked: false, label: 'Points for versus points against by season', yFmt: function (v) { return fmt(v, 0); } }));
+], { id: 'pfpa', stacked: false, label: 'Points for versus points against by season', yFmt: function (v) { return fmt(v, 0); } })) +
+h('div', { class: 'mc-detail', id: 'mc-detail-pfpa' }, 'Click a season on the chart to see the exact numbers.');
 html += h('h3', { class: 'playoff-heading' }, 'Wins vs Losses') +
 legend([{ color: C.win, label: 'Wins' }, { color: C.loss, label: 'Losses' }]) +
 h('div', { class: 'mc-chart' }, barChart(played, [
 { label: 'Wins', color: C.win, val: function (r) { return pick(r, split).w; }, fmt: function (v) { return String(v); } },
 { label: 'Losses', color: C.loss, val: function (r) { return pick(r, split).l; }, fmt: function (v) { return String(v); } }
-], { stacked: true, label: 'Wins and losses by season', yFmt: function (v) { return String(Math.round(v)); } }));
+], { id: 'wl', stacked: true, label: 'Wins and losses by season', yFmt: function (v) { return String(Math.round(v)); } })) +
+h('div', { class: 'mc-detail', id: 'mc-detail-wl' }, 'Click a season on the chart to see the exact numbers.');
 html += h('h3', { class: 'playoff-heading' }, 'Win % by Season') +
 h('div', { class: 'mc-chart' }, lineChart(played, function (r) { var x = pick(r, split); return pct(x.w, x.l, x.t); }, { label: 'Win percentage by season' }));
 
@@ -178,6 +198,20 @@ html += h('p', { class: 'status-text' }, 'Showing: ' + esc(splitLabel(split)) + 
 root.innerHTML = html;
 }
 
+function onChartClick(e) {
+var t = e.target && e.target.closest ? e.target.closest('.mc-hit') : null;
+if (!t) return;
+var chart = t.getAttribute('data-chart'), i = Number(t.getAttribute('data-i'));
+var r = state.played[i];
+var box = document.getElementById('mc-detail-' + chart);
+if (!r || !box) return;
+box.innerHTML = detailText(chart, r, state.split);
+var all = document.querySelectorAll('.mc-hit');
+for (var k = 0; k < all.length; k++) {
+if (all[k].getAttribute('data-chart') === chart) all[k].setAttribute('fill', all[k] === t ? C.sel : 'transparent');
+}
+}
+
 function buildUi(panel) {
 var splits = [['combined', 'Combined'], ['regular', 'Regular Season'], ['playoff', 'Playoffs']];
 panel.innerHTML = h('div', { class: 'week-picker mc-controls' },
@@ -187,6 +221,7 @@ return h('button', { class: 'btn mc-split-btn' + (i === 0 ? ' active' : ''), 'da
 }).join(''))) + h('div', { id: 'mc-body' }, h('p', { class: 'status-text' }, 'Loading career data...'));
 var sel = panel.querySelector('#mc-owner');
 sel.addEventListener('change', function () { state.ownerKey = sel.value; render(); });
+panel.querySelector('#mc-body').addEventListener('click', onChartClick);
 panel.querySelectorAll('.mc-split-btn').forEach(function (b) {
 b.addEventListener('click', function () {
 panel.querySelectorAll('.mc-split-btn').forEach(function (x) { x.classList.remove('active'); });
@@ -223,8 +258,9 @@ style.textContent = '.mc-controls{display:flex;gap:14px;align-items:center;flex-
 '.mc-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 18px}' +
 '.mc-card{background:rgba(255,255,255,.04);border:1px solid rgba(139,151,171,.25);border-radius:10px;padding:10px 12px}' +
 '.mc-card-v{font-size:1.25rem;font-weight:700}.mc-card-l{font-size:.78rem;opacity:.7;margin-top:2px}' +
-'.mc-chart{margin:6px 0 18px;overflow-x:auto}.mc-legend{display:flex;gap:16px;font-size:.85rem;margin:4px 0}' +
+'.mc-chart{margin:6px 0 8px;overflow-x:auto}.mc-legend{display:flex;gap:16px;font-size:.85rem;margin:4px 0}' +
 '.mc-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}' +
+'.mc-detail{margin:0 0 18px;padding:10px 12px;border:1px solid rgba(139,151,171,.25);border-radius:10px;background:rgba(255,255,255,.04);font-size:.92rem;line-height:1.5}' +
 '.mc-scroll{overflow-x:auto}.mc-total td{border-top:2px solid rgba(139,151,171,.5)}';
 document.head.appendChild(style);
 var btn = document.createElement('button');
@@ -245,6 +281,6 @@ var b = e.target.closest && e.target.closest('.tab-btn');
 if (b && b !== btn) panel.classList.remove('active');
 });
 }
-window.MemberCareer = { buildSeasons: buildSeasons, totals: totals, pct: pct, render: render, st: state };
+window.MemberCareer = { buildSeasons: buildSeasons, totals: totals, pct: pct, render: render, st: state, detailText: detailText };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
