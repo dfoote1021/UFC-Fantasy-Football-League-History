@@ -22,6 +22,23 @@ function merge(a, b) { return { w: a.w + b.w, l: a.l + b.l, t: a.t + b.t, pf: a.
 function pick(row, split) { return split === 'regular' ? row.reg : split === 'playoff' ? row.po : row.all; }
 function dash() { return '-'; }
 
+function regularFinish(season, ownerKey) {
+var tally = {};
+(season.games || []).forEach(function (g) {
+if (g.gameType !== 'regular') return;
+[[g.ownerAKey, g.ownerAScore, g.ownerBScore], [g.ownerBKey, g.ownerBScore, g.ownerAScore]].forEach(function (s) {
+if (!tally[s[0]]) tally[s[0]] = { key: s[0], pts: 0, pf: 0 };
+var my = Number(s[1]) || 0, opp = Number(s[2]) || 0;
+tally[s[0]].pf += my;
+tally[s[0]].pts += my > opp ? 1 : my === opp ? 0.5 : 0;
+});
+});
+var list = Object.keys(tally).map(function (k) { return tally[k]; });
+list.sort(function (a, b) { return b.pts !== a.pts ? b.pts - a.pts : b.pf - a.pf; });
+for (var i = 0; i < list.length; i++) { if (list[i].key === ownerKey) return { place: i + 1, of: list.length }; }
+return null;
+}
+
 function buildSeasons(data, ownerKey) {
 var rows = [];
 data.forEach(function (season) {
@@ -40,12 +57,18 @@ add(g.gameType === 'playoff' ? po : reg, Number(mine[0]) || 0, Number(mine[1]) |
 var result = team.isChampion ? 'Champion' : team.isRunnerUp ? 'Runner-up' : team.madePlayoffs ? 'Made playoffs' : 'Missed playoffs';
 rows.push({ year: season.year, source: season.source, teamName: team.teamName, reg: reg, po: po, all: merge(reg, po),
 champion: !!team.isChampion, runnerUp: !!team.isRunnerUp, madePlayoffs: !!team.madePlayoffs, result: result,
+finish: regularFinish(season, ownerKey),
 txns: team.transactions || 0, txnIncomplete: !!team.hasIncompleteTransactionData });
 });
 rows.sort(function (a, b) { return a.year - b.year; });
 return rows;
 }
 function totals(rows, split) { var t = newRec(); rows.forEach(function (r) { t = merge(t, pick(r, split)); }); return t; }
+function avgFinish(rows) {
+var f = rows.filter(function (r) { return r.finish; });
+if (!f.length) return null;
+return f.reduce(function (s, r) { return s + r.finish.place; }, 0) / f.length;
+}
 
 function niceMax(v) {
 if (v <= 0) return 1;
@@ -122,6 +145,7 @@ function splitLabel(s) { return s === 'regular' ? 'Regular season' : s === 'play
 function winPctText(r) { var p = pct(r.w, r.l, r.t); return p == null ? dash() : (p * 100).toFixed(1) + '%'; }
 function recText(r) { return r.w + '-' + r.l + (r.t ? '-' + r.t : ''); }
 function td(v) { return h('td', {}, v); }
+function finishText(f) { return f ? f.place + ' of ' + f.of : dash(); }
 
 function detailText(chart, r, split) {
 var x = pick(r, split), gp = games(x);
@@ -132,7 +156,7 @@ return head + '<br>Points for: <strong>' + fmt(x.pf, 2) + '</strong> &nbsp; Poin
 '<br>Per game: ' + fmt(x.pf / gp, 2) + ' for, ' + fmt(x.pa / gp, 2) + ' against &nbsp; Record: ' + recText(x) + ' (' + winPctText(x) + ')';
 }
 return head + '<br>Wins: <strong>' + x.w + '</strong> &nbsp; Losses: <strong>' + x.l + '</strong>' + (x.t ? ' &nbsp; Ties: <strong>' + x.t + '</strong>' : '') +
-' &nbsp; Win %: <strong>' + winPctText(x) + '</strong>' + '<br>Result: ' + esc(r.result);
+' &nbsp; Win %: <strong>' + winPctText(x) + '</strong>' + '<br>Result: ' + esc(r.result) + ' &nbsp; Regular season finish: ' + finishText(r.finish);
 }
 
 function render() {
@@ -152,7 +176,12 @@ var x = pick(r, split), p = pct(x.w, x.l, x.t);
 if (best == null || p > best.p) best = { p: p, r: r };
 if (worst == null || p < worst.p) worst = { p: p, r: r };
 });
+var af = avgFinish(rows);
+var bestFinish = null;
+rows.forEach(function (r) { if (r.finish && (bestFinish == null || r.finish.place < bestFinish)) bestFinish = r.finish.place; });
+var poTot = rows.reduce(function (t, r) { return merge(t, r.po); }, newRec());
 var cards = [['Seasons', rows.length], ['Championships', champs], ['Runner-ups', ru], ['Playoff trips', po], ['Record', recText(tot)], ['Win %', winPctText(tot)],
+['Playoff record', games(poTot) ? recText(poTot) : dash()], ['Avg reg. season finish', af == null ? dash() : fmt(af, 1)], ['Best reg. season finish', bestFinish == null ? dash() : bestFinish],
 ['Points for', fmt(tot.pf, 2)], ['Points against', fmt(tot.pa, 2)], ['Avg points for', g ? fmt(tot.pf / g, 2) : dash()], ['Avg points against', g ? fmt(tot.pa / g, 2) : dash()],
 ['Best season', best ? best.r.year + ' (' + (best.p * 100).toFixed(0) + '%)' : dash()], ['Worst season', worst ? worst.r.year + ' (' + (worst.p * 100).toFixed(0) + '%)' : dash()]];
 var html = h('div', { class: 'mc-cards' }, cards.map(function (c) {
@@ -175,7 +204,7 @@ h('div', { class: 'mc-detail', id: 'mc-detail-wl' }, 'Click a season on the char
 html += h('h3', { class: 'playoff-heading' }, 'Win % by Season') +
 h('div', { class: 'mc-chart' }, lineChart(played, function (r) { var x = pick(r, split); return pct(x.w, x.l, x.t); }, { label: 'Win percentage by season' }));
 
-var heads = ['Season', 'Team', 'Record', 'Win %', 'PF', 'PA', 'PF/G', 'PA/G', 'Playoff W-L', 'Result', 'Txns'];
+var heads = ['Season', 'Team', 'Record', 'Win %', 'PF', 'PA', 'PF/G', 'PA/G', 'Playoff W-L', 'Result', 'Reg. Season Finish', 'Txns'];
 var body = '', incomplete = false;
 rows.slice().reverse().forEach(function (r) {
 var x = pick(r, split), gp = games(x);
@@ -184,17 +213,18 @@ var tag = r.champion ? '&#127942; ' : r.runnerUp ? '&#129352; ' : '';
 body += h('tr', {}, td(r.year + (r.source === 'espn' ? ' (ESPN)' : '')) + td(esc(r.teamName)) +
 td(gp ? recText(x) : dash()) + td(gp ? winPctText(x) : dash()) + td(gp ? fmt(x.pf, 2) : dash()) + td(gp ? fmt(x.pa, 2) : dash()) +
 td(gp ? fmt(x.pf / gp, 2) : dash()) + td(gp ? fmt(x.pa / gp, 2) : dash()) +
-td(games(r.po) ? r.po.w + '-' + r.po.l + (r.po.t ? '-' + r.po.t : '') : dash()) + td(tag + esc(r.result)) + td(r.txnIncomplete ? 'n/a' : r.txns));
+td(games(r.po) ? r.po.w + '-' + r.po.l + (r.po.t ? '-' + r.po.t : '') : dash()) + td(tag + esc(r.result)) + td(finishText(r.finish)) + td(r.txnIncomplete ? 'n/a' : r.txns));
 });
 var txnTotal = rows.reduce(function (s, r) { return s + (r.txns || 0); }, 0);
 body += h('tr', { class: 'mc-total' }, td('<strong>Career</strong>') + td('') + td('<strong>' + (g ? recText(tot) : dash()) + '</strong>') + td('<strong>' + (g ? winPctText(tot) : dash()) + '</strong>') +
 td('<strong>' + fmt(tot.pf, 2) + '</strong>') + td('<strong>' + fmt(tot.pa, 2) + '</strong>') +
-td('<strong>' + (g ? fmt(tot.pf / g, 2) : dash()) + '</strong>') + td('<strong>' + (g ? fmt(tot.pa / g, 2) : dash()) + '</strong>') + td('') + td('') + td('<strong>' + txnTotal + '</strong>'));
+td('<strong>' + (g ? fmt(tot.pf / g, 2) : dash()) + '</strong>') + td('<strong>' + (g ? fmt(tot.pa / g, 2) : dash()) + '</strong>') +
+td('<strong>' + (games(poTot) ? recText(poTot) : dash()) + '</strong>') + td('') + td('<strong>' + (af == null ? dash() : 'Avg ' + fmt(af, 1)) + '</strong>') + td('<strong>' + txnTotal + '</strong>'));
 html += h('h3', { class: 'playoff-heading' }, 'Season by Season') +
 h('div', { class: 'mc-scroll' }, h('table', { class: 'data-table mc-table' },
 h('thead', {}, h('tr', {}, heads.map(function (x) { return h('th', {}, x); }).join(''))) + h('tbody', {}, body)));
 if (incomplete) html += h('p', { class: 'status-text' }, 'n/a: transaction counts are not available for some ESPN seasons.');
-html += h('p', { class: 'status-text' }, 'Showing: ' + esc(splitLabel(split)) + '. Consolation and placement games are not counted. Seasons with no recorded games are left out of the charts.');
+html += h('p', { class: 'status-text' }, 'Showing: ' + esc(splitLabel(split)) + ' for the records and charts. Playoff record is always the full playoffs. Regular season finish ranks all teams that year by wins, then points for; the playoff outcome is in the Result column. Consolation and placement games are not counted.');
 root.innerHTML = html;
 }
 
@@ -255,6 +285,7 @@ var nav = content && content.querySelector('.alltime-tabs');
 if (!content || !nav || document.getElementById('alltime-member')) return;
 var style = document.createElement('style');
 style.textContent = '.mc-controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}' +
+'.mc-split-btn.active{background:#4f8cff !important;color:#ffffff !important;border-color:#4f8cff !important;font-weight:700}' +
 '.mc-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 18px}' +
 '.mc-card{background:rgba(255,255,255,.04);border:1px solid rgba(139,151,171,.25);border-radius:10px;padding:10px 12px}' +
 '.mc-card-v{font-size:1.25rem;font-weight:700}.mc-card-l{font-size:.78rem;opacity:.7;margin-top:2px}' +
@@ -281,6 +312,6 @@ var b = e.target.closest && e.target.closest('.tab-btn');
 if (b && b !== btn) panel.classList.remove('active');
 });
 }
-window.MemberCareer = { buildSeasons: buildSeasons, totals: totals, pct: pct, render: render, st: state, detailText: detailText };
+window.MemberCareer = { buildSeasons: buildSeasons, totals: totals, pct: pct, render: render, st: state, detailText: detailText, avgFinish: avgFinish };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
