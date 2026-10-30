@@ -402,6 +402,26 @@
 <script src="assets/espn-draft-loader.js"></script>
 <script src="assets/espn-roster-loader.js"></script>
 <script src="assets/all-time.js"></script>
+<script>
+(function () {
+  "use strict";
+  var stats = window.AllTimeStats;
+  ["buildMasterRecords", "buildMemberRecords", "buildSeasonMasterRecords", "buildSeasonMemberRecords"].forEach(function (name) {
+    var original = stats[name];
+    var splitIndex = name.indexOf("buildSeason") === 0 ? 2 : 1;
+    stats[name] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var split = args[splitIndex];
+      args[0] = args[0].map(function (season) {
+        return Object.assign({}, season, {
+          games: season.games.filter(function (game) { return game.gameType === split; })
+        });
+      });
+      return original.apply(this, args);
+    };
+  });
+})();
+</script>
 <script src="assets/draft-enhancements.js"></script>
 <script src="assets/roster-stats.js"></script>
 <script src="assets/season.js"></script>
