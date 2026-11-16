@@ -61,14 +61,14 @@ function fmt(v, digits, signed) {
 return (signed && v > 0 ? '+' : '') + Number(v === 0 ? 0 : v).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 function holderText(t, metric) {
-var text = esc(t.ownerName) + ' &mdash; ' + esc(t.teamName) + ' (' + esc(t.year) + ')';
+var text = '<div class="record-holder">' + esc(t.ownerName) + '</div><div class="record-detail">' + esc(t.teamName) + ' &middot; ' + esc(t.year) + '</div>';
 if (metric === 'moves') return text;
-text += '<br>' + t.games + (t.games === 1 ? ' game' : ' games');
-if (metric === 'wins' || metric === 'losses') text += ' &middot; Record: ' + t.wins + '-' + t.losses + '-' + t.ties + ' (W-L-T)';
-if (metric === 'avgPF') text += ' &middot; Total PF: ' + fmt(t.pf, 2);
-if (metric === 'avgPA') text += ' &middot; Total PA: ' + fmt(t.pa, 2);
-if (metric === 'margin' || metric === 'avgMargin') text += ' &middot; PF: ' + fmt(t.pf, 2) + ' &middot; PA: ' + fmt(t.pa, 2);
-return text;
+var details = [t.games + (t.games === 1 ? ' game' : ' games')];
+if (metric === 'wins' || metric === 'losses') details.push('Record: ' + t.wins + '-' + t.losses + '-' + t.ties + ' (W-L-T)');
+if (metric === 'avgPF') details.push('Total PF: ' + fmt(t.pf, 2));
+if (metric === 'avgPA') details.push('Total PA: ' + fmt(t.pa, 2));
+if (metric === 'margin' || metric === 'avgMargin') details.push('PF: ' + fmt(t.pf, 2), 'PA: ' + fmt(t.pa, 2));
+return text + '<div class="record-detail">' + details.join(' &middot; ') + '</div>';
 }
 var data = null, pending = null;
 function init() {
@@ -79,9 +79,9 @@ panel.appendChild(section);
 function render() {
 if (!data) {
 if (pending) return;
-section.textContent = 'Loading single-season records...';
+section.innerHTML = '<p class="status-text" role="status">Loading single-season records...</p>';
 pending = window.AllTimeStats.loadAllSeasons().then(function (result) { data = result; pending = null; render(); }).catch(function (err) {
-pending = null; section.textContent = 'Could not load single-season records. Reopen Records to retry.';
+pending = null; section.innerHTML = '<p class="status-text" role="status">Could not load single-season records. Reopen Records to retry.</p>';
 console.error('Single-season records failed', err);
 });
 return;
@@ -90,21 +90,23 @@ var splitButton = panel.querySelector('.records-split-btn.active');
 var viewButton = panel.querySelector('.records-view-btn.active');
 var member = document.getElementById('records-member-select');
 var owner = viewButton && viewButton.getAttribute('data-view') === 'member' ? member && member.value : null;
-if (viewButton && viewButton.getAttribute('data-view') === 'member' && !owner) { section.textContent = 'Select a member to see single-season records.'; return; }
+if (viewButton && viewButton.getAttribute('data-view') === 'member' && !owner) { section.innerHTML = '<p class="status-text">Select a member to see single-season records.</p>'; return; }
 var split = splitButton ? splitButton.getAttribute('data-split') : 'regular';
 var cards = records(build(data, split, owner)).map(function (r) {
+if (r.value === null) return '<article class="record-card no-data"><h4>' + esc(r.title) + '</h4><p>No eligible data</p></article>';
 var points = ['moves', 'wins', 'losses'].indexOf(r.metric) === -1;
 var signed = r.metric === 'margin' || r.metric === 'avgMargin';
-var value = r.value === null ? 'No eligible data' : fmt(r.value, points ? 2 : 0, signed);
-if (r.value !== null && r.metric.indexOf('avg') === 0) value += ' / game';
-return '<article style="padding:16px;border:1px solid rgba(139,151,171,.3);border-radius:10px"><h4>' + esc(r.title) + '</h4><p style="font-size:1.5rem;font-weight:700">' + esc(value) + '</p>' + r.holders.map(function (t) {
-return '<p>' + holderText(t, r.metric) + '</p>';
+var value = fmt(r.value, points ? 2 : 0, signed);
+var unit = r.metric.indexOf('avg') === 0 ? '<div class="record-detail">Points per game</div>' : '';
+return '<article class="record-card"><h4>' + esc(r.title) + '</h4><div class="record-value">' + esc(value) + '</div>' + unit + r.holders.map(function (t) {
+return '<div>' + holderText(t, r.metric) + '</div>';
 }).join('') + '</article>';
 }).join('');
-section.innerHTML = '<h3 class="playoff-heading">Single-Season Records</h3><p class="status-text">Scoring and W-L records: ' + (split === 'playoff' ? 'playoffs' : 'regular season') + '. Moves: full season. Differential = PF minus PA across all counted games in the selected split, not the largest single-game margin. Average PF, PA and differential = season total divided by games. Two-week playoff rounds count as one game for W-L and averages; these are per-matchup, not per-week averages. Consolation and placement games are excluded. Missing move counts are excluded; verified zero counts are eligible. All tied holders are shown; averages are ranked before display rounding. Loaded seasons may be in progress; no completed-season minimum is applied.</p><div class="records-grid">' + cards + '</div>';
+var notesOpen = section.querySelector('details[open]') ? ' open' : '';
+section.innerHTML = '<h3 class="playoff-heading">Single-Season Records</h3><p class="status-text">' + (split === 'playoff' ? 'Playoffs' : 'Regular Season') + ' &middot; Moves use full-season totals</p><div class="records-grid">' + cards + '</div><details class="status-text"' + notesOpen + '><summary>How these records are calculated</summary><p>Differential = PF minus PA across all counted games in the selected split, not the largest single-game margin. Average PF, PA and differential = season total divided by games. Two-week playoff rounds count as one game for W-L and averages; these are per-matchup, not per-week averages. Consolation and placement games are excluded. Missing move counts are excluded; verified zero counts are eligible. All tied holders are shown; averages are ranked before display rounding. Loaded seasons may be in progress; no completed-season minimum is applied.</p></details>';
 }
 new MutationObserver(render).observe(grid, { childList: true, subtree: true });
-panel.addEventListener('click', function () { setTimeout(render, 0); });
+panel.addEventListener('click', function (event) { if (section.contains(event.target)) return; setTimeout(render, 0); });
 panel.addEventListener('change', render);
 var tab = document.querySelector('[data-alltime-tab="records"]');
 if (tab) tab.addEventListener('click', function () { setTimeout(render, 0); });
