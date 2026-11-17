@@ -173,18 +173,20 @@
 (function () {
 'use strict';
 var A = window.SleeperAPI;
-var POS = {QB:['QB'],RB:['RB'],WR:['WR'],TE:['TE'],K:['K'],DEF:['DEF','DST'],FLEX:['RB','WR','TE'],SUPER_FLEX:['QB','RB','WR','TE'],RB_WR_FLEX:['RB','WR'],WR_TE_FLEX:['WR','TE'],REC_FLEX:['WR','TE'],IDP_FLEX:['DL','LB','DB'],DL:['DL','DE','DT'],LB:['LB'],DB:['DB','CB','S']};
+var POS = {QB:['QB'],RB:['RB'],WR:['WR'],TE:['TE'],K:['K'],DEF:['DEF','DST'],FLEX:['RB','WR','TE'],SUPER_FLEX:['QB','RB','WR','TE'],WRRB_FLEX:['WR','RB'],RB_WR_FLEX:['RB','WR'],WR_TE_FLEX:['WR','TE'],REC_FLEX:['WR','TE'],IDP_FLEX:['DL','LB','DB'],DL:['DL','DE','DT'],LB:['LB'],DB:['DB','CB','S']};
 function num(v) { return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)); }
 function rnd(v) { return Math.round(v * 100) / 100; }
 function analyze(side, positions, meta) {
 var slots = positions.filter(function (s) { return ['BN','IR','TAXI','RESERVE'].indexOf(s) < 0; });
 function bad(s) { return { error:s }; }
-if (!slots.length || slots.length > 16 || slots.some(function (s) { return !POS[s]; })) return bad('Unsupported lineup slots.');
-if (!side || !Array.isArray(side.starters) || side.starters.length !== slots.length || !side.players_points) return bad('Weekly starters or scores are unavailable.');
+var unsupported=slots.filter(function(s){return !POS[s];});
+if (!slots.length || slots.length > 16 || unsupported.length) return bad('Unsupported lineup slots: '+(unsupported.join(', ') || slots.length+' starter slots'));
+if (!side || !Array.isArray(side.starters) || side.starters.length !== slots.length || !side.players_points) return bad('Weekly starters or scores unavailable; expected '+slots.length+' starters, received '+(side && side.starters ? side.starters.length : 0)+'.');
 var starters = side.starters.map(String), excluded = (side.reserve || []).concat(side.taxi || []).map(String);
 var ids = Array.from(new Set((side.players || []).concat(starters).map(String))).filter(function (id) { return id !== '0' && excluded.indexOf(id) < 0; });
 var points = side.players_points, actual = 0;
-if (ids.some(function (id) { return !num(points[id]) || !meta[id]; })) return bad('Some weekly player scores or position metadata are missing.');
+var missingScores=ids.filter(function(id){return !num(points[id]);}),missingMeta=ids.filter(function(id){return !meta[id];});
+if (missingScores.length || missingMeta.length) return bad('Missing weekly scores for player IDs: '+(missingScores.join(', ') || 'none')+'. Missing position metadata for player IDs: '+(missingMeta.join(', ') || 'none')+'.');
 if (new Set(starters.filter(function (id) { return id !== '0'; })).size !== starters.filter(function (id) { return id !== '0'; }).length) return bad('Duplicate starter IDs.');
 if (starters.some(function (id) { return id !== '0' && ids.indexOf(id) < 0; })) return bad('Starter eligibility could not be resolved.');
 starters.forEach(function (id) { if (id !== '0') actual += Number(points[id]); });
@@ -213,6 +215,7 @@ return { actual:rnd(actual), optimal:rnd(best.score), left:rnd(Math.max(0,best.s
 }
 function summarize(weeks) {
 var good=weeks.filter(function (w) { return !w.result.error; }), actual=0,optimal=0,perfect=0;
+if (!good.length) return {weeks:0,unavailable:weeks.length,actual:null,optimal:null,left:null,perfect:null,efficiency:null};
 good.forEach(function (w) { actual+=w.result.actual; optimal+=w.result.optimal; if(w.result.perfect)perfect++; });
 return { weeks:good.length, unavailable:weeks.length-good.length, actual:rnd(actual),optimal:rnd(optimal),left:rnd(optimal-actual),perfect:perfect,efficiency:optimal>0 && actual>=0 ? actual/optimal*100:null };
 }
@@ -236,7 +239,6 @@ for(var w=1;w<=last;w++) {
 try {
 var entries=await A.getMatchups(id,w);
 (entries || []).forEach(function (side) {
-if(!side.players || !side.players.length || !side.starters || !side.starters.length)return;
 if(!results[side.roster_id])results[side.roster_id]=[];
 results[side.roster_id].push({week:w,result:analyze(side,league.roster_positions || [],meta)});
 });
@@ -259,6 +261,8 @@ var notes='<details class="status-text"><summary>Method and data coverage</summa
 var header='<h3 class="playoff-heading">Lineup Analysis &middot; Sleeper</h3><div class="week-picker"><button class="btn '+(view==='weekly'?'btn-primary':'')+'" data-la-view="weekly">Weekly Analysis</button><button class="btn '+(view==='season'?'btn-primary':'')+'" data-la-view="season">Season Summary</button></div>';
 if(d.failed.length)header+='<p class="status-text">Could not load weeks '+d.failed.join(', ')+'. Totals below have incomplete coverage. <button class="btn" data-la-retry="1">Retry</button></p>';
 var weeks=d.results[rid] || [], selected=weeks.find(function(w){return w.week===Number(weekSel.value);});
+var rejected=weeks.filter(function(w){return w.result.error;});
+if(rejected.length)header+='<details class="status-text"><summary>Unavailable lineup diagnostics for '+esc(d.map[rid].teamName)+' ('+rejected.length+' weeks)</summary><ul>'+rejected.map(function(w){return '<li>Week '+w.week+': '+esc(w.result.error)+'</li>';}).join('')+'</ul></details>';
 if(view==='weekly') {
 if(!selected || selected.result.error) { root.innerHTML=header+'<p class="status-text">'+esc(selected?selected.result.error:Number(weekSel.value)>d.last?'This week is not yet eligible as completed.':'Weekly roster data unavailable.')+'</p>'+notes;return; }
 var x=selected.result;
@@ -266,7 +270,7 @@ var cards=[['Actual Starter Points',fmt(x.actual)],['Optimal Lineup Points',fmt(
 root.innerHTML=header+'<div class="records-grid">'+cards.map(function(c){return '<div class="record-card"><h4>'+c[0]+'</h4><div class="record-value">'+c[1]+'</div></div>';}).join('')+'</div><details><summary>Actual vs. Optimal Lineup</summary><table class="data-table"><thead><tr><th>Slot</th><th>Started</th><th>Points</th><th>Optimal Selection</th><th>Points</th><th>Difference</th></tr></thead><tbody>'+x.slots.map(function(slot,i){var a=x.starters[i],b=x.lineup[i],ap=a==='0'?0:Number(x.points[a]),bp=b.indexOf('empty-')===0?0:Number(x.points[b]);return '<tr><td>'+esc(slot)+'</td><td>'+esc(name(d,a))+'</td><td>'+fmt(ap)+'</td><td>'+esc(name(d,b))+'</td><td>'+fmt(bp)+'</td><td>'+fmt(bp-ap)+'</td></tr>';}).join('')+'</tbody></table></details>'+notes;
 } else {
 var rows=ids.map(function(id){return {id:id,team:d.map[id],s:summarize(d.results[id] || [])};}).sort(function(a,b){return (b.s.efficiency==null?-Infinity:b.s.efficiency)-(a.s.efficiency==null?-Infinity:a.s.efficiency);});
-root.innerHTML=header+'<p class="status-text">Select a team for weekly results. Efficiency = total actual / total optimal points. Coverage varies where data is unavailable.</p><table class="data-table"><thead><tr><th>Team / Owner</th><th>Efficiency</th><th>Actual</th><th>Optimal</th><th>Left on Bench</th><th>Perfect Weeks</th><th>Weeks Analyzed</th><th>Unavailable Weeks*</th></tr></thead><tbody>'+rows.map(function(row){var s=row.s;return '<tr><td><button class="btn" data-la-team="'+esc(row.id)+'">'+esc(row.team.teamName)+' / '+esc(row.team.displayName)+'</button></td><td>'+(s.efficiency==null?'Unavailable':fmt(s.efficiency)+'%')+'</td><td>'+fmt(s.actual)+'</td><td>'+fmt(s.optimal)+'</td><td>'+fmt(s.left)+'</td><td>'+s.perfect+'</td><td>'+s.weeks+'</td><td>'+Math.max(0,d.last-s.weeks)+'</td></tr>';}).join('')+'</tbody></table><p class="status-text">*Includes missing/unusable roster data and failed requests through week '+d.last+'.</p><h4>'+esc(d.map[rid].teamName)+' &mdash; Weekly Results</h4><table class="data-table"><thead><tr><th>Week</th><th>Actual</th><th>Optimal</th><th>Efficiency</th><th>Left on Bench</th></tr></thead><tbody>'+weeks.map(function(w){var s=w.result;return s.error?'<tr><td>'+w.week+'</td><td colspan="4">'+esc(s.error)+'</td></tr>':'<tr><td>'+w.week+'</td><td>'+fmt(s.actual)+'</td><td>'+fmt(s.optimal)+'</td><td>'+(s.efficiency==null?'Unavailable':fmt(s.efficiency)+'%')+'</td><td>'+fmt(s.left)+'</td></tr>';}).join('')+'</tbody></table>'+notes;
+root.innerHTML=header+'<p class="status-text">Select a team for weekly results. Efficiency = total actual / total optimal points. Coverage varies where data is unavailable. Unavailable means no usable weeks, not zero points.</p><table class="data-table"><thead><tr><th>Team / Owner</th><th>Efficiency</th><th>Actual</th><th>Optimal</th><th>Left on Bench</th><th>Perfect Weeks</th><th>Weeks Analyzed</th><th>Unavailable Weeks*</th></tr></thead><tbody>'+rows.map(function(row){var s=row.s;return '<tr><td><button class="btn" data-la-team="'+esc(row.id)+'">'+esc(row.team.teamName)+' / '+esc(row.team.displayName)+'</button></td><td>'+(s.efficiency==null?'Unavailable':fmt(s.efficiency)+'%')+'</td><td>'+fmt(s.actual)+'</td><td>'+fmt(s.optimal)+'</td><td>'+fmt(s.left)+'</td><td>'+(s.perfect==null?'Unavailable':s.perfect)+'</td><td>'+s.weeks+'</td><td>'+Math.max(0,d.last-s.weeks)+'</td></tr>';}).join('')+'</tbody></table><p class="status-text">*Includes missing/unusable roster data and failed requests through week '+d.last+'.</p><h4>'+esc(d.map[rid].teamName)+' &mdash; Weekly Results</h4><table class="data-table"><thead><tr><th>Week</th><th>Actual</th><th>Optimal</th><th>Efficiency</th><th>Left on Bench</th></tr></thead><tbody>'+weeks.map(function(w){var s=w.result;return s.error?'<tr><td>'+w.week+'</td><td colspan="4">'+esc(s.error)+'</td></tr>':'<tr><td>'+w.week+'</td><td>'+fmt(s.actual)+'</td><td>'+fmt(s.optimal)+'</td><td>'+(s.efficiency==null?'Unavailable':fmt(s.efficiency)+'%')+'</td><td>'+fmt(s.left)+'</td></tr>';}).join('')+'</tbody></table>'+notes;
 }
 }
 function refresh() {
