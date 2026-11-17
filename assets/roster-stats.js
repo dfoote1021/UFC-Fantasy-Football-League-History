@@ -313,21 +313,37 @@ var unmatched=rows.filter(function(r){return !used.has(r);});
 if(unmatched.length)return rows;
 return starters.concat(bench,taxi,ir);
 }
+function adapt(result,side,positions,meta){
+var rows=Array.isArray(result)?result:result&&result.players;
+var ordered=layout(rows,side,positions,meta);
+if(ordered===rows)return result;
+return Array.isArray(result)?ordered:Object.assign({},result,{players:ordered});
+}
+function applyVisible(tbody,players){
+var available=Array.prototype.slice.call(tbody.querySelectorAll('tr')),used=new Set();
+if(available.length!==players.length)return false;
+var ordered=players.map(function(p){var name=String(p.name||p.playerName||'').trim();var tr=available.find(function(r){var cells=r.querySelectorAll('td');return !used.has(r)&&cells[1]&&cells[1].textContent.trim()===name;});if(tr)used.add(tr);return tr;});
+if(ordered.some(function(r){return !r;}))return false;
+ordered.forEach(function(tr,i){tr.querySelectorAll('td')[0].textContent=players[i].slot;if(tbody.children[i]!==tr)tbody.appendChild(tr);});
+return true;
+}
 A.buildWeeklyRoster=function(matchups,rosterId,meta){
-var rows=build.apply(this,arguments),sel=document.getElementById('season-select'),week=document.getElementById('roster-week-select'),team=document.getElementById('roster-team-select');
+var result=build.apply(this,arguments),sel=document.getElementById('season-select'),week=document.getElementById('roster-week-select'),team=document.getElementById('roster-team-select');
 var year=sel&&sel.value,id=A.SLEEPER_SEASONS[year],league=leagues[id],side=(matchups||[]).find(function(m){return String(m.roster_id)===String(rosterId);});
-if(!id||!side)return rows;
-var out=league?layout(rows,side,league.roster_positions||[],meta||{}):rows,n=++token,w=week&&week.value,t=team&&team.value;
+if(!id||!side)return result;
+var out=league?adapt(result,side,league.roster_positions||[],meta||{}):result,n=++token,w=week&&week.value,t=team&&team.value;
 setTimeout(function(){
 if(n!==token||!sel||sel.value!==year||!week||week.value!==w||!team||team.value!==t)return;
 var table=document.getElementById('roster-table');if(!table)return;
+var players=Array.isArray(out)?out:out&&out.players,tbody=table.querySelector('tbody');
+var applied=out!==result&&tbody&&Array.isArray(players)&&applyVisible(tbody,players);
 var note=document.getElementById('weekly-ir-note');if(!note){note=document.createElement('p');note.id='weekly-ir-note';note.className='status-text';table.parentNode.insertBefore(note,table.nextSibling);}
 note.hidden=false;
-note.textContent=(out===rows?'Starter-slot mapping unavailable for this roster. ':'')+(Array.isArray(side.reserve)?side.reserve.length?'IR entries use the selected week reserve list.':'No IR assignments in the selected week reserve list.':'IR assignments are unavailable for this historical week. Bench rows may include reserves; NFL injury status and current IR lists are not used to guess weekly assignments.');
+note.textContent=(!applied?'Starter-slot display could not be matched to the rendered table. ':'')+(Array.isArray(side.reserve)?side.reserve.length?'IR entries use the selected week reserve list.':'No IR assignments in the selected week reserve list.':'IR assignments are unavailable for this historical week. Bench rows may include reserves; NFL injury status and current IR lists are not used to guess weekly assignments.');
 },0);
 return out;
 };
 function init(){var sel=document.getElementById('season-select');if(sel)sel.addEventListener('change',function(){token++;var note=document.getElementById('weekly-ir-note');if(note)note.hidden=true;});}
-window.WeeklyRosterLayout={layout:layout};
+window.WeeklyRosterLayout={layout:layout,adapt:adapt,applyVisible:applyVisible};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
