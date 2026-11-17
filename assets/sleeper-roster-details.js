@@ -14,7 +14,7 @@ function extraStats(s,pos){
 if(['K','DEF','DST'].indexOf(pos)>=0)return '';
 var fields=[['rush_fd','Rush 1D'],['rec_fd','Rec 1D'],['rush_40p','40+ rush'],['rec_40p','40+ rec']];
 if(pos==='QB')fields=[['rush_fd','Rush 1D'],['pass_cmp_40p','40+ pass cmp'],['rush_40p','40+ rush']];
-return fields.map(function(f){return f[1]+': '+(s&&number(s[f[0]])?Number(s[f[0]]):'Unavailable');}).join(' | ');
+return fields.filter(function(f){return f[0].indexOf('40')<0||(s&&number(s[f[0]])&&Number(s[f[0]])>0);}).map(function(f){return f[1]+': '+(s&&number(s[f[0]])?Number(s[f[0]]):'Unavailable');}).join(' | ');
 }
 function label(s){return s==='WRRB_FLEX'||s==='RB_WR_FLEX'?'WR/RB':s==='REC_FLEX'||s==='WR_TE_FLEX'?'WR/TE':s;}
 function name(meta,id){var p=meta[id]||{};return p.full_name||[p.first_name,p.last_name].filter(Boolean).join(' ')||id;}
@@ -71,6 +71,20 @@ await Promise.all([updateWeekly(year,id,meta),updateMatchups(year,id,meta)]);
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(refresh,100);}
 function init(){
+if(!document.getElementById('matchup-layout-style')){
+var style=document.createElement('style');style.id='matchup-layout-style';
+style.textContent='#matchups-list{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}'+
+'#matchups-list .matchup-card,#matchups-list .matchup-roster-col{min-width:0}'+
+'#matchups-list .matchup-rosters.expanded{grid-template-columns:repeat(2,minmax(0,1fr))}'+
+'#matchups-list .matchup-roster-col li{gap:8px;align-items:flex-start}'+
+'#matchups-list .matchup-roster-col li>div{min-width:0;flex:1;overflow-wrap:anywhere}'+
+'#matchups-list .matchup-roster-col li>span{flex-shrink:0;white-space:nowrap}'+
+'#matchups-list .matchup-row>span:first-child{min-width:0;overflow-wrap:anywhere}'+
+'@media(max-width:1099px){#matchups-list{grid-template-columns:repeat(2,minmax(0,1fr))}}'+
+'@media(max-width:780px){#matchups-list{grid-template-columns:1fr}}'+
+'@media(max-width:600px){#matchups-list .matchup-rosters.expanded{grid-template-columns:1fr}}';
+document.head.appendChild(style);
+}
 ['season-select','roster-week-select','roster-team-select','week-select'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('change',schedule);});
 ['roster-table','matchups-list'].forEach(function(id){var e=document.getElementById(id);if(e)new MutationObserver(schedule).observe(e,{childList:true,subtree:true,characterData:true});});
 var panel=document.getElementById('tab-matchups');if(panel)panel.addEventListener('click',schedule);
