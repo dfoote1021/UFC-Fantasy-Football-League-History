@@ -203,3 +203,22 @@
     font-size: 0.8rem;
   }
 }
+
+/* Site-wide text links: this stylesheet is shared by every tab. */
+a[href]:not(.btn),
+a[href]:not(.btn):visited {
+  color: #8cc8ff;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+a[href]:not(.btn):hover,
+a[href]:not(.btn):focus-visible {
+  color: #c6e7ff;
+  text-decoration-thickness: 2px;
+}
+
+a[href]:not(.btn):focus-visible {
+  outline: 2px solid #ffd25c;
+  outline-offset: 3px;
+}
