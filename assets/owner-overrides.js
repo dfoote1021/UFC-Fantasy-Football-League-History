@@ -68,3 +68,16 @@
     resolveOwnerName: resolveOwnerName,
   };
 })();
+
+/* Page bootstrap: keep mappings unchanged; initialize optional history UI after core scripts. */
+(function(){
+'use strict';
+var src=new URL('league-history.js',document.currentScript.src).href;
+function start(){
+if(document.querySelector('script[data-ufc-history]'))return;
+var script=document.createElement('script');script.setAttribute('data-ufc-history','true');script.src=src;
+script.onerror=function(){console.error('UFC league-history.js could not load. Existing league views remain available.');};
+document.head.appendChild(script);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
